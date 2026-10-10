@@ -9,7 +9,7 @@ import {
   union,
 } from '@sanity-labs/typed-schema'
 
-const invalidUnion = union([
+const InvalidUnion = union([
   string(),
   number(),
   boolean(),
@@ -17,16 +17,16 @@ const invalidUnion = union([
   object({_type: literal('some-object'), foo: string()}),
 ])
 
-const singleUnion = union([
+const SingleUnion = union([
   object({_type: literal('some-object'), foo: string()}),
 ])
 
-const arr = array(singleUnion)
-const u1 = parse(arr, [{}])
+const Arr = array(SingleUnion)
+const u1 = parse(Arr, [{}])
 
-const multiUnion = union([
+const MultiUnion = union([
   object({_type: literal('some-object'), foo: string()}),
   object({_type: literal('other-object'), num: number()}),
 ])
 
-const u2 = parse(multiUnion, {})
+const u2 = parse(MultiUnion, {})

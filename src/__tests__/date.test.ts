@@ -5,8 +5,8 @@ import {safeParse} from '../parse'
 
 describe('date type', () => {
   test('date type definition', () => {
-    const dateSchema = date()
-    expect(safeParse(dateSchema, '2023-01-22')).toMatchInlineSnapshot(`
+    const DateSchema = date()
+    expect(safeParse(DateSchema, '2023-01-22')).toMatchInlineSnapshot(`
       {
         "status": "ok",
         "value": "2023-01-22",
@@ -14,14 +14,14 @@ describe('date type', () => {
     `)
   })
   test('errors', () => {
-    const dateSchema = date()
-    expect(safeParse(dateSchema, '2023-12-06')).toMatchInlineSnapshot(`
+    const DateSchema = date()
+    expect(safeParse(DateSchema, '2023-12-06')).toMatchInlineSnapshot(`
       {
         "status": "ok",
         "value": "2023-12-06",
       }
     `)
-    expect(safeParse(dateSchema, '2023-12-06')).toMatchInlineSnapshot(`
+    expect(safeParse(DateSchema, '2023-12-06')).toMatchInlineSnapshot(`
       {
         "status": "ok",
         "value": "2023-12-06",
@@ -30,7 +30,7 @@ describe('date type', () => {
 
     expect(
       safeParse(
-        dateSchema,
+        DateSchema,
         '2023-12-06 ', // note the trailing whitespace
       ),
     ).toMatchInlineSnapshot(`
@@ -46,7 +46,7 @@ describe('date type', () => {
         "status": "fail",
       }
     `)
-    expect(safeParse(dateSchema, '2023-1-6')).toMatchInlineSnapshot(`
+    expect(safeParse(DateSchema, '2023-1-6')).toMatchInlineSnapshot(`
       {
         "errors": [
           {
@@ -59,7 +59,7 @@ describe('date type', () => {
         "status": "fail",
       }
     `)
-    expect(safeParse(dateSchema, 'xyz')).toMatchInlineSnapshot(`
+    expect(safeParse(DateSchema, 'xyz')).toMatchInlineSnapshot(`
       {
         "errors": [
           {
@@ -72,7 +72,7 @@ describe('date type', () => {
         "status": "fail",
       }
     `)
-    expect(safeParse(dateSchema, undefined)).toMatchInlineSnapshot(`
+    expect(safeParse(DateSchema, undefined)).toMatchInlineSnapshot(`
       {
         "errors": [
           {
@@ -85,7 +85,7 @@ describe('date type', () => {
         "status": "fail",
       }
     `)
-    expect(safeParse(dateSchema, {})).toMatchInlineSnapshot(`
+    expect(safeParse(DateSchema, {})).toMatchInlineSnapshot(`
       {
         "errors": [
           {
@@ -102,21 +102,21 @@ describe('date type', () => {
 })
 
 describe('date validation', () => {
-  const dateSchema = date()
+  const DateSchema = date()
   test('accepts valid calendar dates', () => {
-    expect(safeParse(dateSchema, '2024-02-29').status).toBe('ok') // leap day
-    expect(safeParse(dateSchema, '2023-01-31').status).toBe('ok')
-    expect(safeParse(dateSchema, '2023-12-31').status).toBe('ok')
+    expect(safeParse(DateSchema, '2024-02-29').status).toBe('ok') // leap day
+    expect(safeParse(DateSchema, '2023-01-31').status).toBe('ok')
+    expect(safeParse(DateSchema, '2023-12-31').status).toBe('ok')
   })
   test('rejects invalid months and days', () => {
-    expect(safeParse(dateSchema, '2023-45-10').status).toBe('fail')
-    expect(safeParse(dateSchema, '2023-00-10').status).toBe('fail')
-    expect(safeParse(dateSchema, '2023-02-31').status).toBe('fail')
-    expect(safeParse(dateSchema, '2023-02-29').status).toBe('fail') // not a leap year
-    expect(safeParse(dateSchema, '2023-04-31').status).toBe('fail')
-    expect(safeParse(dateSchema, '2023-12-00').status).toBe('fail')
+    expect(safeParse(DateSchema, '2023-45-10').status).toBe('fail')
+    expect(safeParse(DateSchema, '2023-00-10').status).toBe('fail')
+    expect(safeParse(DateSchema, '2023-02-31').status).toBe('fail')
+    expect(safeParse(DateSchema, '2023-02-29').status).toBe('fail') // not a leap year
+    expect(safeParse(DateSchema, '2023-04-31').status).toBe('fail')
+    expect(safeParse(DateSchema, '2023-12-00').status).toBe('fail')
   })
   test('rejects date-times', () => {
-    expect(safeParse(dateSchema, '2023-12-06T19:01:07Z').status).toBe('fail')
+    expect(safeParse(DateSchema, '2023-12-06T19:01:07Z').status).toBe('fail')
   })
 })

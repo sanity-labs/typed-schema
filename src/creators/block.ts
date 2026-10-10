@@ -183,13 +183,13 @@ export function block<
     TypeName
   >
 > {
-  const marksSchema = options.decorator
+  const Marks = options.decorator
     ? array(union([options.decorator, string()]))
     : array(string())
 
-  const spanType = object({
+  const Span = object({
     _type: literal('span'),
-    marks: marksSchema,
+    marks: Marks,
     text: string(),
   })
   return defineType({
@@ -199,7 +199,7 @@ export function block<
       style: optional(options.style || string()),
       listItem: optional(options.list || string()),
       level: optional(number()),
-      children: array(union([spanType, options.inline || never()])),
+      children: array(union([Span, options.inline || never()])),
       markDefs: optional(
         options.annotation ? array(options.annotation) : array(never()),
       ),

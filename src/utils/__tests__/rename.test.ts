@@ -12,8 +12,8 @@ test('rename a document type', () => {
     _type: literal('something'),
     foo: string(),
   })
-  const renamedDoc = rename(doc, 'renamed')
-  const res = parse(renamedDoc, {
+  const RenamedDoc = rename(doc, 'renamed')
+  const res = parse(RenamedDoc, {
     _id: 'some-id',
     _type: 'renamed',
     foo: 'Foo',

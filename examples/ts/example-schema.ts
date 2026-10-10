@@ -14,23 +14,23 @@ import {
 
 function assertAssignable<A extends B, B>() {}
 
-const country = document({
+const Country = document({
   _type: literal('country'),
   name: string(),
 })
 
-const pet = object({
+const Pet = object({
   _type: literal('pet'),
   species: union([literal('dog'), literal('cat')]),
   name: string(),
 })
-declare const petOutput: OutputOf<typeof pet>
+declare const petOutput: OutputOf<typeof Pet>
 
-const list = array(object({test: string()}))
+const List = array(object({test: string()}))
 
-declare const listOutput: OutputOf<typeof list>
+declare const listOutput: OutputOf<typeof List>
 
-const person = document({
+const Person = document({
   _type: literal('person'),
   firstName: string(),
   lastName: string(),
@@ -38,25 +38,25 @@ const person = document({
     _type: literal('address'),
     street: string(),
     zip: string(),
-    country: reference(country),
+    country: reference(Country),
   }),
-  visitedCountries: array(reference(country)),
-  pets: array(pet),
+  visitedCountries: array(reference(Country)),
+  pets: array(Pet),
 })
 
-declare const personOutput: OutputOf<typeof person>
+declare const personOutput: OutputOf<typeof Person>
 
-const polyObjectArr = array(
+const PolyObjectArr = array(
   union([
     object({_type: literal('foo'), foo: string()}),
     object({_type: literal('two'), age: number()}),
   ]),
 )
-declare const stringOrNumOut: OutputOf<typeof polyObjectArr>
+declare const stringOrNumOut: OutputOf<typeof PolyObjectArr>
 
-const t = reference(country)
+const t = reference(Country)
 
-const somePerson = parse(person, {})
+const somePerson = parse(Person, {})
 
 console.log(somePerson.address.country)
 

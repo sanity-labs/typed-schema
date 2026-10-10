@@ -10,7 +10,7 @@ import {type Infer} from '../defs'
 
 describe('block type', () => {
   test('block type definition', () => {
-    const blockSchema = block({
+    const Block = block({
       list: union([literal('bullet'), literal('number')]),
       style: union([literal('normal'), literal('h1'), literal('h2')]),
       inline: object({
@@ -46,13 +46,13 @@ describe('block type', () => {
       level?: number | undefined
     }
 
-    type ActualType = Infer<typeof blockSchema>
+    type ActualType = Infer<typeof Block>
 
     expectTypeOf<ActualType>().toEqualTypeOf<ExpectedBlockValue>()
   })
 
   test('block type definition without config', () => {
-    const blockSchema = block({})
+    const Block = block({})
 
     type ExpectedBlockValue = {
       _type: 'block'
@@ -68,7 +68,7 @@ describe('block type', () => {
       markDefs?: never[] | undefined
     }
 
-    type ActualType = Infer<typeof blockSchema>
+    type ActualType = Infer<typeof Block>
 
     expectTypeOf<ActualType>().toEqualTypeOf<ExpectedBlockValue>()
   })

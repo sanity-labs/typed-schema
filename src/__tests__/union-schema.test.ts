@@ -8,22 +8,22 @@ import {string} from '../creators/string'
 import {union} from '../creators/union'
 
 test('typed object union excludes never types', () => {
-  const unionSchema = union([
+  const Union = union([
     object({
       _type: literal('ok'),
       name: string(),
     }),
     never(),
   ])
-  const neverType = unionSchema.union.find(schema => {
+  const neverType = Union.union.find(schema => {
     // @ts-expect-error - should not be in type system
     return schema.typeName === 'never'
   })
   expect(neverType).toBeUndefined()
 })
 test('primitive union excludes never types', () => {
-  const unionSchema = union([string(), number(), never()])
-  const neverType = unionSchema.union.find(schema => {
+  const Union = union([string(), number(), never()])
+  const neverType = Union.union.find(schema => {
     // @ts-expect-error - should not be in type system
     return schema.typeName === 'never'
   })

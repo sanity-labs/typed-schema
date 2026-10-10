@@ -48,7 +48,7 @@ export type SanityDocumentShape = {
 }
 
 /** @internal */
-export const documentBase: SanityObject<SanityDocumentShape> = dt({
+export const DocumentBase: SanityObject<SanityDocumentShape> = dt({
   typeName: 'object',
   shape: {
     _type: STRING,
@@ -66,7 +66,7 @@ export type SanityReferenceShape = {
 }
 
 /** @internal */
-export const referenceBase: SanityObject<SanityReferenceShape> = dt({
+export const ReferenceBase: SanityObject<SanityReferenceShape> = dt({
   typeName: 'object',
   shape: {
     _type: lit('reference'),
@@ -75,7 +75,7 @@ export const referenceBase: SanityObject<SanityReferenceShape> = dt({
   },
 })
 
-export type ReferenceBase = Infer<typeof referenceBase>
+export type ReferenceBase = Infer<typeof ReferenceBase>
 
 export type GeopointShape = {
   _type: SanityLiteral<'geopoint'>
@@ -134,7 +134,7 @@ export type AssetBaseShape = SanityDocumentShape & {
 }
 
 const assetBase: AssetBaseShape = {
-  ...documentBase.shape,
+  ...DocumentBase.shape,
   url: STRING,
   path: STRING,
   assetId: STRING,
@@ -280,14 +280,14 @@ export type SanityImageShape = {
 }
 
 /** @internal */
-export const imageBase: SanityObject<SanityImageShape> = dt({
+export const ImageBase: SanityObject<SanityImageShape> = dt({
   typeName: 'object',
   shape: {
     _type: lit('image'),
     asset: dt({
       typeName: 'reference',
       referenceType: IMAGE_ASSET,
-      shape: referenceBase.shape,
+      shape: ReferenceBase.shape,
     }),
   },
 })
@@ -298,14 +298,14 @@ export type SanityFileShape = {
 }
 
 /** @internal */
-export const fileBase: SanityObject<SanityFileShape> = dt({
+export const FileBase: SanityObject<SanityFileShape> = dt({
   typeName: 'object',
   shape: {
     _type: lit('file'),
     asset: dt({
       typeName: 'reference',
       referenceType: FILE_ASSET,
-      shape: referenceBase.shape,
+      shape: ReferenceBase.shape,
     }),
   },
 })

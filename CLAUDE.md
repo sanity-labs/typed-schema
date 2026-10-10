@@ -55,6 +55,7 @@ The central idea: every schema type is a plain object carrying `typeName` plus a
 
 ## Conventions
 
+- Schema constants are PascalCase and share their name with the inferred type: `const Pet = document({...})`, `type Pet = Infer<typeof Pet>`. Creator and transform functions stay camelCase, `_type` literals stay camelCase (`literal('pet')`), and instances stay camelCase (`const pet = parse(Pet, data)`). This applies to README snippets, examples and tests alike; throwaway test locals like `schema` or `doc` are the only exception.
 - Type-only imports must be inline: `import {type Foo} from './x'` (enforced by oxlint).
 - Sanity system fields (`_type`, `_id`, `_ref`, `_key`) are the only identifiers allowed to start with `_`; user-defined schema fields starting with `_` are a compile-time error by design.
 - When changing inference, add or update a `.test-d.ts` test and run `pnpm test`; `tsc` alone will not catch regressions in `expectTypeOf` assertions.

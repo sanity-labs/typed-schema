@@ -14,20 +14,20 @@ interface Human extends SanityDocumentValue {
   name: string
 }
 
-const human: SanityType<Human> = document({
+const Human: SanityType<Human> = document({
   _type: literal('human'),
   name: string(),
-  pets: lazy(() => array(reference(pet))),
+  pets: lazy(() => array(reference(Pet))),
 })
 
-const pet = document({
+const Pet = document({
   _type: literal('pet'),
   name: string(),
-  owner: reference(human),
-  human: human,
+  owner: reference(Human),
+  human: Human,
 })
 
-const myPet = parse(pet, {name: 'fido', owner: {_type: 'human', name: 'bob'}})
+const myPet = parse(Pet, {name: 'fido', owner: {_type: 'human', name: 'bob'}})
 // @ts-expect-error - should not have _foo property
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 myPet._foo

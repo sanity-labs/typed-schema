@@ -17,30 +17,30 @@ import {
 // type out both the typescript type and the schema type
 
 // base blogpost schema
-const baseBlogpost = document({
+const BaseBlogpost = document({
   _type: literal('blogpost'),
   title: string(),
   //… more fields
 })
 
 // Define only the circular part here by extending from the inferred base schema
-interface SelfReferencingBlogPost extends Infer<typeof baseBlogpost> {
+interface SelfReferencingBlogPost extends Infer<typeof BaseBlogpost> {
   mainRelated: SanityReferenceValue<SelfReferencingBlogPost>
   relatedPosts: SanityArrayValue<SanityReferenceValue<SelfReferencingBlogPost>>
 }
 
 // Now extend the base schema with the circular field
-const blogpost: SanityDocumentType<SelfReferencingBlogPost> = extend(
-  baseBlogpost,
+const Blogpost: SanityDocumentType<SelfReferencingBlogPost> = extend(
+  BaseBlogpost,
   {
-    mainRelated: lazy(() => reference(blogpost)),
-    relatedPosts: lazy(() => array(reference(blogpost))),
+    mainRelated: lazy(() => reference(Blogpost)),
+    relatedPosts: lazy(() => array(reference(Blogpost))),
   },
 )
 
-type BlogPost = Infer<typeof blogpost>
+type Blogpost = Infer<typeof Blogpost>
 
-declare const post: BlogPost
+declare const post: Blogpost
 
 // works
 console.log(post.mainRelated._ref)

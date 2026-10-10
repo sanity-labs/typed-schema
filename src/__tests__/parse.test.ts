@@ -81,12 +81,12 @@ describe('object parsing', () => {
         name: string
         parent?: Person
       }
-      const person: SanityType<Person> = object({
+      const Person: SanityType<Person> = object({
         name: string(),
-        parent: optional(lazy(() => person)),
+        parent: optional(lazy(() => Person)),
       })
 
-      const parsed = safeParse(person, {
+      const parsed = safeParse(Person, {
         name: 'Tester',
         parent: {name: "Tester's parent"},
       })
@@ -104,13 +104,13 @@ describe('object parsing', () => {
       parent?: Person
     }
 
-    const person: SanityObjectType<Person> = object({
+    const Person: SanityObjectType<Person> = object({
       _type: literal('person'),
       name: string(),
-      parent: optional(lazy(() => person)),
+      parent: optional(lazy(() => Person)),
     })
 
-    const parsed = parse(person, {
+    const parsed = parse(Person, {
       _type: 'person',
       name: 'foo',
       parent: {_type: 'person', name: 'another'},
@@ -128,19 +128,19 @@ describe('object parsing', () => {
       name: string
     }
 
-    const human: SanityType<Human> = document({
+    const Human: SanityType<Human> = document({
       _type: literal('human'),
       name: string(),
-      pets: lazy(() => array(reference(pet))),
+      pets: lazy(() => array(reference(Pet))),
     })
 
-    const pet = document({
+    const Pet = document({
       _type: literal('pet'),
       name: string(),
-      owner: reference(human),
+      owner: reference(Human),
     })
 
-    const parsed = parse(pet, {
+    const parsed = parse(Pet, {
       _type: 'pet',
       name: 'Jara',
       owner: {_type: 'reference', _ref: 'knut'},
@@ -240,10 +240,10 @@ describe('object array parsing', () => {
 
 describe('reference parsing', () => {
   test('parsing of simple reference', () => {
-    const personSchema = document({_type: literal('person'), name: string()})
-    const referenceSchema = reference(personSchema)
+    const Person = document({_type: literal('person'), name: string()})
+    const Reference = reference(Person)
 
-    const parsed = parse(referenceSchema, {
+    const parsed = parse(Reference, {
       _ref: 'some-person',
       _type: 'reference',
     })
@@ -259,9 +259,9 @@ describe('reference parsing', () => {
 
 describe('asset parsing', () => {
   test('parsing of image', () => {
-    const imageSchema = image({caption: string()})
+    const ImageSchema = image({caption: string()})
 
-    const parsed = parse(imageSchema, {
+    const parsed = parse(ImageSchema, {
       _type: 'image',
       caption: 'A nice pic of my favourite lizard, Leon.',
       asset: {
@@ -280,9 +280,9 @@ describe('asset parsing', () => {
     })
   })
   test('parsing of file', () => {
-    const fileSchema = file({caption: string()})
+    const FileSchema = file({caption: string()})
 
-    const parsed = parse(fileSchema, {
+    const parsed = parse(FileSchema, {
       _type: 'file',
       asset: {
         _type: 'reference',

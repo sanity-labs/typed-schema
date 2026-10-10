@@ -12,7 +12,7 @@ import {
 } from '@sanity-labs/typed-schema'
 
 // define and export a user schema
-export const userSchema = document({
+export const User = document({
   _type: literal('user'),
   name: string(),
   union: union([string(), number()]),
@@ -22,11 +22,11 @@ export const userSchema = document({
   }),
 })
 
-// export the User type inferred from the userSchema
-export type User = Infer<typeof userSchema>
+// export the User type inferred from the User schema
+export type User = Infer<typeof User>
 
 // Use it to validate that a value is compatible with the schema
-const user = parse(userSchema, {
+const user = parse(User, {
   _type: 'user',
   name: 'Grace Hopper',
   union: 'this is a string, but could also be number',

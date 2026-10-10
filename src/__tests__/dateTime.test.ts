@@ -5,8 +5,8 @@ import {safeParse} from '../parse'
 
 describe('dateTime type', () => {
   test('parsing dateTime', () => {
-    const dateTimeSchema = dateTime()
-    expect(safeParse(dateTimeSchema, '2023-12-06T19:01:07.512Z'))
+    const DateTime = dateTime()
+    expect(safeParse(DateTime, '2023-12-06T19:01:07.512Z'))
       .toMatchInlineSnapshot(`
       {
         "status": "ok",
@@ -16,8 +16,8 @@ describe('dateTime type', () => {
   })
 
   test('errors', () => {
-    const dateTimeSchema = dateTime()
-    expect(safeParse(dateTimeSchema, '2023-12-06')).toMatchInlineSnapshot(`
+    const DateTime = dateTime()
+    expect(safeParse(DateTime, '2023-12-06')).toMatchInlineSnapshot(`
       {
         "errors": [
           {
@@ -30,8 +30,7 @@ describe('dateTime type', () => {
         "status": "fail",
       }
     `)
-    expect(safeParse(dateTimeSchema, '2023-12-06T19:01:07  '))
-      .toMatchInlineSnapshot(`
+    expect(safeParse(DateTime, '2023-12-06T19:01:07  ')).toMatchInlineSnapshot(`
         {
           "errors": [
             {
@@ -44,7 +43,7 @@ describe('dateTime type', () => {
           "status": "fail",
         }
       `)
-    expect(safeParse(dateTimeSchema, 'xyz')).toMatchInlineSnapshot(`
+    expect(safeParse(DateTime, 'xyz')).toMatchInlineSnapshot(`
       {
         "errors": [
           {
@@ -57,7 +56,7 @@ describe('dateTime type', () => {
         "status": "fail",
       }
     `)
-    expect(safeParse(dateTimeSchema, undefined)).toMatchInlineSnapshot(`
+    expect(safeParse(DateTime, undefined)).toMatchInlineSnapshot(`
       {
         "errors": [
           {
@@ -70,7 +69,7 @@ describe('dateTime type', () => {
         "status": "fail",
       }
     `)
-    expect(safeParse(dateTimeSchema, {})).toMatchInlineSnapshot(`
+    expect(safeParse(DateTime, {})).toMatchInlineSnapshot(`
       {
         "errors": [
           {
@@ -87,7 +86,7 @@ describe('dateTime type', () => {
 })
 
 describe('ISO 8601 variants', () => {
-  const dateTimeSchema = dateTime()
+  const DateTime = dateTime()
   test('accepts values without milliseconds and with offsets', () => {
     for (const value of [
       '2023-12-06T19:01:07Z',
@@ -97,7 +96,7 @@ describe('ISO 8601 variants', () => {
       '2023-12-06T19:01:07+01:00',
       '2023-12-06T19:01:07.000-05:30',
     ]) {
-      expect(safeParse(dateTimeSchema, value), value).toEqual({
+      expect(safeParse(DateTime, value), value).toEqual({
         status: 'ok',
         value,
       })
@@ -112,7 +111,7 @@ describe('ISO 8601 variants', () => {
       '2023-12-06T25:01:07Z',
       '2023-12-06T19:01:07+1:00',
     ]) {
-      expect(safeParse(dateTimeSchema, value).status, value).toBe('fail')
+      expect(safeParse(DateTime, value).status, value).toBe('fail')
     }
   })
 })

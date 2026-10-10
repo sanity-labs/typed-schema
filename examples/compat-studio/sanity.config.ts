@@ -3,7 +3,7 @@ import {visionTool} from '@sanity/vision'
 import {defineConfig} from 'sanity'
 import {deskTool} from 'sanity/desk'
 
-import {human} from './schemas/human'
+import {Human} from './schemas/human'
 
 export default defineConfig({
   name: 'default',
@@ -15,6 +15,6 @@ export default defineConfig({
   plugins: [deskTool(), visionTool()],
 
   schema: {
-    types: toClassicSchema(human),
+    types: toClassicSchema(Human),
   },
 })

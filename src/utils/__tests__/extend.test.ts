@@ -82,18 +82,18 @@ describe('extends helper', () => {
       parent: Omit<Person, 'parent'> & {foo: string; parent?: Person}
     }
 
-    const lazyPerson: SanityObjectType<Person> = object({
+    const LazyPerson: SanityObjectType<Person> = object({
       _type: literal('person'),
       name: lazy(() => string()),
       parent: lazy(() =>
-        extend(lazyPerson, {
+        extend(LazyPerson, {
           foo: string(),
-          parent: optional(lazyPerson),
+          parent: optional(LazyPerson),
         }),
       ),
     })
 
-    const parsed = parse(lazyPerson, {
+    const parsed = parse(LazyPerson, {
       _type: 'person',
       name: 'foo',
       parent: {
@@ -113,18 +113,18 @@ describe('extends helper', () => {
     })
   })
   test('inline extends', () => {
-    const pet = object({name: string()})
+    const Pet = object({name: string()})
 
     const u = union([
-      extend(pet, {
+      extend(Pet, {
         _type: literal('avine'),
         squeaks: boolean(),
       }),
-      extend(pet, {
+      extend(Pet, {
         _type: literal('feline'),
         meows: boolean(),
       }),
-      extend(pet, {
+      extend(Pet, {
         _type: literal('canine'),
         barks: boolean(),
       }),

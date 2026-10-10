@@ -24,24 +24,24 @@ interface Human extends SanityDocumentValue {
   coworkers: SanityArrayValue<SanityReferenceValue<Human>>
 }
 
-const human: SanityDocumentType<Human> = document({
+const Human: SanityDocumentType<Human> = document({
   _type: literal('human'),
   name: object({first: string(), last: string()}),
-  coworkers: lazy(() => array(reference(human))),
+  coworkers: lazy(() => array(reference(Human))),
 })
 
 // todo: fetch a human
-const knut = await loadDocument(human, 'knut')
+const knut = await loadDocument(Human, 'knut')
 
 // todo: make a "pet" document schema
-// todo: make the pet have a reference to it's human
-const pet = document({
+// todo: make the pet have a reference to its human
+const Pet = document({
   _type: literal('pet'),
   name: string(),
-  human: reference(human),
+  human: reference(Human),
 })
 // todo: fetch a pet
-const jara = await loadDocument(pet, 'jara')
+const jara = await loadDocument(Pet, 'jara')
 
 // todo: resolve the pet's human
 const jarasHuman = loadReference(jara.human)

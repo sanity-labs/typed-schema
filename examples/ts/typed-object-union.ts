@@ -1,6 +1,6 @@
 import {literal, object, parse, string, union} from '@sanity-labs/typed-schema'
 
-const myUnion = union([
+const MyUnion = union([
   object({
     _type: literal('success'),
     status: literal('success'),
@@ -13,4 +13,4 @@ const myUnion = union([
   }),
 ])
 
-const f = parse(myUnion, {status: 'success', successProp: 'it worked'})
+const f = parse(MyUnion, {status: 'success', successProp: 'it worked'})

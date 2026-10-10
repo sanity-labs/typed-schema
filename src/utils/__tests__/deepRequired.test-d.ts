@@ -185,19 +185,19 @@ test('deep required on circular object type', () => {
     }
   }
 
-  const lazyPerson: SanityObjectType<Person> = object({
+  const LazyPerson: SanityObjectType<Person> = object({
     _type: literal('person'),
     name: lazy(() => string()),
     parent: lazy(() =>
-      extend(lazyPerson, {
+      extend(LazyPerson, {
         foo: string(),
-        parent: optional(omit(lazyPerson, ['parent'])),
+        parent: optional(omit(LazyPerson, ['parent'])),
       }),
     ),
   })
 
-  const requiredLazyPerson = deepRequired(lazyPerson)
-  const res = parse(requiredLazyPerson, {})
+  const RequiredLazyPerson = deepRequired(LazyPerson)
+  const res = parse(RequiredLazyPerson, {})
 
   expectTypeOf(res).toEqualTypeOf<{
     _type: 'person'

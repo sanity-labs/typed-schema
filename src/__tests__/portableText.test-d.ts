@@ -11,7 +11,7 @@ import {type Infer} from '../defs'
 
 describe('block type', () => {
   test('block type definition', () => {
-    const portableTextSchema = portableText({
+    const PortableText = portableText({
       block: block({
         list: union([literal('bullet'), literal('number')]),
         style: union([literal('normal'), literal('h1'), literal('h2')]),
@@ -54,13 +54,13 @@ describe('block type', () => {
       | {_type: 'foobar'; _key: string}
     >
 
-    type ActualType = Infer<typeof portableTextSchema>
+    type ActualType = Infer<typeof PortableText>
 
     expectTypeOf<ActualType>().toEqualTypeOf<ExpectedBlockValue>()
   })
 
   test('block type definition without config', () => {
-    const blockSchema = portableText({
+    const Block = portableText({
       block: block({}),
       element: object({_type: literal('foobar')}),
     })
@@ -83,7 +83,7 @@ describe('block type', () => {
       | {_type: 'foobar'; _key: string}
     >
 
-    type ActualType = Infer<typeof blockSchema>
+    type ActualType = Infer<typeof Block>
 
     expectTypeOf<ActualType>().toEqualTypeOf<ExpectedBlockValue>()
   })

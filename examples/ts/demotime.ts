@@ -11,20 +11,20 @@ import {
   union,
 } from '@sanity-labs/typed-schema'
 
-const human = document({
+const Human = document({
   _type: literal('human'),
   name: object({first: string(), last: string()}),
 })
 
-const pet = document({
+const Pet = document({
   _type: literal('pet'),
   name: string(),
   union: union([string(), number()]),
-  humans: array(union([reference(human)])),
+  humans: array(union([reference(Human)])),
 })
 
-const somePet = parse(pet, {})
+const somePet = parse(Pet, {})
 
-type Pet = Infer<typeof pet>
+type Pet = Infer<typeof Pet>
 
 const someHuman = somePet.humans[0]
