@@ -1,5 +1,7 @@
 import {describe, expect, test} from 'vitest'
 
+import {date} from '../creators/date'
+import {dateTime} from '../creators/dateTime'
 import {file} from '../creators/file'
 import {image} from '../creators/image'
 import {literal} from '../creators/literal'
@@ -184,4 +186,12 @@ describe('typed object union', () => {
         }
       `)
   })
+})
+
+test('primitive unions may contain date and dateTime', () => {
+  const schema = union([date(), dateTime(), string()])
+  expect(schema.typeName).toBe('primitiveUnion')
+  expect(parse(schema, '2023-12-06')).toBe('2023-12-06')
+  expect(parse(schema, '2023-12-06T19:01:07Z')).toBe('2023-12-06T19:01:07Z')
+  expect(parse(schema, 'anything')).toBe('anything')
 })

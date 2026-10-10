@@ -1,6 +1,7 @@
 import {expect, expectTypeOf, test, vi} from 'vitest'
 
 import {document} from '../../creators/document'
+import {lazy} from '../../creators/lazy'
 import {literal} from '../../creators/literal'
 import {reference} from '../../creators/reference'
 import {string} from '../../creators/string'
@@ -66,4 +67,15 @@ test('document loader selects the document fields and parses the result', async 
 
   fetch.mockResolvedValueOnce({_type: 'country', _id: 'usa'})
   await expect(loadDocument(country, 'usa')).rejects.toThrow(/name/)
+})
+
+test('document loader resolves lazy document schemas', async () => {
+  const fetch = vi.fn().mockResolvedValueOnce({_type: 'country', name: 'USA'})
+  const loadDocument = createDocumentLoader(fetch)
+  const usa = await loadDocument(
+    lazy(() => country),
+    'usa',
+  )
+  expect(fetch.mock.calls[0]?.[1]).toContain('name')
+  expect(usa).toEqual({_type: 'country', name: 'USA'})
 })

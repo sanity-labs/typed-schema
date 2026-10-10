@@ -2,13 +2,12 @@ import {
   isBooleanSchema,
   isDateSchema,
   isDateTimeSchema,
-  isDocumentSchema,
   isEnumSchema,
-  isExtendableObjectSchema,
   isLiteralSchema,
   isNeverSchema,
   isNumberSchema,
   isObjectArraySchema,
+  isObjectLikeSchema,
   isObjectUnionSchema,
   isOptionalSchema,
   isPrimitiveArraySchema,
@@ -27,11 +26,11 @@ import {
   type SanityDateTime,
   type SanityDocument,
   type SanityEnum,
-  type SanityExtendableObject,
   type SanityLiteral,
   type SanityNever,
   type SanityNumber,
   type SanityObjectArray,
+  type SanityObjectLike,
   type SanityObjectUnion,
   type SanityOptional,
   type SanityPrimitiveArray,
@@ -48,7 +47,6 @@ import {
   isStrictlyDateTime,
   isStrictlyFormatted,
 } from './helpers/strictDateParse'
-import {referenceBase} from './shapeDefs'
 
 export type Path = Array<string | number | {_key: string}>
 
@@ -101,11 +99,9 @@ export function safeParse<T extends SanityType>(
   if (isReferenceSchema(schema)) {
     return parseReference(schema, input) as any
   }
-  if (isExtendableObjectSchema(schema)) {
+  // object, document, block, image, file
+  if (isObjectLikeSchema(schema)) {
     return parseObject(schema, input) as any
-  }
-  if (isDocumentSchema(schema)) {
-    return parseDocument(schema, input) as any
   }
   if (isLiteralSchema(schema)) {
     return parseLiteral(schema, input) as any
@@ -417,7 +413,9 @@ export function parseReference<S extends SanityReference<any>>(
   schema: S,
   input: unknown,
 ): ParseResult<OutputOf<S>> {
-  const parsed = parseObject(referenceBase, input)
+  // parse against the schema's own shape rather than the static reference
+  // base, so that `_key` (added for array items) and extended shapes apply
+  const parsed = parseObject(schema, input)
   if (parsed.status === 'fail') {
     return parsed
   }
@@ -580,7 +578,7 @@ export function parseDocument<S extends SanityDocument>(
   return parseObject(schema, input)
 }
 
-export function parseObject<S extends SanityExtendableObject>(
+export function parseObject<S extends SanityObjectLike>(
   schema: S,
   input: unknown,
 ): ParseResult<OutputOf<S>> {

@@ -20,12 +20,40 @@ import {number} from './number'
 import {object} from './object'
 import {optional} from './optional'
 import {string} from './string'
-import {type FlattenUnionTypes, union} from './union'
+import {
+  type FlattenPrimitiveUnionTypes,
+  type FlattenUnionTypes,
+  union,
+} from './union'
 
-export function _markDefRef(): SanityLiteral<`ref-${string}`> {
-  return literal(`ref-$id`)
+type Configured<T, Fallback> = [T] extends [SanityNever] ? Fallback : T
+
+/**
+ * The schema of a Portable Text span. `marks` holds decorator names and the
+ * `_key`s of entries in the block's `markDefs`, so it is a plain string array.
+ */
+export type SpanObjectShape<
+  DecoratorType extends
+    | SanityNever
+    | SanityLiteral<string>
+    | SanityPrimitiveUnion<SanityLiteral<string>>,
+> = {
+  _type: SanityLiteral<'span'>
+  marks: SanityPrimitiveArray<
+    [DecoratorType] extends [SanityNever]
+      ? SanityString
+      : SanityPrimitiveUnion<
+          FlattenPrimitiveUnionTypes<DecoratorType> | SanityString
+        >
+  >
+  text: SanityString
 }
 
+/**
+ * The shape of a Portable Text block as stored by Sanity: `style`, `listItem`
+ * and `level` are optional, `children` always present, `markDefs` optional.
+ * Unconfigured `style`/`listItem` accept any string.
+ */
 export type BlockObjectShape<
   StyleType extends
     | SanityNever
@@ -50,22 +78,20 @@ export type BlockObjectShape<
   TypeName extends SanityLiteral<string> = SanityLiteral<'block'>,
 > = {
   _type: TypeName
-  style: StyleType
+  style: SanityOptional<Configured<StyleType, SanityString>>
+  listItem: SanityOptional<Configured<ListType, SanityString>>
   level: SanityOptional<SanityNumber>
-  listType: ListType
   children: SanityObjectArray<
     SanityObjectUnion<
       | FlattenUnionTypes<InlineType>
-      | SanityObject<{
-          _type: SanityLiteral<'span'>
-          marks: SanityPrimitiveArray<
-            DecoratorType | SanityLiteral<`ref-${string}`>
-          >
-          text: SanityString
-        }>
+      | SanityObject<SpanObjectShape<DecoratorType>>
     >
   >
-  markDefs: SanityObjectArray<Exclude<AnnotationType, SanityNever>>
+  markDefs: SanityOptional<
+    [AnnotationType] extends [SanityNever]
+      ? SanityPrimitiveArray<SanityNever>
+      : SanityObjectArray<Exclude<AnnotationType, SanityNever>>
+  >
 }
 
 export type BlockOptions<
@@ -92,15 +118,30 @@ export type BlockOptions<
   TypeName extends SanityLiteral<string> = SanityLiteral<'block'>,
 > = {
   _type?: TypeName
+  /** Allowed block styles, e.g. `union([literal('normal'), literal('h1')])`. Any string if omitted. */
   style?: StyleType
+  /** Allowed list item types, e.g. `union([literal('bullet'), literal('number')])`. Any string if omitted. */
   list?: ListType
+  /**
+   * Decorator names for span marks, e.g. `union([literal('strong'), literal('em')])`.
+   *
+   * Marks also hold the `_key`s of entries in `markDefs`, which are arbitrary
+   * strings, so the inferred `marks` type is always `string[]` and parsing
+   * accepts any string. The option is kept for Studio schema generation.
+   */
   decorator?: DecoratorType
+  /** Typed objects allowed inline among the spans */
   inline?: InlineType
+  /** Typed objects allowed in `markDefs` (annotations referenced from span marks by `_key`) */
   annotation?: AnnotationType
 }
 
 export type VoidNever<T> = void extends T ? SanityNever : Exclude<T, void>
 
+/**
+ * A Portable Text block. Use together with {@link portableText} to declare a
+ * rich text field.
+ */
 export function block<
   StyleType extends
     | void
@@ -142,10 +183,9 @@ export function block<
     TypeName
   >
 > {
-  const markDefRefSchema = _markDefRef()
   const marksSchema = options.decorator
-    ? array(union([options.decorator, markDefRefSchema]))
-    : array(markDefRefSchema)
+    ? array(union([options.decorator, string()]))
+    : array(string())
 
   const spanType = object({
     _type: literal('span'),
@@ -156,11 +196,13 @@ export function block<
     typeName: 'block',
     shape: {
       _type: options._type || literal('block'),
-      ...(options.style ? {style: optional(options.style)} : {}),
+      style: optional(options.style || string()),
+      listItem: optional(options.list || string()),
       level: optional(number()),
-      ...(options.list ? {list: optional(options.list)} : {}),
       children: array(union([spanType, options.inline || never()])),
-      ...(options.annotation ? {markDefs: array(options.annotation)} : {}),
+      markDefs: optional(
+        options.annotation ? array(options.annotation) : array(never()),
+      ),
     },
   }) as any
 }

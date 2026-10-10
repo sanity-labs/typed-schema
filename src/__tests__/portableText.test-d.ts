@@ -31,8 +31,8 @@ describe('block type', () => {
     type ExpectedBlockValue = Array<
       | {
           _type: 'block'
-          listType: 'number' | 'bullet'
-          style: 'normal' | 'h1' | 'h2'
+          listItem?: 'number' | 'bullet' | undefined
+          style?: 'normal' | 'h1' | 'h2' | undefined
           _key: string
           children: (
             | {_type: 'author'; name: string; _key: string}
@@ -40,13 +40,15 @@ describe('block type', () => {
                 _type: 'span'
                 _key: string
                 text: string
-                marks: ('strong' | 'em' | `ref-${string}`)[]
+                marks: string[]
               }
           )[]
-          markDefs: (
-            | {_type: 'author'; foo: number; _key: string}
-            | {_type: 'book'; bar: number; _key: string}
-          )[]
+          markDefs?:
+            | (
+                | {_type: 'author'; foo: number; _key: string}
+                | {_type: 'book'; bar: number; _key: string}
+              )[]
+            | undefined
           level?: number | undefined
         }
       | {_type: 'foobar'; _key: string}
@@ -67,16 +69,16 @@ describe('block type', () => {
       | {
           _type: 'block'
           _key: string
-          style: never
-          listType: never
+          style?: string | undefined
+          listItem?: string | undefined
           children: {
             _type: 'span'
             _key: string
             text: string
-            marks: `ref-${string}`[]
+            marks: string[]
           }[]
           level?: number
-          markDefs: never[]
+          markDefs?: never[] | undefined
         }
       | {_type: 'foobar'; _key: string}
     >

@@ -1,0 +1,110 @@
+import {describe, expect, test} from 'vitest'
+
+import {block} from '../creators/block'
+import {literal} from '../creators/literal'
+import {object} from '../creators/object'
+import {portableText} from '../creators/portableText'
+import {string} from '../creators/string'
+import {union} from '../creators/union'
+import {parse, safeParse} from '../parse'
+
+describe('parsing blocks', () => {
+  const richBlock = block({
+    style: union([literal('normal'), literal('h1')]),
+    list: union([literal('bullet'), literal('number')]),
+    decorator: union([literal('strong'), literal('em')]),
+    inline: object({_type: literal('mention'), userId: string()}),
+    annotation: object({_type: literal('link'), href: string()}),
+  })
+
+  test('parses a block the way Sanity stores it', () => {
+    const value = {
+      _type: 'block',
+      style: 'h1',
+      listItem: 'bullet',
+      level: 1,
+      markDefs: [{_type: 'link', _key: 'l1', href: 'https://example.com'}],
+      children: [
+        {_type: 'span', _key: 's1', text: 'Hello ', marks: ['strong']},
+        // marks reference markDefs by `_key`
+        {_type: 'span', _key: 's2', text: 'world', marks: ['l1']},
+        {_type: 'mention', _key: 'm1', userId: 'u1'},
+      ],
+    }
+    expect(parse(richBlock, value)).toEqual(value)
+  })
+
+  test('style, listItem, level and markDefs are optional', () => {
+    const value = {
+      _type: 'block',
+      children: [{_type: 'span', _key: 's1', text: 'hi', marks: []}],
+    }
+    expect(parse(richBlock, value)).toEqual(value)
+  })
+
+  test('rejects values outside the configured styles and lists', () => {
+    const base = {
+      _type: 'block',
+      children: [{_type: 'span', _key: 's1', text: 'hi', marks: []}],
+    }
+    expect(safeParse(richBlock, {...base, style: 'h3'}).status).toBe('fail')
+    expect(safeParse(richBlock, {...base, listItem: 'checkbox'}).status).toBe(
+      'fail',
+    )
+    expect(
+      safeParse(richBlock, {
+        ...base,
+        children: [{_type: 'span', text: 'no key', marks: []}],
+      }).status,
+    ).toBe('fail')
+    expect(
+      safeParse(richBlock, {
+        ...base,
+        markDefs: [{_type: 'other', _key: 'x'}],
+      }).status,
+    ).toBe('fail')
+  })
+
+  test('an unconfigured block accepts any style and no markDefs', () => {
+    const plain = block({})
+    const value = {
+      _type: 'block',
+      style: 'normal',
+      markDefs: [],
+      children: [{_type: 'span', _key: 's1', text: 'hi', marks: []}],
+    }
+    expect(parse(plain, value)).toEqual(value)
+    expect(
+      safeParse(plain, {...value, markDefs: [{_type: 'link', _key: 'k'}]})
+        .status,
+    ).toBe('fail')
+  })
+})
+
+describe('parsing portable text', () => {
+  const body = portableText({
+    block: block({decorator: literal('strong')}),
+    element: object({_type: literal('image'), url: string()}),
+  })
+
+  test('parses blocks and custom elements', () => {
+    const value = [
+      {
+        _type: 'block',
+        _key: 'b1',
+        style: 'normal',
+        markDefs: [],
+        children: [{_type: 'span', _key: 's1', text: 'hi', marks: []}],
+      },
+      {_type: 'image', _key: 'i1', url: 'https://example.com/a.png'},
+    ]
+    expect(parse(body, value)).toEqual(value)
+  })
+
+  test('requires _key on every element', () => {
+    expect(
+      safeParse(body, [{_type: 'image', url: 'https://example.com/a.png'}])
+        .status,
+    ).toBe('fail')
+  })
+})

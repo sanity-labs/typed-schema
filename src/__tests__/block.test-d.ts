@@ -26,21 +26,23 @@ describe('block type', () => {
 
     type ExpectedBlockValue = {
       _type: 'block'
-      listType: 'number' | 'bullet'
-      style: 'normal' | 'h1' | 'h2'
+      listItem?: 'number' | 'bullet' | undefined
+      style?: 'normal' | 'h1' | 'h2' | undefined
       children: (
         | {_type: 'author'; name: string; _key: string}
         | {
             _type: 'span'
             _key: string
             text: string
-            marks: ('strong' | 'em' | `ref-${string}`)[]
+            marks: string[]
           }
       )[]
-      markDefs: (
-        | {_type: 'author'; foo: number; _key: string}
-        | {_type: 'book'; bar: number; _key: string}
-      )[]
+      markDefs?:
+        | (
+            | {_type: 'author'; foo: number; _key: string}
+            | {_type: 'book'; bar: number; _key: string}
+          )[]
+        | undefined
       level?: number | undefined
     }
 
@@ -54,16 +56,16 @@ describe('block type', () => {
 
     type ExpectedBlockValue = {
       _type: 'block'
-      style: never
-      listType: never
+      style?: string | undefined
+      listItem?: string | undefined
       children: {
         _type: 'span'
         _key: string
         text: string
-        marks: `ref-${string}`[]
+        marks: string[]
       }[]
       level?: number
-      markDefs: never[]
+      markDefs?: never[] | undefined
     }
 
     type ActualType = Infer<typeof blockSchema>

@@ -1,10 +1,13 @@
 import {describe, expectTypeOf, test} from 'vitest'
 
 import {array, objectArray} from '../creators/array'
+import {document} from '../creators/document'
+import {image} from '../creators/image'
 import {literal} from '../creators/literal'
 import {never} from '../creators/never'
 import {number} from '../creators/number'
 import {object} from '../creators/object'
+import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {type Infer} from '../defs'
@@ -52,5 +55,18 @@ describe('array types', () => {
     type ActualType = Infer<typeof arraySchema>
 
     expectTypeOf<ActualType>().toEqualTypeOf<ExpectedType>()
+  })
+})
+
+describe('arrays of object-like types', () => {
+  test('references and images become keyed object arrays', () => {
+    const pet = document({_type: literal('pet'), name: string()})
+    const refs = array(reference(pet))
+    expectTypeOf(refs.typeName).toEqualTypeOf<'objectArray'>()
+    expectTypeOf<Infer<typeof refs>[number]['_key']>().toEqualTypeOf<string>()
+
+    const images = array(image({}))
+    expectTypeOf(images.typeName).toEqualTypeOf<'objectArray'>()
+    expectTypeOf<Infer<typeof images>[number]['_key']>().toEqualTypeOf<string>()
   })
 })

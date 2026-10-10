@@ -86,13 +86,20 @@ export function isLazySchema(schema: SanityType): schema is SanityLazy<any> {
 export function isLiteralSchema(schema: SanityType): schema is SanityLiteral {
   return schema.typeName === 'literal'
 }
+/**
+ * Whether the array element schema is an object-like type (object, document,
+ * reference, block, image, file) or a (possibly nested) union of those, in
+ * which case array items are keyed objects (`_key`)
+ */
 export function isItemObjectArrayCompatible(
   elementSchema: SanityType,
 ): elementSchema is SanityObjectLike | SanityObjectUnion {
   return (
-    isObjectSchema(elementSchema) ||
+    isObjectLikeSchema(elementSchema) ||
     (isObjectUnionSchema(elementSchema) &&
-      elementSchema.union.every(def => isObjectSchema(def)))
+      elementSchema.union.every(
+        def => isNeverSchema(def) || isItemObjectArrayCompatible(def),
+      ))
   )
 }
 
@@ -125,7 +132,11 @@ export function isPrimitiveSchema(
   schema: SanityType,
 ): schema is SanityPrimitive {
   return (
-    isStringSchema(schema) || isBooleanSchema(schema) || isNumberSchema(schema)
+    isStringSchema(schema) ||
+    isBooleanSchema(schema) ||
+    isNumberSchema(schema) ||
+    isDateSchema(schema) ||
+    isDateTimeSchema(schema)
   )
 }
 

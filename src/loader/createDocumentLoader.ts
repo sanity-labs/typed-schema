@@ -1,10 +1,10 @@
-import {isLazySchema} from '../asserters'
 import {
   type Infer,
   type SanityDocumentType,
   type SanityLazy,
   type SanityType,
 } from '../defs'
+import {getLazySchema} from '../helpers/getLazySchema'
 import {ParseError, safeParse} from '../parse'
 import {type SanityDocumentValue} from '../shapeDefs'
 
@@ -16,7 +16,7 @@ export function createSafeLoadDocument(
   return function safeFetchDocument<
     DocumentSchema extends SanityDocumentType<SanityDocumentValue>,
   >(schema: MaybeLazy<DocumentSchema>, id: string) {
-    const nonlazySchema = isLazySchema(schema) ? schema.get() : schema
+    const nonlazySchema = getLazySchema(schema) as DocumentSchema
     const fields = Object.keys(nonlazySchema.shape)
     return fetch(id, fields).then(input => safeParse(nonlazySchema, input))
   }
