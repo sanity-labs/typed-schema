@@ -425,7 +425,7 @@ const value = parse(schema, {
 Clone this repository
 
 ```
-git clone git@github.com:sanity-io/sanitype.git
+git clone git@github.com:sanity-labs/sanitype.git
 ```
 
 Install dependencies
@@ -461,7 +461,7 @@ Releases are managed with [changesets](https://github.com/changesets/changesets)
 pnpm changeset
 ```
 
-When merged to `main`, a "chore: release" pull request is opened automatically. Merging it bumps the version, updates `CHANGELOG.md` and publishes to npm.
+When merged to `main`, a "chore: version packages" pull request is opened automatically. Merging it bumps the version, updates `CHANGELOG.md` and publishes to npm via trusted publishing from the `npm-publish` GitHub environment.
 
 ## Acknowledgements & inspiration
 

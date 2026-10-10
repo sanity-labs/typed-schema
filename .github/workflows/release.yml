@@ -1,59 +1,53 @@
+# On every push to main, changesets/action either opens/updates a
+# "chore: version packages" PR, or, if that PR was just merged, publishes to
+# npm. `changeset publish` detects the pnpm workspace and publishes with
+# `pnpm publish`, which authenticates with npm trusted publishing (OIDC) via
+# the `npm-publish` GitHub environment registered as the trusted publisher for
+# the package on npmjs.com, and attaches provenance automatically.
 name: Release
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 permissions:
-  contents: read # for checkout
+  contents: write # to create releases and push the version commit
+  id-token: write # to enable use of OIDC for npm trusted publishing
+  pull-requests: write # to open the version PR
 
 jobs:
   release:
-    if: github.repository_owner == 'sanity-io'
+    name: Release
     runs-on: ubuntu-latest
-    permissions:
-      contents: read # for checkout
-      id-token: write # to enable use of OIDC for npm provenance
+    environment: npm-publish
     steps:
-      - uses: actions/create-github-app-token@v3
-        id: app-token
-        with:
-          client-id: ${{ vars.ECOSPARK_CLIENT_ID }}
-          private-key: ${{ secrets.ECOSPARK_APP_PRIVATE_KEY }}
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token }}
-          persist-credentials: false
-      - name: Get app token user id
-        id: get-user-id
-        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-      - name: Setup git user
-        run: |
-          git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
-          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          cache: pnpm
-          check-latest: true
           node-version: lts/*
-      # npm 12 wraps `npm info --json` in an array; @changesets/cli@3.0.1's pnpm
-      # parser does not unwrap it (changesets/changesets#2274). Trusted publishing
-      # still works at npm >=11.5.1.
-      - name: Update npm to use trusted publishing (OIDC)
-        run: npm install -g npm@11
-      - run: pnpm install
-      - name: Create Release Pull Request or Publish to npm
-        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+      - uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
-          github-token: ${{ steps.app-token.outputs.token }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          version-script: pnpm exec changeset version
           publish-script: pnpm release
+          pr-title: 'chore: version packages'
+          commit-message: 'chore: version packages'
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-          NPM_CONFIG_PROVENANCE: ${{ github.event.repository.visibility == 'public' && 'true' || 'false' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

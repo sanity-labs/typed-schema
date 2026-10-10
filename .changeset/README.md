@@ -9,7 +9,7 @@ Add one for every user-facing change:
 pnpm changeset
 ```
 
-On merge to `main`, the release workflow opens or updates a "chore: release"
+On merge to `main`, the release workflow opens or updates a "chore: version packages"
 pull request that applies the pending changesets to `package.json` and
 `CHANGELOG.md`. Merging that pull request publishes to npm.
 

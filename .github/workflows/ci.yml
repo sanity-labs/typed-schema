@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint --deny-warnings --format github
+      - run: pnpm typecheck
+      - run: pnpm typecheck:examples
+      - run: pnpm knip --reporter github-actions
+      # pkg build + pkg check + publint + arethetypeswrong
+      - run: pnpm build
+
+  test:
+    name: Test (node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write # for the coverage comment
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [lts/-1, lts/*]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm vitest run --typecheck --coverage.enabled=true
+      - name: Report coverage
+        # also generate the report when tests fail (reportOnFailure is set in vitest.config.ts)
+        if: always()
+        uses: davelosert/vitest-coverage-report-action@v2

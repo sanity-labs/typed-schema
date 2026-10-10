@@ -30,7 +30,7 @@ Config files are TypeScript where the tool supports it (`oxlint.config.ts`, `oxf
 
 ## Releasing
 
-Changesets, not conventional commits. `.github/workflows/release.yml` opens a "chore: release" PR on push to `main` when `.changeset/*.md` files exist; merging it publishes to npm with provenance. Every user-facing change needs a changeset file. `CHANGELOG.md` is generated, do not edit by hand.
+Changesets, not conventional commits. `.github/workflows/release.yml` opens a "chore: version packages" PR on push to `main` when `.changeset/*.md` files exist; merging it publishes to npm with trusted publishing (OIDC, `npm-publish` environment) and provenance. Every user-facing change needs a changeset file. `CHANGELOG.md` is generated, do not edit by hand. This repo lives in the `sanity-labs` GitHub org and follows the conventions of sibling repos there (react-table-kit, sanity-plugin-resonance): single `ci.yml`, `GITHUB_TOKEN` rather than an app token.
 
 ## Architecture
 
