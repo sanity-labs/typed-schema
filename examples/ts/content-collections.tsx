@@ -19,22 +19,22 @@ const {loadDocument, loadReference, loadReferences} = createLoader(
   },
 )
 
-const authorSchema = document({
+const Author = document({
   _type: literal('author'),
   name: optional(string()),
   slug: string(),
 })
 
-const blogpostSchema = document({
+const Blogpost = document({
   _type: literal('blogpost'),
   title: string(),
-  author: reference(authorSchema),
-  coauthors: array(reference(authorSchema)),
+  author: reference(Author),
+  coauthors: array(reference(Author)),
 })
 
-const blogPost = await loadDocument(blogpostSchema, 'welcome')
+const blogPost = await loadDocument(Blogpost, 'welcome')
 
-const partialBlogPostSchema = pick(blogpostSchema, [
+const PartialBlogPost = pick(Blogpost, [
   '_id',
   '_type',
   'title',
@@ -43,7 +43,7 @@ const partialBlogPostSchema = pick(blogpostSchema, [
 ])
 
 // can even load partial documents – this will only fetch the title, author and coauthors fields
-const partialBlogPost = await loadDocument(partialBlogPostSchema, 'welcome')
+const partialBlogPost = await loadDocument(PartialBlogPost, 'welcome')
 
 // Resolve a singular reference
 const author = await loadReference(blogPost.author)

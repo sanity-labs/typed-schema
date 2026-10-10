@@ -4,26 +4,26 @@ import {enums} from '../creators/enums'
 import {parse} from '../parse'
 
 test('define string array enum', () => {
-  const enumSchema = enums(['a', 'b', 'c'])
-  expect(enumSchema.enum.a).toEqual('a')
-  expect(enumSchema.enum.b).toEqual('b')
-  expect(enumSchema.enum.c).toEqual('c')
+  const Enum = enums(['a', 'b', 'c'])
+  expect(Enum.enum.a).toEqual('a')
+  expect(Enum.enum.b).toEqual('b')
+  expect(Enum.enum.c).toEqual('c')
 })
 
 test('define object literal enum', () => {
-  const enumSchema = enums({foo: 'a', bar: 'b', baz: 'c'})
-  expect(enumSchema.enum.foo).toEqual('a')
-  expect(enumSchema.enum.bar).toEqual('b')
-  expect(enumSchema.enum.baz).toEqual('c')
+  const Enum = enums({foo: 'a', bar: 'b', baz: 'c'})
+  expect(Enum.enum.foo).toEqual('a')
+  expect(Enum.enum.bar).toEqual('b')
+  expect(Enum.enum.baz).toEqual('c')
 })
 
 test('define object literal enum as const', () => {
   const enumDef = {foo: 'a', bar: 1, baz: 'c'} as const
 
-  const enumSchema = enums(enumDef)
-  expect(enumSchema.enum.foo).toEqual('a')
-  expect(enumSchema.enum.bar).toEqual(1)
-  expect(enumSchema.enum.baz).toEqual('c')
+  const Enum = enums(enumDef)
+  expect(Enum.enum.foo).toEqual('a')
+  expect(Enum.enum.bar).toEqual(1)
+  expect(Enum.enum.baz).toEqual('c')
 })
 
 test('parse string array enum', () => {

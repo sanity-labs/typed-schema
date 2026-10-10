@@ -2,7 +2,7 @@ import {array, literal, object, union} from '@sanity-labs/typed-schema'
 
 import {strictMode} from '../../src/helpers/strictMode'
 
-const personSchema = strictMode(
+const Person = strictMode(
   object({
     _type: literal('person'),
     name: object({

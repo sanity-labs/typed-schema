@@ -2,7 +2,7 @@ import {document, literal, object, string} from '@sanity-labs/typed-schema'
 
 import {defineForm} from './creators'
 
-const pet = document({
+const Pet = document({
   _type: literal('pet'),
   name: string(),
   tag: object({
@@ -28,7 +28,7 @@ const tagForm = {
   },
 }
 
-const petForm = defineForm(pet, {
+const petForm = defineForm(Pet, {
   fields: {
     name: {
       title: 'Name',

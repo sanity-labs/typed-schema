@@ -7,13 +7,13 @@ import {
 import {type StoredDocument} from '../lifecycle'
 import {ParseError, type ParseOk, type ParseResult, safeParse} from '../parse'
 import {
-  documentBase,
-  type referenceBase,
+  DocumentBase,
+  type ReferenceBase,
   type SanityDocumentValue,
 } from '../shapeDefs'
 
-export type DocumentLike = Infer<typeof documentBase>
-export type ReferenceLike = Infer<typeof referenceBase>
+export type DocumentLike = Infer<typeof DocumentBase>
+export type ReferenceLike = Infer<typeof ReferenceBase>
 
 export type ReferenceWithOptionalRefType<RefTypeDef> = ReferenceLike &
   Partial<Conceal<RefTypeDef>>
@@ -50,7 +50,7 @@ export function createSafeLoadReference(
     }
 
     return fetch(reference._ref, fieldSelection || []).then(input =>
-      safeParse(reference[INTERNAL_REF_TYPE_SCHEMA] || documentBase, input),
+      safeParse(reference[INTERNAL_REF_TYPE_SCHEMA] || DocumentBase, input),
     ) as any
   }
 }

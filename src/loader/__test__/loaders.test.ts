@@ -11,20 +11,20 @@ import {parse} from '../../parse'
 import {createDocumentLoader} from '../createDocumentLoader'
 import {createReferenceLoader} from '../createReferenceLoader'
 
-const country = document({
+const Country = document({
   _type: literal('country'),
   name: string(),
 })
 
-const personType = document({
+const PersonType = document({
   _type: literal('person'),
   firstName: string(),
   lastName: string(),
-  country: reference(country),
+  country: reference(Country),
 })
 
 test('resolve reference with schema', async () => {
-  const person = parse(personType, {
+  const person = parse(PersonType, {
     _id: 'carl',
     _type: 'person',
     firstName: 'Carl',
@@ -47,7 +47,7 @@ test('resolve reference with schema', async () => {
     name: 'USA',
   })
 
-  type LoadedCountry = StoredDocument<Infer<typeof country>>
+  type LoadedCountry = StoredDocument<Infer<typeof Country>>
 
   expectTypeOf(personCountry).toEqualTypeOf<LoadedCountry>()
 })
@@ -59,21 +59,21 @@ test('document loader selects the document fields and parses the result', async 
     name: 'USA',
   })
   const loadDocument = createDocumentLoader(fetch)
-  const usa = await loadDocument(country, 'usa')
+  const usa = await loadDocument(Country, 'usa')
   expect(fetch.mock.calls).toEqual([
     ['usa', ['_type', '_id', '_createdAt', '_updatedAt', '_rev', 'name']],
   ])
   expect(usa).toEqual({_type: 'country', _id: 'usa', name: 'USA'})
 
   fetch.mockResolvedValueOnce({_type: 'country', _id: 'usa'})
-  await expect(loadDocument(country, 'usa')).rejects.toThrow(/name/)
+  await expect(loadDocument(Country, 'usa')).rejects.toThrow(/name/)
 })
 
 test('document loader resolves lazy document schemas', async () => {
   const fetch = vi.fn().mockResolvedValueOnce({_type: 'country', name: 'USA'})
   const loadDocument = createDocumentLoader(fetch)
   const usa = await loadDocument(
-    lazy(() => country),
+    lazy(() => Country),
     'usa',
   )
   expect(fetch.mock.calls[0]?.[1]).toContain('name')

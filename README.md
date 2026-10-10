@@ -18,17 +18,17 @@ import {
   string,
 } from '@sanity-labs/typed-schema'
 
-export const pet = document({
+export const Pet = document({
   _type: literal('pet'),
   name: string(),
   birthYear: optional(number()),
 })
 
 // {_type: 'pet'; name: string; birthYear?: number; _id?: string; _rev?: string; ...}
-export type Pet = Infer<typeof pet>
+export type Pet = Infer<typeof Pet>
 
 // throws a ParseError if the input does not match the schema
-const fido = parse(pet, {_type: 'pet', name: 'Fido'})
+const fido = parse(Pet, {_type: 'pet', name: 'Fido'})
 ```
 
 ## Table of contents
@@ -143,7 +143,7 @@ import {
   union,
 } from '@sanity-labs/typed-schema'
 
-export const userSchema = document({
+export const User = document({
   _type: literal('user'),
   name: string(),
   idOrHandle: union([string(), number()]),
@@ -153,9 +153,9 @@ export const userSchema = document({
   }),
 })
 
-export type User = Infer<typeof userSchema>
+export type User = Infer<typeof User>
 
-const user = parse(userSchema, {
+const user = parse(User, {
   _type: 'user',
   name: 'Grace Hopper',
   idOrHandle: 'grace',
@@ -169,6 +169,8 @@ user.noSuchProperty
 // @ts-expect-error TS2365: Operator '+' cannot be applied to types '{city?: string}' and 'number'
 user.address + 2
 ```
+
+Schema constants are PascalCase (`User`, `Address`), the same as the type inferred from them. TypeScript lets a `const` and a `type` share a name, so `User` is the schema in a value position and the parsed document type in a type position, and one import gives you both. Creator and transform functions (`document()`, `reference()`, `extend()`) stay camelCase, and `_type` literals keep Sanity's camelCase type names (`'user'`).
 
 ### Parsing and errors
 
@@ -185,9 +187,9 @@ import {
   string,
 } from '@sanity-labs/typed-schema'
 
-const pet = document({_type: literal('pet'), name: string(), age: number()})
+const Pet = document({_type: literal('pet'), name: string(), age: number()})
 
-const result = safeParse(pet, {_type: 'pet', name: 42})
+const result = safeParse(Pet, {_type: 'pet', name: 42})
 if (result.status === 'fail') {
   // [
   //   {path: ['name'], code: 'INVALID_TYPE', input: 42, message: 'Expected a string'},
@@ -197,7 +199,7 @@ if (result.status === 'fail') {
 }
 
 try {
-  parse(pet, {_type: 'pet', name: 42})
+  parse(Pet, {_type: 'pet', name: 42})
 } catch (err) {
   if (err instanceof ParseError) {
     // Invalid input at "name": Expected a string (+ 1)
@@ -215,11 +217,11 @@ Sanity requires every object in an array to carry a `_key`. When the element of 
 ```ts
 import {array, type Infer, object, string} from '@sanity-labs/typed-schema'
 
-const tags = array(string())
-const addresses = array(object({city: string()}))
+const Tags = array(string())
+const Addresses = array(object({city: string()}))
 
-type Tags = Infer<typeof tags> // string[]
-type Addresses = Infer<typeof addresses> // {city: string; _key: string}[]
+type Tags = Infer<typeof Tags> // string[]
+type Addresses = Infer<typeof Addresses> // {city: string; _key: string}[]
 ```
 
 ### Composing schemas
@@ -238,17 +240,17 @@ import {
   string,
 } from '@sanity-labs/typed-schema'
 
-const base = object({name: string(), other: string(), irrelevant: number()})
+const Base = object({name: string(), other: string(), irrelevant: number()})
 
-const extended = extend(base, {extra: string()})
-const withoutIrrelevant = omit(base, ['irrelevant'])
-const nameOnly = pick(base, ['name'])
+const Extended = extend(Base, {extra: string()})
+const WithoutIrrelevant = omit(Base, ['irrelevant'])
+const NameOnly = pick(Base, ['name'])
 
-// same fields as `base`, declared by spreading the shape
-const spread = object({...base.shape, extra: string()})
+// same fields as `Base`, declared by spreading the shape
+const Spread = object({...Base.shape, extra: string()})
 
-const client = object({_type: literal('client'), name: string()})
-const customer = rename(client, 'customer') // _type is now the literal 'customer'
+const Client = object({_type: literal('client'), name: string()})
+const Customer = rename(Client, 'customer') // _type is now the literal 'customer'
 ```
 
 `omit` and `pick` on a document keep the system fields (`_id`, `_rev`, ...) even if you list them.
@@ -275,18 +277,18 @@ import {
   string,
 } from '@sanity-labs/typed-schema'
 
-const contactDetails = object({
+const ContactDetails = object({
   name: string(),
   address: object({street: string(), city: string()}),
   email: string(),
 })
 
 // Validate against this when the user saves
-type ValidContactDetails = Infer<typeof contactDetails>
+type ValidContactDetails = Infer<typeof ContactDetails>
 
 // Use this while the form is being filled in
-const partialContactDetails = deepPartial(contactDetails)
-type PartialContactDetails = Infer<typeof partialContactDetails>
+const PartialContactDetails = deepPartial(ContactDetails)
+type PartialContactDetails = Infer<typeof PartialContactDetails>
 // {name?: string; address?: {street?: string; city?: string}; email?: string}
 ```
 
@@ -309,9 +311,9 @@ import {
   string,
 } from '@sanity-labs/typed-schema'
 
-const pet = document({_type: literal('pet'), name: string()})
+const Pet = document({_type: literal('pet'), name: string()})
 
-const storedPet = parse(stored(pet), {
+const storedPet = parse(stored(Pet), {
   _type: 'pet',
   _id: 'fido',
   _rev: 'abc',
@@ -321,8 +323,8 @@ const storedPet = parse(stored(pet), {
 })
 storedPet._rev.toUpperCase() // _rev is a string, not string | undefined
 
-const petDraft = draft(pet)
-const storedDraft = parse(stored(petDraft), {
+const PetDraft = draft(Pet)
+const storedDraft = parse(stored(PetDraft), {
   _type: 'pet',
   _id: 'drafts.fido',
   _rev: 'abc',
@@ -332,9 +334,9 @@ const storedDraft = parse(stored(petDraft), {
 storedDraft.name // string | undefined
 
 // A new published pet needs its required fields but no system fields
-const newPet: Infer<typeof pet> = {_type: 'pet', name: 'Rex'}
+const newPet: Infer<typeof Pet> = {_type: 'pet', name: 'Rex'}
 // A new draft needs neither
-const newDraft: Infer<typeof petDraft> = {_type: 'pet'}
+const newDraft: Infer<typeof PetDraft> = {_type: 'pet'}
 ```
 
 ### Recursive schemas
@@ -360,10 +362,10 @@ interface Person extends SanityDocumentValue {
   friends: SanityArrayValue<SanityReferenceValue<Person>>
 }
 
-const person: SanityDocumentType<Person> = document({
+const Person: SanityDocumentType<Person> = document({
   _type: literal('person'),
   name: string(),
-  friends: lazy(() => array(reference(person))),
+  friends: lazy(() => array(reference(Person))),
 })
 ```
 
@@ -389,15 +391,15 @@ const {loadDocument, loadReference} = createLoader((id, fields) =>
   client.fetch(`*[_id == $id][0]{${fields.join(', ')}}`, {id}),
 )
 
-const author = document({_type: literal('author'), name: string()})
-const post = document({
+const Author = document({_type: literal('author'), name: string()})
+const Post = document({
   _type: literal('post'),
   title: string(),
-  author: reference(author),
+  author: reference(Author),
 })
 
-const welcome = await loadDocument(post, 'welcome') // Infer<typeof post>
-const writer = await loadReference(welcome.author) // the stored author document
+const welcome = await loadDocument(Post, 'welcome') // Infer<typeof Post>
+const writer = await loadReference(welcome.author) // the stored Author document
 ```
 
 `loadDocument` parses what the fetch returns, so a document that does not match its schema rejects with a `ParseError`. `fields` is the list of top-level field names in the schema, so you can project only what you need.
@@ -415,7 +417,7 @@ import {
   string,
 } from '@sanity-labs/typed-schema'
 
-const post = strictMode(
+const Post = strictMode(
   document({
     _type: literal('post'),
     author: object({_type: literal('person'), name: string()}),
@@ -437,12 +439,12 @@ import {
 } from '@sanity-labs/typed-schema'
 import {defineConfig} from 'sanity'
 
-const human = document({_type: literal('human'), name: string()})
+const Human = document({_type: literal('human'), name: string()})
 
 export default defineConfig({
   projectId: 'abc123',
   dataset: 'production',
-  schema: {types: toClassicSchema(human)},
+  schema: {types: toClassicSchema(Human)},
 })
 ```
 
@@ -458,9 +460,9 @@ for (const key of ['firstName', 'lastName']) {
   shape[key] = string()
 }
 
-const schema = object(shape)
+const Person = object(shape)
 // value is typed as {} even though parsing checks both fields
-const value = parse(schema, {firstName: 'Grace', lastName: 'Hopper'})
+const value = parse(Person, {firstName: 'Grace', lastName: 'Hopper'})
 ```
 
 Write shapes as literals (`object({firstName: string(), lastName: string()})`) to get narrow types.
@@ -529,7 +531,7 @@ import {
   union,
 } from '@sanity-labs/typed-schema'
 
-const body = portableText({
+const Body = portableText({
   block: block({
     style: union([literal('normal'), literal('h1'), literal('h2')]),
     list: union([literal('bullet'), literal('number')]),
@@ -539,7 +541,7 @@ const body = portableText({
   element: object({_type: literal('codeBlock'), code: string()}),
 })
 
-type Body = Infer<typeof body>
+type Body = Infer<typeof Body>
 ```
 
 ### Modifiers

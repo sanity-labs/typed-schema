@@ -11,7 +11,7 @@ import {type FileAssetShape} from '../shapeDefs'
 
 describe('file type', () => {
   test('plain file type definition', () => {
-    const fileSchema = file({})
+    const FileSchema = file({})
 
     type FileValue = {
       _type: 'file'
@@ -23,10 +23,10 @@ describe('file type', () => {
       }
     }
 
-    expectTypeOf<Infer<typeof fileSchema>>().toEqualTypeOf<FileValue>()
+    expectTypeOf<Infer<typeof FileSchema>>().toEqualTypeOf<FileValue>()
   })
   test('custom file type definition', () => {
-    const fileSchema = file({
+    const FileSchema = file({
       caption: string(),
     })
 
@@ -41,6 +41,6 @@ describe('file type', () => {
       caption: string
     }
 
-    expectTypeOf<Infer<typeof fileSchema>>().toEqualTypeOf<FileValue>()
+    expectTypeOf<Infer<typeof FileSchema>>().toEqualTypeOf<FileValue>()
   })
 })

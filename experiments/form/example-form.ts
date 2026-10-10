@@ -1,7 +1,7 @@
 import {defineForm} from './creators'
-import {address, person} from './example-schema'
+import {Address, Person} from './example-schema'
 
-const addressForm = defineForm(address, {
+const addressForm = defineForm(Address, {
   title: 'Address',
   fields: {
     street: {
@@ -18,10 +18,10 @@ const addressForm = defineForm(address, {
 })
 
 /**
- * Define a form for the person type. TypeScript will yell at you if you don't declare a field for all properties defined
+ * Define a form for the Person type. TypeScript will yell at you if you don't declare a field for all properties defined
  * for the schema type
  */
-export const personForm = defineForm(person, {
+export const personForm = defineForm(Person, {
   fields: {
     name: {
       title: 'Name',

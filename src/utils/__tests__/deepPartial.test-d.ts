@@ -185,19 +185,19 @@ test('deep partial on circular object type', () => {
     }
   }
 
-  const lazyPerson: SanityObjectType<Person> = object({
+  const LazyPerson: SanityObjectType<Person> = object({
     _type: literal('person'),
     name: lazy(() => string()),
     parent: lazy(() =>
-      extend(lazyPerson, {
+      extend(LazyPerson, {
         foo: string(),
-        parent: optional(omit(lazyPerson, ['parent'])),
+        parent: optional(omit(LazyPerson, ['parent'])),
       }),
     ),
   })
 
-  const partialLazyPerson = deepPartial(lazyPerson)
-  const res = parse(partialLazyPerson, {})
+  const PartialLazyPerson = deepPartial(LazyPerson)
+  const res = parse(PartialLazyPerson, {})
 
   expectTypeOf(res).toEqualTypeOf<{
     _type: 'person'

@@ -15,27 +15,27 @@ import {loadReference} from './loader'
 
 declare const client: SanityClient
 
-const address = object({
+const Address = object({
   city: string(),
   country: string(),
 })
 
-const human = document({
+const Human = document({
   _type: literal('human'),
   name: string(),
-  address: array(address),
+  address: array(Address),
 })
 
-const pet = document({
+const Pet = document({
   _type: literal('pet'),
   name: string(),
-  humans: array(reference(human)),
+  humans: array(reference(Human)),
 })
 
-type Pet = Infer<typeof pet>
-const partialPet = deepPartial(pet)
+type Pet = Infer<typeof Pet>
+const PartialPet = deepPartial(Pet)
 
-type PartiaPet = Infer<typeof partialPet>
+type PartiaPet = Infer<typeof PartialPet>
 
 const p: PartiaPet = {
   _type: 'pet',
@@ -45,7 +45,7 @@ const p: PartiaPet = {
 
 const jaraAsJson = client.fetch('*[_type == "pet" && _id=="jara"][0]')
 
-const jaraTheDog = parse(pet, jaraAsJson)
+const jaraTheDog = parse(Pet, jaraAsJson)
 
 const humansOfJara = await Promise.all(
   jaraTheDog.humans.map(humanReference => loadReference(humanReference)),

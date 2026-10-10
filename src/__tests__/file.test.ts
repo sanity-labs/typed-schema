@@ -4,16 +4,16 @@ import {file} from '../creators/file'
 import {string} from '../creators/string'
 import {safeParse} from '../parse'
 
-const plainFileSchema = file({})
+const PlainFile = file({})
 
-const customFileSchema = file({
+const CustomFile = file({
   caption: string(),
 })
 
 describe('file type', () => {
   test('file type definition', () => {
     expect(
-      safeParse(plainFileSchema, {
+      safeParse(PlainFile, {
         _type: 'file',
         asset: {
           _type: 'reference',
@@ -33,7 +33,7 @@ describe('file type', () => {
       }
     `)
     expect(
-      safeParse(customFileSchema, {
+      safeParse(CustomFile, {
         _type: 'file',
         asset: {
           _type: 'reference',
@@ -57,7 +57,7 @@ describe('file type', () => {
   })
   test('errors', () => {
     expect(
-      safeParse(plainFileSchema, {
+      safeParse(PlainFile, {
         _type: 'file',
       }),
     ).toMatchInlineSnapshot(`
@@ -76,7 +76,7 @@ describe('file type', () => {
       }
     `)
     expect(
-      safeParse(plainFileSchema, {
+      safeParse(PlainFile, {
         _type: 'file',
         asset: {},
       }),
@@ -106,7 +106,7 @@ describe('file type', () => {
       }
     `)
     expect(
-      safeParse(customFileSchema, {
+      safeParse(CustomFile, {
         _type: 'file',
         asset: {
           _type: 'reference',

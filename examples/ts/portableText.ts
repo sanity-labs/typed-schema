@@ -10,7 +10,7 @@ import {
   union,
 } from '@sanity-labs/typed-schema'
 
-const someBlock = block({
+const SomeBlock = block({
   _type: literal('someBlock'),
   style: union([literal('normal'), literal('h1'), literal('h2')]),
   list: union([literal('bullet'), literal('number')]),
@@ -27,11 +27,11 @@ const someBlock = block({
   ]),
 })
 
-const myPTArray = array(someBlock)
+const MyPTArray = array(SomeBlock)
 
-type MyPTArray = Infer<typeof myPTArray>
+type MyPTArray = Infer<typeof MyPTArray>
 
-const myPTArrayValue = parse(myPTArray, [])
+const myPTArrayValue = parse(MyPTArray, [])
 
 myPTArrayValue.map(
   element => element._type, // 'someBlock'

@@ -20,11 +20,11 @@ describe('circular schemas', () => {
     }
 
     //@ts-expect-error - should fail because name is not optional in the Human type, so they are not compatible
-    const humanObject: SanityObjectType<Human> = object({
+    const Human: SanityObjectType<Human> = object({
       _type: literal('human'),
       name: optional(string()),
       age: number(),
-      parent: lazy(() => extend(humanObject, {extra: number()})),
+      parent: lazy(() => extend(Human, {extra: number()})),
     })
   })
 
@@ -37,13 +37,13 @@ describe('circular schemas', () => {
     }
 
     // @ts-expect-error – the schema declare the extended 'parent.additionalInfo' as optional, but that's not compatible with interface
-    const human: SanityObjectType<Human> = object({
+    const Human: SanityObjectType<Human> = object({
       _type: literal('human'),
       name: optional(string()),
       age: number(),
       parent: optional(
         lazy(() =>
-          extend(human, {
+          extend(Human, {
             additionalInfo: optional(string()),
           }),
         ),

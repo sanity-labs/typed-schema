@@ -8,13 +8,13 @@ import {
   union,
 } from '@sanity-labs/typed-schema'
 
-export const address = object({
+export const Address = object({
   street: string(),
   city: string(),
   country: string(),
 })
 
-export const person = document({
+export const Person = document({
   _type: literal('person'),
   name: string(),
   bio: optional(
@@ -38,7 +38,7 @@ export const person = document({
       }),
     ]),
   ),
-  address,
+  address: Address,
   favoritePet: optional(
     union([
       object({

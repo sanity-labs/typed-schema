@@ -11,7 +11,7 @@ import {type ImageAssetShape} from '../shapeDefs'
 
 describe('image type', () => {
   test('plain image type definition', () => {
-    const imageSchema = image({})
+    const ImageSchema = image({})
 
     type ImageValue = {
       _type: 'image'
@@ -23,10 +23,10 @@ describe('image type', () => {
       }
     }
 
-    expectTypeOf<Infer<typeof imageSchema>>().toEqualTypeOf<ImageValue>()
+    expectTypeOf<Infer<typeof ImageSchema>>().toEqualTypeOf<ImageValue>()
   })
   test('custom image type definition', () => {
-    const imageSchema = image({
+    const ImageSchema = image({
       caption: string(),
     })
 
@@ -41,6 +41,6 @@ describe('image type', () => {
       caption: string
     }
 
-    expectTypeOf<Infer<typeof imageSchema>>().toEqualTypeOf<ImageValue>()
+    expectTypeOf<Infer<typeof ImageSchema>>().toEqualTypeOf<ImageValue>()
   })
 })

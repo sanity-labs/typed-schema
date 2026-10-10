@@ -9,12 +9,12 @@ import {
 
 import * as current from './current'
 
-export const human = extend(omit(current.human, ['birthYear', 'addresses']), {
+export const Human = extend(omit(current.Human, ['birthYear', 'addresses']), {
   age: number(),
   oldTemporaryField: string(),
-  address: array(current.address),
+  address: array(current.Address),
 })
 
-export type Human = Infer<typeof human>
+export type Human = Infer<typeof Human>
 
-export const pet = current.pet
+export const Pet = current.Pet

@@ -14,16 +14,16 @@ import {type Infer} from '../defs'
 
 describe('array types', () => {
   test('array type definition with object item', () => {
-    const arraySchema = array(object({foo: string()}))
+    const ArraySchema = array(object({foo: string()}))
 
     type ArrayValueType = {foo: string; _key: string}[]
 
-    type InferredValueType = Infer<typeof arraySchema>
+    type InferredValueType = Infer<typeof ArraySchema>
     expectTypeOf<InferredValueType>().toEqualTypeOf<ArrayValueType>()
   })
 
   test('array type definition with union of objects', () => {
-    const arraySchema = array(
+    const ArraySchema = array(
       union([
         object({_type: literal('foo'), foo: string()}),
         object({_type: literal('bar'), bar: number()}),
@@ -35,24 +35,24 @@ describe('array types', () => {
       | {_type: 'bar'; bar: number; _key: string}
     )[]
 
-    type ActualType = Infer<typeof arraySchema>
+    type ActualType = Infer<typeof ArraySchema>
 
     expectTypeOf<ActualType>().toEqualTypeOf<ExpectedType>()
   })
 
   test('array type definition with never', () => {
-    const arraySchema = array(never())
+    const ArraySchema = array(never())
 
-    expectTypeOf<Infer<typeof arraySchema>>().toEqualTypeOf<never[]>()
+    expectTypeOf<Infer<typeof ArraySchema>>().toEqualTypeOf<never[]>()
   })
   test('array type definition with object and never', () => {
-    const arraySchema = objectArray(
+    const ArraySchema = objectArray(
       union([object({_type: literal('foo'), foo: string()}), never()]),
     )
 
     type ExpectedType = {_type: 'foo'; foo: string; _key: string}[]
 
-    type ActualType = Infer<typeof arraySchema>
+    type ActualType = Infer<typeof ArraySchema>
 
     expectTypeOf<ActualType>().toEqualTypeOf<ExpectedType>()
   })
@@ -60,13 +60,13 @@ describe('array types', () => {
 
 describe('arrays of object-like types', () => {
   test('references and images become keyed object arrays', () => {
-    const pet = document({_type: literal('pet'), name: string()})
-    const refs = array(reference(pet))
-    expectTypeOf(refs.typeName).toEqualTypeOf<'objectArray'>()
-    expectTypeOf<Infer<typeof refs>[number]['_key']>().toEqualTypeOf<string>()
+    const Pet = document({_type: literal('pet'), name: string()})
+    const Refs = array(reference(Pet))
+    expectTypeOf(Refs.typeName).toEqualTypeOf<'objectArray'>()
+    expectTypeOf<Infer<typeof Refs>[number]['_key']>().toEqualTypeOf<string>()
 
-    const images = array(image({}))
-    expectTypeOf(images.typeName).toEqualTypeOf<'objectArray'>()
-    expectTypeOf<Infer<typeof images>[number]['_key']>().toEqualTypeOf<string>()
+    const Images = array(image({}))
+    expectTypeOf(Images.typeName).toEqualTypeOf<'objectArray'>()
+    expectTypeOf<Infer<typeof Images>[number]['_key']>().toEqualTypeOf<string>()
   })
 })

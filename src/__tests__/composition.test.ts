@@ -20,10 +20,10 @@ test('Schema composition', () => {
   const str = string()
   const num = number()
   const bool = boolean()
-  const stringOrNum = union([string(), number()])
+  const StringOrNum = union([string(), number()])
   const arr1 = primitiveArray(string())
   const polyArr = primitiveArray(union([string(), number()]))
-  const polyObjectArr = array(
+  const PolyObjectArr = array(
     union([
       object({_type: literal('foo'), foo: string()}),
       object({_type: literal('two'), age: number()}),
@@ -33,19 +33,19 @@ test('Schema composition', () => {
   const composed = object({...sharedFields, ...otherFields})
   const lit = literal('literal value')
 
-  const myObj = object({
+  const MyObj = object({
     str,
     num,
     lit,
-    stringOrNum,
+    stringOrNum: StringOrNum,
     polyArr,
-    polyObjectArr,
+    polyObjectArr: PolyObjectArr,
     bool,
     arr1,
     composed,
   })
 
-  type MyObj = Infer<typeof myObj>
+  type MyObj = Infer<typeof MyObj>
 
   assertType<MyObj['lit']>('literal value')
 
@@ -72,7 +72,7 @@ test('Schema composition', () => {
   assertType<MyObj['composed']['otherField']>('' as number)
 
   // test validation output type
-  const res = parse(myObj, {
+  const res = parse(MyObj, {
     str: 'string',
     num: 2,
     lit: 'literal value',

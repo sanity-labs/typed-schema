@@ -10,13 +10,13 @@ import {type Infer} from '../defs'
 
 describe('never type', () => {
   test('never type inference', () => {
-    const neverType = never()
-    type NeverOutput = Infer<typeof neverType>
+    const NeverType = never()
+    type NeverOutput = Infer<typeof NeverType>
     expectTypeOf<NeverOutput>({} as never)
   })
 
   test('never type inference as member of other types', () => {
-    const someObject = object({
+    const SomeObject = object({
       cantTouchThis: never(),
       primitiveUnion: union([string(), literal('foo'), never()]),
       objectUnion: union([
@@ -27,7 +27,7 @@ describe('never type', () => {
       name: string(),
     })
 
-    type SomeObjectType = Infer<typeof someObject>
+    type SomeObjectType = Infer<typeof SomeObject>
 
     expectTypeOf<SomeObjectType>(
       {} as {

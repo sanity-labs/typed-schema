@@ -13,23 +13,23 @@ import {string} from '../../../../creators/string'
 import {union} from '../../../../creators/union'
 import {extend} from '../../../../utils/extend'
 
-const pet = object({name: string()})
-const city = document({
+const Pet = object({name: string()})
+const City = document({
   _type: literal('city'),
   name: string(),
   country: string(),
 })
-export const human = document({
+export const Human = document({
   _type: literal('human'),
   name: string(),
   birthTime: dateTime(),
   favoriteTimes: array(dateTime()),
   address: object({
     street: string(),
-    city: reference(city),
+    city: reference(City),
     country: string(),
   }),
-  citiesVisited: array(reference(city)),
+  citiesVisited: array(reference(City)),
   profilePicture: image({
     alt: string(),
   }),
@@ -59,15 +59,15 @@ export const human = document({
   ),
   pets: array(
     union([
-      extend(pet, {
+      extend(Pet, {
         _type: literal('avine'),
         squeaks: boolean(),
       }),
-      extend(pet, {
+      extend(Pet, {
         _type: literal('feline'),
         meows: boolean(),
       }),
-      extend(pet, {
+      extend(Pet, {
         _type: literal('canine'),
         barks: boolean(),
       }),

@@ -7,7 +7,7 @@ import {string} from '../../creators/string'
 import {createLiteralValue} from '../createLiteralValue'
 
 test('create literal value from document schema', () => {
-  const catSchema = document({
+  const Cat = document({
     _type: literal('cat'),
     sound: literal('miau'),
     breed: string(),
@@ -16,7 +16,7 @@ test('create literal value from document schema', () => {
     }),
     name: string(),
   })
-  const myCat = createLiteralValue(catSchema)
+  const myCat = createLiteralValue(Cat)
   expect(myCat).toEqual({
     _type: 'cat',
     metadata: {
@@ -27,8 +27,8 @@ test('create literal value from document schema', () => {
 })
 
 test('create literal value from literal schema', () => {
-  const someLiteral = literal('lit')
-  const myLit = createLiteralValue(someLiteral)
+  const SomeLiteral = literal('lit')
+  const myLit = createLiteralValue(SomeLiteral)
   expect(myLit).toEqual('lit')
 })
 

@@ -4,16 +4,16 @@ import {image} from '../creators/image'
 import {string} from '../creators/string'
 import {safeParse} from '../parse'
 
-const plainImageSchema = image({})
+const PlainImage = image({})
 
-const customImageSchema = image({
+const CustomImage = image({
   caption: string(),
 })
 
 describe('image type', () => {
   test('image type definition', () => {
     expect(
-      safeParse(plainImageSchema, {
+      safeParse(PlainImage, {
         _type: 'image',
         asset: {
           _type: 'reference',
@@ -33,7 +33,7 @@ describe('image type', () => {
       }
     `)
     expect(
-      safeParse(customImageSchema, {
+      safeParse(CustomImage, {
         _type: 'image',
         asset: {
           _type: 'reference',
@@ -57,7 +57,7 @@ describe('image type', () => {
   })
   test('errors', () => {
     expect(
-      safeParse(plainImageSchema, {
+      safeParse(PlainImage, {
         _type: 'image',
       }),
     ).toMatchInlineSnapshot(`
@@ -76,7 +76,7 @@ describe('image type', () => {
       }
     `)
     expect(
-      safeParse(plainImageSchema, {
+      safeParse(PlainImage, {
         _type: 'image',
         asset: {},
       }),
@@ -106,7 +106,7 @@ describe('image type', () => {
       }
     `)
     expect(
-      safeParse(customImageSchema, {
+      safeParse(CustomImage, {
         _type: 'image',
         asset: {
           _type: 'reference',

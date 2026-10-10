@@ -1,6 +1,6 @@
 import {type SanityImage, type SanityObjectShape} from '../defs'
 import {defineType} from '../helpers/defineType'
-import {imageBase, type SanityImageShape} from '../shapeDefs'
+import {ImageBase, type SanityImageShape} from '../shapeDefs'
 
 // TODO: Make `shape` optional, add hotspot + crop
 export function image<Shape extends SanityObjectShape = SanityObjectShape>(
@@ -8,6 +8,6 @@ export function image<Shape extends SanityObjectShape = SanityObjectShape>(
 ): SanityImage<Shape & SanityImageShape> {
   return defineType({
     typeName: 'image',
-    shape: {...imageBase.shape, ...shape},
+    shape: {...ImageBase.shape, ...shape},
   })
 }

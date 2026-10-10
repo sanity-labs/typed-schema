@@ -10,22 +10,22 @@ import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {parse, safeParse} from '../parse'
 
-const pet = document({_type: literal('pet'), name: string()})
+const Pet = document({_type: literal('pet'), name: string()})
 
 describe('arrays of object-like types are keyed object arrays', () => {
   test('array of references', () => {
-    const pets = array(reference(pet))
-    expect(pets.typeName).toBe('objectArray')
+    const Pets = array(reference(Pet))
+    expect(Pets.typeName).toBe('objectArray')
     const value = [{_type: 'reference', _ref: 'fido', _key: 'k1'}]
-    expect(parse(pets, value)).toEqual(value)
-    expect(safeParse(pets, [{_type: 'reference', _ref: 'fido'}]).status).toBe(
+    expect(parse(Pets, value)).toEqual(value)
+    expect(safeParse(Pets, [{_type: 'reference', _ref: 'fido'}]).status).toBe(
       'fail',
     )
   })
 
   test('array of images', () => {
-    const images = array(image({}))
-    expect(images.typeName).toBe('objectArray')
+    const Images = array(image({}))
+    expect(Images.typeName).toBe('objectArray')
     const value = [
       {
         _type: 'image',
@@ -33,14 +33,14 @@ describe('arrays of object-like types are keyed object arrays', () => {
         asset: {_type: 'reference', _ref: 'image-abc-100x100-png'},
       },
     ]
-    expect(parse(images, value)).toEqual(value)
+    expect(parse(Images, value)).toEqual(value)
   })
 
   test('array of a union containing non-object types', () => {
-    const items = array(
+    const Items = array(
       union([object({_type: literal('note'), text: string()}), image({})]),
     )
-    expect(items.typeName).toBe('objectArray')
+    expect(Items.typeName).toBe('objectArray')
     const value = [
       {_type: 'note', _key: 'k1', text: 'hi'},
       {
@@ -49,26 +49,26 @@ describe('arrays of object-like types are keyed object arrays', () => {
         asset: {_type: 'reference', _ref: 'image-abc-100x100-png'},
       },
     ]
-    expect(parse(items, value)).toEqual(value)
-    expect(safeParse(items, [{_type: 'note', text: 'no key'}]).status).toBe(
+    expect(parse(Items, value)).toEqual(value)
+    expect(safeParse(Items, [{_type: 'note', text: 'no key'}]).status).toBe(
       'fail',
     )
   })
 
   test('array of nested unions', () => {
-    const items = array(
+    const Items = array(
       union([
         object({_type: literal('a')}),
         union([object({_type: literal('b')}), object({_type: literal('c')})]),
       ]),
     )
-    expect(items.typeName).toBe('objectArray')
+    expect(Items.typeName).toBe('objectArray')
     const value = [
       {_type: 'a', _key: 'k1'},
       {_type: 'c', _key: 'k2'},
     ]
-    expect(parse(items, value)).toEqual(value)
-    expect(safeParse(items, [{_type: 'c'}]).status).toBe('fail')
+    expect(parse(Items, value)).toEqual(value)
+    expect(safeParse(Items, [{_type: 'c'}]).status).toBe('fail')
   })
 
   test('arrays of primitives stay primitive arrays', () => {

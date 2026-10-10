@@ -10,23 +10,23 @@ import {
   string,
 } from '@sanity-labs/typed-schema'
 
-const pet = document({_type: literal('pet'), name: string()})
+const Pet = document({_type: literal('pet'), name: string()})
 
-declare const petOutput: Infer<typeof pet>
+declare const petOutput: Infer<typeof Pet>
 
-const person = document({
+const Person = document({
   _type: literal('person'),
   firstName: string(),
   lastName: optional(string()),
-  favoritePet: reference(pet),
-  pets: array(reference(pet)),
+  favoritePet: reference(Pet),
+  pets: array(reference(Pet)),
 })
 
-declare const personOutput: Infer<typeof person>
+declare const personOutput: Infer<typeof Person>
 
-type Person = Infer<typeof person>
+type Person = Infer<typeof Person>
 
-const aPerson = parse(person, {})
+const aPerson = parse(Person, {})
 const resolve = createReferenceLoader(async () => {})
 console.log(aPerson.favoritePet.__schema__)
 const allPets = await Promise.all(

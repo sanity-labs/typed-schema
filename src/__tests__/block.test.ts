@@ -9,7 +9,7 @@ import {union} from '../creators/union'
 import {parse, safeParse} from '../parse'
 
 describe('parsing blocks', () => {
-  const richBlock = block({
+  const RichBlock = block({
     style: union([literal('normal'), literal('h1')]),
     list: union([literal('bullet'), literal('number')]),
     decorator: union([literal('strong'), literal('em')]),
@@ -31,7 +31,7 @@ describe('parsing blocks', () => {
         {_type: 'mention', _key: 'm1', userId: 'u1'},
       ],
     }
-    expect(parse(richBlock, value)).toEqual(value)
+    expect(parse(RichBlock, value)).toEqual(value)
   })
 
   test('style, listItem, level and markDefs are optional', () => {
@@ -39,7 +39,7 @@ describe('parsing blocks', () => {
       _type: 'block',
       children: [{_type: 'span', _key: 's1', text: 'hi', marks: []}],
     }
-    expect(parse(richBlock, value)).toEqual(value)
+    expect(parse(RichBlock, value)).toEqual(value)
   })
 
   test('rejects values outside the configured styles and lists', () => {
@@ -47,18 +47,18 @@ describe('parsing blocks', () => {
       _type: 'block',
       children: [{_type: 'span', _key: 's1', text: 'hi', marks: []}],
     }
-    expect(safeParse(richBlock, {...base, style: 'h3'}).status).toBe('fail')
-    expect(safeParse(richBlock, {...base, listItem: 'checkbox'}).status).toBe(
+    expect(safeParse(RichBlock, {...base, style: 'h3'}).status).toBe('fail')
+    expect(safeParse(RichBlock, {...base, listItem: 'checkbox'}).status).toBe(
       'fail',
     )
     expect(
-      safeParse(richBlock, {
+      safeParse(RichBlock, {
         ...base,
         children: [{_type: 'span', text: 'no key', marks: []}],
       }).status,
     ).toBe('fail')
     expect(
-      safeParse(richBlock, {
+      safeParse(RichBlock, {
         ...base,
         markDefs: [{_type: 'other', _key: 'x'}],
       }).status,
@@ -66,23 +66,23 @@ describe('parsing blocks', () => {
   })
 
   test('an unconfigured block accepts any style and no markDefs', () => {
-    const plain = block({})
+    const Plain = block({})
     const value = {
       _type: 'block',
       style: 'normal',
       markDefs: [],
       children: [{_type: 'span', _key: 's1', text: 'hi', marks: []}],
     }
-    expect(parse(plain, value)).toEqual(value)
+    expect(parse(Plain, value)).toEqual(value)
     expect(
-      safeParse(plain, {...value, markDefs: [{_type: 'link', _key: 'k'}]})
+      safeParse(Plain, {...value, markDefs: [{_type: 'link', _key: 'k'}]})
         .status,
     ).toBe('fail')
   })
 })
 
 describe('parsing portable text', () => {
-  const body = portableText({
+  const Body = portableText({
     block: block({decorator: literal('strong')}),
     element: object({_type: literal('image'), url: string()}),
   })
@@ -98,12 +98,12 @@ describe('parsing portable text', () => {
       },
       {_type: 'image', _key: 'i1', url: 'https://example.com/a.png'},
     ]
-    expect(parse(body, value)).toEqual(value)
+    expect(parse(Body, value)).toEqual(value)
   })
 
   test('requires _key on every element', () => {
     expect(
-      safeParse(body, [{_type: 'image', url: 'https://example.com/a.png'}])
+      safeParse(Body, [{_type: 'image', url: 'https://example.com/a.png'}])
         .status,
     ).toBe('fail')
   })

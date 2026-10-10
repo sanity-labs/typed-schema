@@ -8,7 +8,7 @@ import {
 } from '../defs'
 import {defineType} from '../helpers/defineType'
 import {type Format} from '../helpers/utilTypes'
-import {documentBase, type SanityDocumentShape} from '../shapeDefs'
+import {DocumentBase, type SanityDocumentShape} from '../shapeDefs'
 import {type SafeObject} from './object'
 
 export function document<Shape extends SanityObjectShape = SanityObjectShape>(
@@ -22,6 +22,6 @@ export function document<Shape extends SanityObjectShape = SanityObjectShape>(
 > {
   return defineType({
     typeName: 'document',
-    shape: {...documentBase.shape, ...shape},
+    shape: {...DocumentBase.shape, ...shape},
   }) as any
 }

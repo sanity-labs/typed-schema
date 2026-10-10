@@ -14,9 +14,9 @@ import {
   union,
 } from '@sanity-labs/typed-schema'
 
-import {pet} from './pet'
+import {Pet} from './pet'
 
-export const human = document({
+export const Human = document({
   _type: literal('human'),
   name: string(),
   profilePicture: image({
@@ -54,15 +54,15 @@ export const human = document({
   ),
   pets: array(
     union([
-      extend(pet, {
+      extend(Pet, {
         _type: literal('avine'),
         squeaks: boolean(),
       }),
-      extend(pet, {
+      extend(Pet, {
         _type: literal('feline'),
         meows: boolean(),
       }),
-      extend(pet, {
+      extend(Pet, {
         _type: literal('canine'),
         barks: boolean(),
       }),
