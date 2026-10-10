@@ -10,15 +10,15 @@
     "typescript",
     "validation"
   ],
-  "homepage": "https://github.com/sanity-labs/sanitype#readme",
+  "homepage": "https://github.com/sanity-labs/typed-schema#readme",
   "bugs": {
-    "url": "https://github.com/sanity-labs/sanitype/issues"
+    "url": "https://github.com/sanity-labs/typed-schema/issues"
   },
   "license": "MIT",
   "author": "Bjørge Næss <bjoerge@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sanity-labs/sanitype.git"
+    "url": "git+https://github.com/sanity-labs/typed-schema.git"
   },
   "files": [
     "dist",

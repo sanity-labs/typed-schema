@@ -1,155 +1,133 @@
 # @sanity-labs/typed-schema
 
-_TypeScript-first Sanity schemas with static type inference and (optional) runtime validation_
+_TypeScript-first Sanity schemas with static type inference and optional runtime validation_
 
-> [!WARNING]  
-> This is an experiment and not an official, nor supported way of declaring Sanity schemas. Use at own risk.
+> [!NOTE]
+> This is an experiment and not an official, nor supported way of declaring Sanity schemas. Read about what to expect from Sanity Labs projects here: https://github.com/sanity-labs#what-to-expect
+
+Declare a content model once, as TypeScript values. The same definition gives you the TypeScript type of its documents and validates incoming data:
+
+```ts
+import {
+  document,
+  type Infer,
+  literal,
+  number,
+  optional,
+  parse,
+  string,
+} from '@sanity-labs/typed-schema'
+
+export const pet = document({
+  _type: literal('pet'),
+  name: string(),
+  birthYear: optional(number()),
+})
+
+// {_type: 'pet'; name: string; birthYear?: number; _id?: string; _rev?: string; ...}
+export type Pet = Infer<typeof pet>
+
+// throws a ParseError if the input does not match the schema
+const fido = parse(pet, {_type: 'pet', name: 'Fido'})
+```
 
 ## Table of contents
 
 <!-- TOC -->
 
-- [Motivation](#motivation)
-  - [Instant developer feedback](#instant-developer-feedback)
-  - [DRY Content Models](#dry-content-models)
-  - [Type-level "Sanity-isms"](#type-level-sanity-isms)
-  - [Type Safe Content Migrations](#type-safe-content-migrations)
-  - [Why not just use Zod?](#why-not-just-use-zod)
+- [Why](#why)
+  - [Constraints checked at compile time](#constraints-checked-at-compile-time)
+  - [A content model you can share](#a-content-model-you-can-share)
+  - [Sanity conventions at the type level](#sanity-conventions-at-the-type-level)
+  - [Type-safe content migrations](#type-safe-content-migrations)
+  - [Why not Zod?](#why-not-zod)
 - [Getting started](#getting-started)
-  - [Requirements](#requirements)
-  - [Install](#install)
-  - [npm](#npm)
-  - [pnpm](#pnpm)
-  - [bun](#bun)
-  - [yarn](#yarn)
-- [Usage examples](#usage-examples)
-  - [Basic example](#basic-example)
-  - [Extending types](#extending-types)
-    - [The `extend()` helper](#the-extend-helper)
-  - [Pick & omit fields](#pick--omit-fields)
-  - [Lifecycle and type transforms](#lifecycle-and-type-transforms)
-    - [Recursive types](#recursive-types)
-    - [Document lifecycles](#document-lifecycles)
-- [Limitations & gotchas](#limitations--gotchas)
-- [API](#api)
-  - [Data types](#data-types)
-    - [Primitives](#primitives)
-    - [Literal](#literal)
-    - [Unions](#unions)
-    - [Objects](#objects)
-    - [Arrays](#arrays)
-    - [References](#references)
-    - [Portable text](#portable-text)
-    - [Recursive types](#recursive-types-1)
-  - [Utilities](#utilities)
-    - [Extend](#extend)
-    - [Optional](#optional)
-    - [Required](#required)
-    - [Omit](#omit)
-    - [Pick](#pick)
-    - [Rename](#rename)
-  - [GraphQL Strict mode](#graphql-strict-mode)
+- [Guide](#guide)
+  - [Declaring a document](#declaring-a-document)
+  - [Parsing and errors](#parsing-and-errors)
+  - [Arrays and `_key`](#arrays-and-_key)
+  - [Composing schemas](#composing-schemas)
+  - [Partial and required variants](#partial-and-required-variants)
+  - [Document lifecycles](#document-lifecycles)
+  - [Recursive schemas](#recursive-schemas)
+  - [Loading documents and references](#loading-documents-and-references)
+  - [Unique type names (GraphQL strict mode)](#unique-type-names-graphql-strict-mode)
+  - [Using a typed schema in Sanity Studio](#using-a-typed-schema-in-sanity-studio)
+- [Limitations](#limitations)
+- [API reference](#api-reference)
+  - [Primitives](#primitives)
+  - [Objects, documents and assets](#objects-documents-and-assets)
+  - [Arrays, unions and references](#arrays-unions-and-references)
+  - [Portable Text](#portable-text)
+  - [Modifiers](#modifiers)
+  - [Schema transforms](#schema-transforms)
+  - [Parsing](#parsing)
+  - [Lifecycle helpers](#lifecycle-helpers)
+  - [Loaders](#loaders)
+  - [Types](#types)
 - [Development](#development)
-- [Acknowledgements & inspiration](#acknowledgements--inspiration)
+- [Acknowledgements](#acknowledgements)
 
 <!-- TOC -->
 
-## Motivation
+## Why
 
-Sanity Schemas that has static type inference while enabling runtime validation offers significant advantages over traditional Sanity schemas when working with content at scale.
+### Constraints checked at compile time
 
-### Instant developer feedback
+Sanity accepts almost any shape of content, but it does have rules. A classic Sanity schema reports violations of those rules at runtime, usually when the Studio reloads during development. With typed schemas the same violations are type errors in your editor and in `tsc`:
 
-Although Sanity lets you express almost anything, it puts forward a handful of constraints on your data model. Today, violations of these constraints are surfaced to developers at runtime, typically during development when reloading the Studio. With Sanitype any violation of these restrictions will be surfaced immediately as type errors both in the IDE and at build/compile time.
+1. Arrays of arrays.
+2. Arrays that mix primitive values and objects.
+3. Unions of untyped objects. Object unions must consist of objects with a `_type` literal, because a partially edited object (an empty one, say) is otherwise impossible to match to a schema type during real-time collaboration.
+4. Field names that start with an underscore. These are reserved for system fields.
+5. Characters that are not allowed in field names.
 
-Violations of the following constraints will be caught and surfaced instantly in the IDE as type errors when using Sanitype:
+### A content model you can share
 
-1. Multidimensional arrays.
-2. Arrays with both primitive values and object values.
-3. Object unions with unnamed object types. Object unions are only supported for _typed_ objects (i.e. objects with a `_type` literal). This restriction is necessary in order to support collaborative real-time editing of partial object values. Without a discriminator it would be impossible to tell which schema type a partial (e.g. empty) object belongs to.
-4. Fields starting with underscore are not allowed. These are reserved for system fields. Sanitype gives a compile-time error if you define a field starting with underscore.
-5. Disallowed characters in field names: There's restrictions on what characters can be used as object properties, if you try to use an invalid character, this will be caught by TypeScript.
+A classic Sanity schema mixes the content model with presentation: input components, previews, field groups and titles. That makes the schema hard to use outside the Studio and hard to reuse across teams.
 
-### DRY Content Models
+A typed schema is plain data describing content only. It can be:
 
-Traditional Sanity schemas have a few drawbacks that makes it harder to share and re-use across runtimes, environments and organizations. They define not only the content model, they also include presentational concerns, which leads to several drawbacks:
+- published to npm and versioned with semver, so a breaking change to a shared type fails the downstream build instead of failing in production,
+- used in any runtime (Node, edge, browser) without pulling in React,
+- used to validate content coming from another system before it is written to Sanity.
 
-- _Tied to a specific editing experience_: Today you can't easily use the same content model for creating different editor experiences, e.g. using a different set of field groups, or different field descriptions across different contexts.
-- _Coupled with the browser runtime_: Traditional Sanity schemas defines presentation concerns like custom input components, preview configs and field labels that often includes React and browser libraries. Unless taking extra precautions, this can often lead to issues when attempting to share the schema across different runtimes and execution environments.
-- _Limited composability and re-use_: Sharing data models or aspects of a data model between different parts of an organization is challenging today, can often make it hard to reason about impact of making a change, and introduce far-reaching changes with unintended consequences. With the benefit of statical type checking, schemas can be published to npm, versioned with semver and will give early compile-time errors stopping accidental breakage from reaching production.
+Several variants of one type can live side by side: a `ProductV2` that renames `client` to `customer`, or a type with one field removed for a specific context.
 
-The composability of Sanitype combined with runtime validation provides several added advantages:
+### Sanity conventions at the type level
 
-- Different versions of the same content model can live side by side, extending or composing of each other. You can create a variant of a type that omits a particular field, or you can create a ProductV2 type that renames the `client`-field to `customer`.
-- When importing content from an external system into Sanity, you can use the schema to validate that the external content adheres to the shape defined by the schema, preventing invalid or unexpected data from entering the Sanity Data store.
+Sanity attaches data to your content that you did not declare. Typed schemas model it:
 
-### Type-level "Sanity-isms"
+1. Objects inside arrays get a `_key: string`. The inferred array element type includes it, so there is no `item as T & {_key: string}`.
+2. Documents get `_id`, `_rev`, `_createdAt` and `_updatedAt`.
+3. A document goes through stages, and each stage has its own type. A document fetched from the API always has `_id` and `_rev`; one created on the client does not yet. A draft has every field optional. A published document has passed validation, so required fields are present. See [Document lifecycles](#document-lifecycles).
 
-Sanity is extremely flexible, but is also opinionated about certain aspects of your content model, for example:
+### Type-safe content migrations
 
-1. Object types automatically gets assigned persistent keys ( `_key: string`) when they're contained in arrays. With Sanitype, this is handled at the type level, so no need for `arrayItem as T & {_key: string}`
-2. Document types automatically gets assigned system properties like `_rev: string, _createdAt`, etc.
-3. Document lifecycles can be reflected at the type level:
-   - A document fetched from the API will always have `_id`, `_rev`. For documents created client side, these are optional, and can be undefined.
-   - All properties of a draft document will be optional/nullable, since drafts are partial in nature.
-   - A published document will have passed validation, and thus have all required fields (no need for non-null assertions)
+Because schemas compose (`extend`, `omit`, `pick`, `rename`), two versions of a content model can coexist during a migration. A migration function takes `Infer<typeof v1.human>` and returns `Infer<typeof current.human>`, and the compiler checks every field. `examples/content-migration` shows the pattern.
 
-### Type Safe Content Migrations
+### Why not Zod?
 
-Sanitype schemas are highly composable. I.e. you can create a base schema that can be extended in different contexts or represent different versions of the same content model. This enables a migration strategy that allows different versions of a schema can coexist side by side in a transition period, enabling incremental content migrations without breaking frontends or client applications.
-
-### Why not just use Zod?
-
-[Zod](https://zod.dev/) is great, and we have been long-time adopters and fans here at Sanity. However, zod has a much broader scope, and supports JavaScript types that can't be represented in a Sanity document like Set, Map, Promise, functions, etc.
+[Zod](https://zod.dev/) is the inspiration for this library, and nothing here replaces it for general validation. Zod accepts values a Sanity document cannot hold (`Set`, `Map`, functions, promises) and has no notion of `_key`, `_type`, references, drafts, or the field-name rules above. This library covers the subset Sanity can store and builds those conventions in.
 
 ## Getting started
 
-### Requirements
-
-Sanitype requires TypeScript 5.x and strict mode to be enabled in `tsconfig.json`:
-
-```
-{
-  // ...
-  "compilerOptions": {
-    // ...
-    "strict": true
-  }
-}
-
-```
-
-### Install
-
-### npm
+Requires TypeScript 6.0 or later with `strict: true` in `tsconfig.json`. Install with your package manager:
 
 ```sh
 npm install @sanity-labs/typed-schema
-```
-
-### pnpm
-
-```sh
 pnpm add @sanity-labs/typed-schema
-```
-
-### bun
-
-```sh
 bun add @sanity-labs/typed-schema
-```
-
-### yarn
-
-```sh
 yarn add @sanity-labs/typed-schema
 ```
 
-## Usage examples
+The package is published as ES modules only.
 
-### Basic example
+## Guide
 
-Creating a simple document type
+### Declaring a document
+
+Every schema is a value built from creator functions. `Infer` turns a schema into its TypeScript type.
 
 ```ts
 import {
@@ -165,304 +143,497 @@ import {
   union,
 } from '@sanity-labs/typed-schema'
 
-// define and export a user schema
 export const userSchema = document({
   _type: literal('user'),
   name: string(),
-  union: union([string(), number()]),
-  optional: optional(boolean()),
-  nested: object({
-    foo: optional(string()),
+  idOrHandle: union([string(), number()]),
+  isAdmin: optional(boolean()),
+  address: object({
+    city: optional(string()),
   }),
 })
 
-// export the User type inferred from the userSchema
 export type User = Infer<typeof userSchema>
 
-// Use it to validate that a value is compatible with the schema
 const user = parse(userSchema, {
   _type: 'user',
   name: 'Grace Hopper',
-  union: 'this is a string, but could also be number',
-  optional: true,
-  nested: {
-    foo: 'bar',
-  },
+  idOrHandle: 'grace',
+  isAdmin: true,
+  address: {city: 'Arlington'},
 })
 
-// 💥 type error
-// TS2339: Property noSuchProperty does not exist on type
+// @ts-expect-error TS2339: Property 'noSuchProperty' does not exist on type
 user.noSuchProperty
 
-// 💥 type error
-// TS2365: Operator + cannot be applied to types {foo?: string | undefined;} and number
-user.nested + 2
+// @ts-expect-error TS2365: Operator '+' cannot be applied to types '{city?: string}' and 'number'
+user.address + 2
 ```
 
-### Extending types
+### Parsing and errors
 
-Extending document or object types is as easy as using everyday JavaScript:
-
-```ts
-const baseFields = {name: string(), other: string()}
-const baseType = object(baseFields)
-
-const extendedType = object({...baseFields, extendedField: string()})
-```
-
-#### The `extend()` helper
-
-There's also an `extend()` utility function that can extend any object or document type:
+`parse(schema, input)` returns the typed value or throws `ParseError`. `safeParse` returns a result object instead, with every problem found, not only the first:
 
 ```ts
-const baseType = object({name: string(), other: string()})
+import {
+  document,
+  literal,
+  number,
+  ParseError,
+  parse,
+  safeParse,
+  string,
+} from '@sanity-labs/typed-schema'
 
-const extendedType = extend(baseType, {extendedField: string()})
-```
+const pet = document({_type: literal('pet'), name: string(), age: number()})
 
-### Pick & omit fields
-
-You can create define your own types by picking or omitting sets of fields from other types
-
-```ts
-const someSchema = object({
-  name: string(),
-  other: string(),
-  irrelevant: number(),
-})
-
-// create a new type without the `irrelevant` field
-const example1 = omit(someSchema, ['irrelevant'])
-
-// in effect the same as above, but explicitly picking the fields to keep
-const example2 = pick(someSchema, ['name', 'other'])
-```
-
-### Lifecycle and type transforms
-
-Sanitype supports various utilities to create different variations of a type. For example, if using a schema to let users fill in a form, you want the type to allow for optional values (since users typically fill in forms gradually). However, you don't want to allow for this by making every field optional on your data type, and you still want a type you can validate against to check if the user have filled in all required fields. For these scenarios, Sanitype provides the following utilities:
-
-- `shallowPartial()` - makes all fields of an object type optional (i.e. nullable)
-- `shallowRequired()` - makes all fields of an object type required (i.e. non-nullable).
-- `deepPartial()` - recursively makes all fields of an object type optional (i.e. non-nullable).
-- `deepRequired()` - recursively makes all fields of an object type optional (i.e. non-nullable).
-
-```ts
-// Note that all fields are required in this type
-const contactDetails = object({
-  name: string(),
-  address: string(),
-  email: string(),
-})
-const optionalContactDetails = deepPartial(contactDetails)
-
-// This would be the type to validate against
-type ValidContactDetails = Infer<typeof contactDetails>
-
-// This would be the type to use when working with partial data, e.g. as a user fills in the contact details form
-type OptionalContactDetails = Infer<typeof optionalContactDetauls>
-```
-
-#### Recursive types
-
-You can define a recursive schema in Sanitype using the `lazy()` type helper, but due to a limitation in TypeScript, its type cannot be automatically inferred. To work around this, you’ll need to manually define the type and provide it as a "type hint".
-
-```ts
-interface Person {
-  _type: 'person'
-  name: number
-  parent: Person & {foo: string}
+const result = safeParse(pet, {_type: 'pet', name: 42})
+if (result.status === 'fail') {
+  // [
+  //   {path: ['name'], code: 'INVALID_TYPE', input: 42, message: 'Expected a string'},
+  //   {path: ['age'], code: 'INVALID_TYPE', input: undefined, message: 'Expected a finite number'},
+  // ]
+  console.log(result.errors)
 }
 
-const personSchema: SanityObjectType<Person> = object({
-  _type: literal('person'),
-  name: lazy(() => number()),
-  foo: literal('ok'),
-  parent: lazy(() => extend(personSchema, {foo: string()})),
-})
+try {
+  parse(pet, {_type: 'pet', name: 42})
+} catch (err) {
+  if (err instanceof ParseError) {
+    // Invalid input at "name": Expected a string (+ 1)
+    console.log(err.message, err.errors)
+  }
+}
 ```
 
-#### Document lifecycles
+Parsing strips properties the schema does not declare rather than rejecting them.
 
-Sanitype also exports helpers to represent a Sanity Document at different stages, e.g.:
+### Arrays and `_key`
 
-- published (schemas are modelled as published)
-- draft
-- stored (e.g. retrieved from the data store)
-- variations of the above (e.g. a stored draft)
+Sanity requires every object in an array to carry a `_key`. When the element of `array()` is object-like (an object, reference, image, file, block, or a union of those), the inferred element type includes `_key` and parsing requires it. Arrays of primitives do not have keys.
 
 ```ts
-import {type Infer} from '@sanity-labs/typed-schema'
+import {array, type Infer, object, string} from '@sanity-labs/typed-schema'
+
+const tags = array(string())
+const addresses = array(object({city: string()}))
+
+type Tags = Infer<typeof tags> // string[]
+type Addresses = Infer<typeof addresses> // {city: string; _key: string}[]
+```
+
+### Composing schemas
+
+Shapes are plain objects, so spreading works. `extend`, `omit`, `pick` and `rename` do the same for whole schemas and keep the inferred types in sync:
+
+```ts
+import {
+  extend,
+  literal,
+  number,
+  object,
+  omit,
+  pick,
+  rename,
+  string,
+} from '@sanity-labs/typed-schema'
+
+const base = object({name: string(), other: string(), irrelevant: number()})
+
+const extended = extend(base, {extra: string()})
+const withoutIrrelevant = omit(base, ['irrelevant'])
+const nameOnly = pick(base, ['name'])
+
+// same fields as `base`, declared by spreading the shape
+const spread = object({...base.shape, extra: string()})
+
+const client = object({_type: literal('client'), name: string()})
+const customer = rename(client, 'customer') // _type is now the literal 'customer'
+```
+
+`omit` and `pick` on a document keep the system fields (`_id`, `_rev`, ...) even if you list them.
+
+### Partial and required variants
+
+A form lets users fill in fields gradually, so you want a type where everything is optional while they edit and a type where required fields are required when they save. Rather than making every field optional in the content model, derive the variants:
+
+| Function             | Effect                                                           |
+| -------------------- | ---------------------------------------------------------------- |
+| `shallowPartial(s)`  | Every top-level field becomes optional                           |
+| `shallowRequired(s)` | Every top-level field becomes required                           |
+| `deepPartial(s)`     | Every field becomes optional, recursively through nested objects |
+| `deepRequired(s)`    | Every field becomes required, recursively through nested objects |
+| `required(s)`        | Removes `optional()` from a single schema                        |
+
+`_type` stays required in all of them.
+
+```ts
+import {
+  deepPartial,
+  type Infer,
+  object,
+  string,
+} from '@sanity-labs/typed-schema'
+
+const contactDetails = object({
+  name: string(),
+  address: object({street: string(), city: string()}),
+  email: string(),
+})
+
+// Validate against this when the user saves
+type ValidContactDetails = Infer<typeof contactDetails>
+
+// Use this while the form is being filled in
+const partialContactDetails = deepPartial(contactDetails)
+type PartialContactDetails = Infer<typeof partialContactDetails>
+// {name?: string; address?: {street?: string; city?: string}; email?: string}
+```
+
+### Document lifecycles
+
+A document schema describes the published, validated form. `draft()` and `stored()` derive the other stages:
+
+- `draft(doc)` makes every field except `_type` optional, recursively.
+- `stored(doc)` makes `_id`, `_rev`, `_createdAt` and `_updatedAt` required, which is what the API returns.
+- `stored(draft(doc))` is a draft as the API returns it.
+
+```ts
 import {
   document,
   draft,
+  type Infer,
   literal,
   parse,
   stored,
   string,
 } from '@sanity-labs/typed-schema'
 
-// The schema for the myDocument type in its "ideal" form (i.e. published/validated state)
-const myDocument = document({
-  _type: literal('pet'),
+const pet = document({_type: literal('pet'), name: string()})
+
+const storedPet = parse(stored(pet), {
+  _type: 'pet',
+  _id: 'fido',
+  _rev: 'abc',
+  _createdAt: '2024-01-01T00:00:00Z',
+  _updatedAt: '2024-01-01T00:00:00Z',
+  name: 'Fido',
+})
+storedPet._rev.toUpperCase() // _rev is a string, not string | undefined
+
+const petDraft = draft(pet)
+const storedDraft = parse(stored(petDraft), {
+  _type: 'pet',
+  _id: 'drafts.fido',
+  _rev: 'abc',
+  _createdAt: '2024-01-01T00:00:00Z',
+  _updatedAt: '2024-01-01T00:00:00Z',
+})
+storedDraft.name // string | undefined
+
+// A new published pet needs its required fields but no system fields
+const newPet: Infer<typeof pet> = {_type: 'pet', name: 'Rex'}
+// A new draft needs neither
+const newDraft: Infer<typeof petDraft> = {_type: 'pet'}
+```
+
+### Recursive schemas
+
+`lazy(() => schema)` defers a reference to a schema that is not defined yet. TypeScript cannot infer the type of a self-referencing value, so declare the output type by hand and annotate the schema with it:
+
+```ts
+import {
+  array,
+  document,
+  lazy,
+  literal,
+  reference,
+  type SanityArrayValue,
+  type SanityDocumentType,
+  type SanityDocumentValue,
+  type SanityReferenceValue,
+  string,
+} from '@sanity-labs/typed-schema'
+
+interface Person extends SanityDocumentValue {
+  name: string
+  friends: SanityArrayValue<SanityReferenceValue<Person>>
+}
+
+const person: SanityDocumentType<Person> = document({
+  _type: literal('person'),
   name: string(),
+  friends: lazy(() => array(reference(person))),
 })
-
-// Schema for myDocument as draft
-const myDocumentDraft = draft(myDocument)
-
-// Schema for myDocument as stored
-const myDocumentStored = stored(myDocument)
-const storedMyDocument = parse(myDocumentStored, {/* input */})
-// _rev is defined because it's stored!
-console.log(storedMyDocument._rev.toUpperCase())
-
-// Schema for myDocument as a stored draft
-const myDocumentStoredDraft = stored(myDocumentDraft)
-const storedDraft = parse(myDocumentStoredDraft, {/* input */})
-
-// _id is defined because it's stored!
-console.log(storedDraft._id.toUpperCase())
-
-// Inferred TypeScript type of myDocument (default is published)
-type MyDocument = Infer<typeof myDocument>
-// Can create a new instances of published without having to provide _id, _rev, etc.
-// but still need to provide required fields
-const somePublished: MyDocument = {
-  _type: 'pet',
-  name: 'someName',
-}
-
-// Inferred TypeScript type of myDocument as draft
-type MyDocumentDraft = Infer<typeof myDocumentDraft>
-
-// Can create a new instances of drafts without having to provide required attributes
-const someDraft: MyDocumentDraft = {
-  _type: 'pet',
-}
 ```
 
-## Limitations & gotchas
+The thunk runs once, the first time the schema is parsed, and the result is cached.
 
-Static types only works schema generation works as far as TypeScript can infer
+### Loading documents and references
 
-For example, generate types dynamically like this is _not_ supported:
+`createLoader(fetch)` wraps a function that fetches a document by id and returns typed `loadDocument` and `loadReference` helpers. The library does not talk to the Sanity API itself; you supply the fetch, for example with `@sanity/client`:
 
-```typescript
-const strings = ['firstName', 'lastName']
-const shape = {}
-strings.forEach(key => {
+```ts
+import {
+  createLoader,
+  document,
+  literal,
+  reference,
+  string,
+} from '@sanity-labs/typed-schema'
+import {createClient} from '@sanity/client'
+
+const client = createClient({projectId: 'abc123', dataset: 'production'})
+
+const {loadDocument, loadReference} = createLoader((id, fields) =>
+  client.fetch(`*[_id == $id][0]{${fields.join(', ')}}`, {id}),
+)
+
+const author = document({_type: literal('author'), name: string()})
+const post = document({
+  _type: literal('post'),
+  title: string(),
+  author: reference(author),
+})
+
+const welcome = await loadDocument(post, 'welcome') // Infer<typeof post>
+const writer = await loadReference(welcome.author) // the stored author document
+```
+
+`loadDocument` parses what the fetch returns, so a document that does not match its schema rejects with a `ParseError`. `fields` is the list of top-level field names in the schema, so you can project only what you need.
+
+### Unique type names (GraphQL strict mode)
+
+Sanity's GraphQL API needs every `_type` in a schema to map to exactly one shape. `strictMode(schema)` walks the schema and throws a `StrictModeError` if the same `_type` literal appears in more than one place; `safeStrictMode` returns the duplicates instead of throwing.
+
+```ts
+import {
+  document,
+  literal,
+  object,
+  strictMode,
+  string,
+} from '@sanity-labs/typed-schema'
+
+const post = strictMode(
+  document({
+    _type: literal('post'),
+    author: object({_type: literal('person'), name: string()}),
+    // a second 'person' object here would throw
+  }),
+)
+```
+
+### Using a typed schema in Sanity Studio
+
+`toClassicSchema(documentSchema)` converts a document schema to the array of schema type definitions a Studio config expects. It is a proof of concept: it does not emit referenced document types, required-ness, or Portable Text styles and decorators, so treat the result as a starting point. `examples/compat-studio` runs a Studio on it.
+
+```ts
+import {
+  document,
+  literal,
+  string,
+  toClassicSchema,
+} from '@sanity-labs/typed-schema'
+import {defineConfig} from 'sanity'
+
+const human = document({_type: literal('human'), name: string()})
+
+export default defineConfig({
+  projectId: 'abc123',
+  dataset: 'production',
+  schema: {types: toClassicSchema(human)},
+})
+```
+
+## Limitations
+
+Inference is only as precise as the schema literal TypeScript can see. A shape built dynamically infers as `{}`:
+
+```ts
+import {object, parse, string} from '@sanity-labs/typed-schema'
+
+const shape: Record<string, ReturnType<typeof string>> = {}
+for (const key of ['firstName', 'lastName']) {
   shape[key] = string()
-})
-
-const schema = s.object(shape)
-
-// type of value will be {}
-const value = schema.parse({
-  firstName: 'Bjørge',
-  lastName: 'Næss',
-})
-```
-
-The inferred static type here will be limited to `{}` (note: the parser will still work as expected)
-
-To reap the full benefit of static typing, it's recommended to write your schemas in a way that TypeScript can infer as narrow types as possible, e.g.:
-
-```typescript
-const shape = {
-  firstName: string(),
-  lastName: string(),
 }
-const schema = object(shape)
 
-// inferred type of value will be {firstName: string, lastName: string}
-const value = parse(schema, {
-  firstName: 'Bjørge',
-  lastName: 'Næss',
-})
+const schema = object(shape)
+// value is typed as {} even though parsing checks both fields
+const value = parse(schema, {firstName: 'Grace', lastName: 'Hopper'})
 ```
 
-## API
+Write shapes as literals (`object({firstName: string(), lastName: string()})`) to get narrow types.
 
-(TODO)
+Other things to know:
 
-### Data types
+- `date()` accepts `YYYY-MM-DD`; `dateTime()` accepts ISO 8601 with a time zone (`Z` or `±HH:mm`), with or without fractional seconds.
+- Union members must all be primitives or all be typed objects. Mixing the two is a type error.
+- Unknown `_type` values in an object union fail to parse.
 
-#### Primitives
+## API reference
 
-#### Literal
+All functions are named exports of `@sanity-labs/typed-schema`.
 
-#### Unions
+### Primitives
 
-#### Objects
+| Creator                                                      | Inferred type                                                 | Notes                                                                          |
+| ------------------------------------------------------------ | ------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `string()`                                                   | `string`                                                      |                                                                                |
+| `number(constraints?)`                                       | `number`                                                      | `{min, max}` or `{gt, lt}`, plus `step`. `NaN` and infinities fail             |
+| `safeint()`, `int32()`, `uint32()`, `float32()`, `float64()` | `number`                                                      | `number()` with the matching range; the integer variants require whole numbers |
+| `boolean()`                                                  | `boolean`                                                     |                                                                                |
+| `literal(value)`                                             | that literal                                                  | `string`, `number` or `boolean` literal                                        |
+| `enums(values)`                                              | union of the values                                           | `enums(['a', 'b'])` or `enums({A: 'a', B: 'b'})`                               |
+| `date()`                                                     | `string`                                                      | `YYYY-MM-DD`, validated as a calendar date                                     |
+| `dateTime()`                                                 | `string`                                                      | ISO 8601 with a time zone designator                                           |
+| `geopoint()`                                                 | `{_type: 'geopoint'; lat: number; lng: number; alt?: number}` |                                                                                |
+| `never()`                                                    | `never`                                                       | Excluded from unions; useful as a placeholder member                           |
 
-#### Arrays
+### Objects, documents and assets
 
-#### References
+| Creator           | Notes                                                                                                           |
+| ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| `object(shape)`   | Field names may not start with `_`, except `_type`, which must be a `literal()`                                 |
+| `document(shape)` | Requires a `_type` literal; adds optional `_id`, `_rev`, `_createdAt`, `_updatedAt`                             |
+| `image(shape)`    | `{_type: 'image'; asset: reference to imageAsset}` plus your fields. Pass `{}` for no extra fields              |
+| `file(shape)`     | `{_type: 'file'; asset: reference to fileAsset}` plus your fields                                               |
+| `imageAsset()`    | The `sanity.imageAsset` document, including `metadata` (dimensions, optional palette, lqip, blurHash, location) |
+| `fileAsset()`     | The `sanity.fileAsset` document                                                                                 |
 
-#### Portable text
+### Arrays, unions and references
 
-#### Recursive types
+| Creator               | Notes                                                                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `array(element)`      | Object-like elements get a required `_key`; primitive elements do not. Arrays of arrays are a type error                                          |
+| `union([...members])` | All primitives (including literals and dates) or all typed objects, references, images, files and blocks. Nested unions are flattened             |
+| `reference(doc)`      | `{_type: 'reference'; _ref: string; _weak?: boolean}`. The referenced schema travels with the parsed value so `loadReference` can type its result |
 
-### Utilities
+### Portable Text
 
-#### Extend
+| Creator                          | Notes                                                                                                                                                                                       |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `block(options)`                 | One Portable Text block. Options: `style`, `list`, `decorator` (literals or unions of literals), `inline` and `annotation` (typed objects or unions of them), `_type` (defaults to `block`) |
+| `portableText({block, element})` | `array(union([block, element]))`: blocks plus the custom block-level objects allowed between them                                                                                           |
 
-#### Optional
+The inferred block type matches what Sanity stores: `style`, `listItem`, `level` and `markDefs` are optional, `children` holds spans (`{_type: 'span'; text; marks: string[]}`) and inline objects. Unconfigured `style` and `list` accept any string.
 
-#### Required
+```ts
+import {
+  block,
+  type Infer,
+  literal,
+  object,
+  portableText,
+  string,
+  union,
+} from '@sanity-labs/typed-schema'
 
-#### Omit
+const body = portableText({
+  block: block({
+    style: union([literal('normal'), literal('h1'), literal('h2')]),
+    list: union([literal('bullet'), literal('number')]),
+    decorator: union([literal('strong'), literal('em')]),
+    annotation: object({_type: literal('link'), href: string()}),
+  }),
+  element: object({_type: literal('codeBlock'), code: string()}),
+})
 
-#### Pick
+type Body = Infer<typeof body>
+```
 
-#### Rename
+### Modifiers
 
-### GraphQL Strict mode
+| Function        | Notes                                                          |
+| --------------- | -------------------------------------------------------------- |
+| `optional(s)`   | The field may be `undefined` or absent                         |
+| `required(s)`   | Removes `optional()`, however many times it was applied        |
+| `lazy(() => s)` | Defers evaluation; see [Recursive schemas](#recursive-schemas) |
+
+### Schema transforms
+
+Each returns a new schema. Types follow the runtime change.
+
+| Function             | Notes                                                          |
+| -------------------- | -------------------------------------------------------------- |
+| `extend(s, shape)`   | Adds or overrides fields                                       |
+| `omit(s, keys)`      | Removes fields. Document system fields are kept                |
+| `pick(s, keys)`      | Keeps only the listed fields (plus system fields on documents) |
+| `rename(s, newType)` | Replaces the `_type` literal                                   |
+| `shallowPartial(s)`  | Top-level fields optional                                      |
+| `shallowRequired(s)` | Top-level fields required                                      |
+| `deepPartial(s)`     | All fields optional, recursively                               |
+| `deepRequired(s)`    | All fields required, recursively                               |
+
+### Parsing
+
+| Export                     | Notes                                                                                                                                       |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `parse(schema, input)`     | Returns `Infer<typeof schema>` or throws `ParseError`                                                                                       |
+| `safeParse(schema, input)` | Returns `{status: 'ok', value}` or `{status: 'fail', errors}`                                                                               |
+| `ParseError`               | `message` summarises the first error; `errors` holds all of them                                                                            |
+| `ParseErrorDetails`        | `{path, code, input, message}`. `path` is an array of field names and array indexes or `_key`s                                              |
+| `ErrorCode`                | `'INVALID_TYPE'`, `'NUM_TOO_SMALL'`, `'NUM_TOO_BIG'`, `'NUM_NOT_MULTIPLE_OF'`, `'INVALID_OBJECT_UNION'`, `'ARRAY_ELEMENT_NOT_KEYED_OBJECT'` |
+
+### Lifecycle helpers
+
+| Export                                                  | Notes                                                            |
+| ------------------------------------------------------- | ---------------------------------------------------------------- |
+| `draft(doc)`                                            | `deepPartial` for documents; `_type` stays required              |
+| `stored(doc)`                                           | `_id`, `_rev`, `_createdAt`, `_updatedAt` become required        |
+| `StoredDocument<T>`                                     | The type-level equivalent of `stored()`, applied to a value type |
+| `strictMode(s)`, `safeStrictMode(s)`, `StrictModeError` | See [Unique type names](#unique-type-names-graphql-strict-mode)  |
+
+### Loaders
+
+| Export                         | Notes                                                                                                                 |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `createLoader(fetch)`          | `fetch: (id, fieldNames) => Promise<unknown>`. Returns `{loadDocument, loadDocuments, loadReference, loadReferences}` |
+| `createDocumentLoader(fetch)`  | Only `loadDocument`                                                                                                   |
+| `createReferenceLoader(fetch)` | Only `loadReference`                                                                                                  |
+
+### Types
+
+| Type                        | Notes                                                                                     |
+| --------------------------- | ----------------------------------------------------------------------------------------- |
+| `Infer<typeof schema>`      | The value type of a schema                                                                |
+| `SanityType<Output>`        | Base type of every schema; `SanityObject`, `SanityDocument`, `SanityArray`, ... extend it |
+| `SanityDocumentType<Value>` | A document schema annotated by its value type; use for recursive schemas                  |
+| `SanityDocumentValue`       | `{_type: string; _id?: string; _rev?: string; _createdAt?: string; _updatedAt?: string}`  |
+| `SanityReferenceValue<T>`   | The value of a `reference()` to a schema of type `T`                                      |
+| `SanityArrayValue<T>`       | `T[]`, with `_key` added to object elements                                               |
+
+The type guards (`isObjectSchema`, `isDocumentSchema`, `isOptionalSchema`, ...) are exported for code that walks schemas.
 
 ## Development
 
-Clone this repository
-
-```
-git clone git@github.com:sanity-labs/sanitype.git
-```
-
-Install dependencies
-
 ```sh
+git clone git@github.com:sanity-labs/typed-schema.git
+cd typed-schema
 pnpm install
 ```
 
-Take a look at the examples in the `examples` folder (feel free to create your own example and push to a branch, e.g. to illustrate a bug, lacking feature, or something that's hard to solve with this approach compared to current day schemas)
+| Script                       | What it runs                                                                     |
+| ---------------------------- | -------------------------------------------------------------------------------- |
+| `pnpm dev`                   | Build, typecheck and tests in watch mode                                         |
+| `pnpm test`                  | Runtime tests and `.test-d.ts` type tests                                        |
+| `pnpm typecheck`             | `tsc` on `src/`; `pnpm typecheck:examples` covers `examples/` and `exploration/` |
+| `pnpm lint`, `pnpm format`   | oxlint and oxfmt                                                                 |
+| `pnpm check`                 | Everything CI runs                                                               |
+| `pnpm example:compat-studio` | A Sanity Studio using `toClassicSchema`                                          |
 
-An example of a vanilla Sanity Studio using typed schemas can be found in `examples/compat-studio`. Start with:
-
-```
-npm run example:compat-studio
-```
-
-Useful scripts:
-
-```sh
-pnpm dev        # build, typecheck and test in watch mode
-pnpm test       # run tests (incl. type tests)
-pnpm typecheck  # tsc
-pnpm lint       # oxlint
-pnpm format     # oxfmt
-pnpm check      # everything CI runs
-```
+`examples/` holds small, typechecked examples; a branch with a new example is a good way to report a bug or a gap. `exploration/` holds sketches that are not part of the package.
 
 ### Releasing
 
-Releases are managed with [changesets](https://github.com/changesets/changesets). Add a changeset together with any user-facing change:
+Releases use [changesets](https://github.com/changesets/changesets). Add one with each user-facing change:
 
 ```sh
 pnpm changeset
 ```
 
-When merged to `main`, a "chore: version packages" pull request is opened automatically. Merging it bumps the version, updates `CHANGELOG.md` and publishes to npm via trusted publishing from the `npm-publish` GitHub environment.
+On merge to `main`, a "chore: version packages" pull request is opened. Merging it bumps the version, updates `CHANGELOG.md` and publishes to npm with trusted publishing from the `npm-publish` GitHub environment.
 
-## Acknowledgements & inspiration
+## Acknowledgements
 
-This implementation is heavily inspired by [zod](https://zod.dev), which popularized runtime schemas with static type inference.
+The design follows [zod](https://zod.dev), which made runtime schemas with static type inference common practice.
