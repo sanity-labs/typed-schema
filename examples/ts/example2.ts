@@ -8,7 +8,7 @@ import {
   parse,
   reference,
   string,
-} from '@sanity/sanitype'
+} from '@sanity-labs/typed-schema'
 
 const pet = document({_type: literal('pet'), name: string()})
 

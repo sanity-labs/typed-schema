@@ -9,7 +9,7 @@ import {
   reference,
   string,
   union,
-} from '@sanity/sanitype'
+} from '@sanity-labs/typed-schema'
 
 const human = document({
   _type: literal('human'),

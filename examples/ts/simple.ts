@@ -9,7 +9,7 @@ import {
   parse,
   string,
   union,
-} from '@sanity/sanitype'
+} from '@sanity-labs/typed-schema'
 
 // define and export a user schema
 export const userSchema = document({

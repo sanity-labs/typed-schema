@@ -1,4 +1,4 @@
-import {literal, object, parse, string, union} from '@sanity/sanitype'
+import {literal, object, parse, string, union} from '@sanity-labs/typed-schema'
 
 const myUnion = union([
   object({

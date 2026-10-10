@@ -10,7 +10,7 @@ import {
   reference,
   string,
   union,
-} from '@sanity/sanitype'
+} from '@sanity-labs/typed-schema'
 
 function assertAssignable<A extends B, B>() {}
 

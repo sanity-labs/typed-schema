@@ -239,7 +239,7 @@ importers:
 
   examples/compat-studio:
     dependencies:
-      '@sanity/sanitype':
+      '@sanity-labs/typed-schema':
         specifier: workspace:^
         version: link:../..
       '@sanity/vision':

@@ -9,7 +9,7 @@
   ],
   "compilerOptions": {
     "paths": {
-      "@sanity/sanitype": ["../src"]
+      "@sanity-labs/typed-schema": ["../src"]
     },
     "jsx": "preserve"
   }

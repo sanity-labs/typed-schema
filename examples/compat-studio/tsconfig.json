@@ -5,7 +5,7 @@
     "composite": true,
     "jsx": "react-jsx",
     "paths": {
-      "@sanity/sanitype": ["../../src"]
+      "@sanity-labs/typed-schema": ["../../src"]
     }
   }
 }

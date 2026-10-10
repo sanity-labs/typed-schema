@@ -1,4 +1,10 @@
-import {defineForm, document, literal, object, string} from '@sanity/sanitype'
+import {
+  defineForm,
+  document,
+  literal,
+  object,
+  string,
+} from '@sanity-labs/typed-schema'
 
 const pet = document({
   _type: literal('pet'),

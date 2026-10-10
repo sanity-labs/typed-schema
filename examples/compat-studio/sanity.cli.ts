@@ -13,7 +13,7 @@ export default defineCliConfig({
     },
     resolve: {
       alias: {
-        sanitype: path.resolve(__dirname, '../../src'),
+        '@sanity-labs/typed-schema': path.resolve(__dirname, '../../src'),
       },
     },
   },

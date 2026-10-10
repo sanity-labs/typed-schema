@@ -12,7 +12,7 @@ import {
   object,
   string,
   union,
-} from '@sanity/sanitype'
+} from '@sanity-labs/typed-schema'
 
 import {pet} from './pet'
 

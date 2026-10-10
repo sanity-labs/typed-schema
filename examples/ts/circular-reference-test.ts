@@ -8,7 +8,7 @@ import {
   type SanityDocumentValue,
   type SanityType,
   string,
-} from '@sanity/sanitype'
+} from '@sanity-labs/typed-schema'
 
 interface Human extends SanityDocumentValue {
   name: string

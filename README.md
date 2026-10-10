@@ -1,5 +1,4 @@
-sani*type*
-=======
+# @sanity-labs/typed-schema
 
 _TypeScript-first Sanity schemas with static type inference and (optional) runtime validation_
 
@@ -125,25 +124,25 @@ Sanitype requires TypeScript 5.x and strict mode to be enabled in `tsconfig.json
 ### npm
 
 ```sh
-npm install @sanity/sanitype
+npm install @sanity-labs/typed-schema
 ```
 
 ### pnpm
 
 ```sh
-pnpm add @sanity/sanitype
+pnpm add @sanity-labs/typed-schema
 ```
 
 ### bun
 
 ```sh
-bun add @sanity/sanitype
+bun add @sanity-labs/typed-schema
 ```
 
 ### yarn
 
 ```sh
-yarn add @sanity/sanitype
+yarn add @sanity-labs/typed-schema
 ```
 
 ## Usage examples
@@ -164,7 +163,7 @@ import {
   parse,
   string,
   union,
-} from '@sanity/sanitype'
+} from '@sanity-labs/typed-schema'
 
 // define and export a user schema
 export const userSchema = document({
@@ -293,8 +292,15 @@ Sanitype also exports helpers to represent a Sanity Document at different stages
 - variations of the above (e.g. a stored draft)
 
 ```ts
-import {type Infer} from '@sanity/sanitype'
-import {document, draft, literal, parse, stored, string} from '@sanity/sanitype'
+import {type Infer} from '@sanity-labs/typed-schema'
+import {
+  document,
+  draft,
+  literal,
+  parse,
+  stored,
+  string,
+} from '@sanity-labs/typed-schema'
 
 // The schema for the myDocument type in its "ideal" form (i.e. published/validated state)
 const myDocument = document({
@@ -430,7 +436,7 @@ pnpm install
 
 Take a look at the examples in the `examples` folder (feel free to create your own example and push to a branch, e.g. to illustrate a bug, lacking feature, or something that's hard to solve with this approach compared to current day schemas)
 
-An example of a vanilla Sanity Studio using sanitype-schemas can be found in `examples/compat-studio`. Start with:
+An example of a vanilla Sanity Studio using typed schemas can be found in `examples/compat-studio`. Start with:
 
 ```
 npm run example:compat-studio

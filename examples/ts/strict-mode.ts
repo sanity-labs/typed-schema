@@ -1,4 +1,4 @@
-import {array, literal, object, union} from '@sanity/sanitype'
+import {array, literal, object, union} from '@sanity-labs/typed-schema'
 
 import {strictMode} from '../../src/helpers/strictMode'
 

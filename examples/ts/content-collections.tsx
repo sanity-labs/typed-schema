@@ -10,7 +10,7 @@ import {
   pick,
   reference,
   string,
-} from '@sanity/sanitype'
+} from '@sanity-labs/typed-schema'
 
 const authorSchema = document({
   _type: literal('author'),

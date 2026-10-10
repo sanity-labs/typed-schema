@@ -8,7 +8,7 @@ import {
   parse,
   string,
   union,
-} from '@sanity/sanitype'
+} from '@sanity-labs/typed-schema'
 
 const someBlock = block({
   _type: literal('someBlock'),

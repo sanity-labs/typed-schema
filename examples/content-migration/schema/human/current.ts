@@ -6,7 +6,7 @@ import {
   number,
   object,
   string,
-} from '@sanity/sanitype'
+} from '@sanity-labs/typed-schema'
 
 export type Human = Infer<typeof human>
 

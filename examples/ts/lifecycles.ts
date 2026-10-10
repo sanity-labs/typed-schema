@@ -6,7 +6,7 @@ import {
   parse,
   stored,
   string,
-} from '@sanity/sanitype'
+} from '@sanity-labs/typed-schema'
 
 // The schema for the myDocument type in its "ideal" form (i.e. published/validated state)
 

@@ -1,5 +1,5 @@
 {
-  "name": "@sanity/sanitype",
+  "name": "@sanity-labs/typed-schema",
   "version": "0.6.2",
   "description": "Experimental TypeScript-first schemas for Sanity",
   "keywords": [

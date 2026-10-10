@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`@sanity/sanitype` is an experimental, TypeScript-first way to declare Sanity schemas: schema creators (`object()`, `string()`, `document()`, ...) that give static type inference via `Infer<>`/`OutputOf<>` plus optional runtime validation via `parse()`/`safeParse()`. Single published package, pnpm workspace with `examples/compat-studio` as a second (private) workspace package.
+`@sanity-labs/typed-schema` is an experimental, TypeScript-first way to declare Sanity schemas: schema creators (`object()`, `string()`, `document()`, ...) that give static type inference via `Infer<>`/`OutputOf<>` plus optional runtime validation via `parse()`/`safeParse()`. Single published package, pnpm workspace with `examples/compat-studio` as a second (private) workspace package.
 
 ## Commands
 
@@ -45,7 +45,7 @@ The central idea: every schema type is a plain object carrying `typeName` plus a
 - `src/lifecycle.ts` models document lifecycle shapes as type transforms over document schemas: `StoredDocument` (system fields required), drafts via `deepPartial`, etc.
 - `src/utils/*` are schema transformers (`extend`, `pick`, `omit`, `rename`, `deepPartial`, `deepRequired`, `shallowPartial`, `shallowRequired`): each returns a _new_ schema object and its types mirror the runtime change, so adding a utility means writing both a type and a function.
 - `src/creators/lazy.ts` + `src/helpers/getLazySchema.ts` enable recursive/circular types via thunks resolved at parse time.
-- `src/compat/typed-to-classic/` converts a sanitype schema to classic Sanity Studio `defineType` schema objects. `examples/compat-studio` consumes this to run a real Studio.
+- `src/compat/typed-to-classic/` converts a typed schema to classic Sanity Studio `defineType` schema objects. `examples/compat-studio` consumes this to run a real Studio.
 - `src/loader/*`: `createLoader(fetchImpl)` is client-agnostic; given a `(id, fieldSelection) => Promise<unknown>` it returns typed `loadDocument`/`loadReference` helpers that parse what comes back against the schema.
 - `src/form/*` is an experimental form-definition layer on top of schemas.
 

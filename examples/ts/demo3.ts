@@ -12,7 +12,7 @@ import {
   type SanityDocumentValue,
   type SanityReferenceValue,
   string,
-} from '@sanity/sanitype'
+} from '@sanity-labs/typed-schema'
 
 // todo: define a "human" document schema with name: {first, last}
 interface Human extends SanityDocumentValue {

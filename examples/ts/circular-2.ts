@@ -7,7 +7,7 @@ import {
   type OutputOf,
   type SanityObjectType,
   string,
-} from '@sanity/sanitype'
+} from '@sanity-labs/typed-schema'
 
 interface Person {
   _type: 'person'

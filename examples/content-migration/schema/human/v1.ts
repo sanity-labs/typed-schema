@@ -1,4 +1,11 @@
-import {array, extend, type Infer, number, omit, string} from '@sanity/sanitype'
+import {
+  array,
+  extend,
+  type Infer,
+  number,
+  omit,
+  string,
+} from '@sanity-labs/typed-schema'
 
 import * as current from './current'
 

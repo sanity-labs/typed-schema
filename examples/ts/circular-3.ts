@@ -10,7 +10,7 @@ import {
   type SanityDocumentType,
   type SanityReferenceValue,
   string,
-} from '@sanity/sanitype'
+} from '@sanity-labs/typed-schema'
 
 // This is and example of a circular type where the base schema is defined separately,
 // and the self-referencing part is defined in a separate schema, minimizing the amount of work needed to

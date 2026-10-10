@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       package:
-        description: 'The package name, for example @sanity/sanitype'
+        description: 'The package name, for example @sanity-labs/typed-schema'
         required: true
-        default: '@sanity/sanitype'
+        default: '@sanity-labs/typed-schema'
 
 permissions:
   contents: read

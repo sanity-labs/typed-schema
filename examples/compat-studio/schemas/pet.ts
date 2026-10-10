@@ -1,4 +1,4 @@
-import {image, object, string} from '@sanity/sanitype'
+import {image, object, string} from '@sanity-labs/typed-schema'
 
 export const pet = object({
   name: string(),

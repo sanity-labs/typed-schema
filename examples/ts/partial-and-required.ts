@@ -10,7 +10,7 @@ import {
   parse,
   string,
   union,
-} from '@sanity/sanitype'
+} from '@sanity-labs/typed-schema'
 
 import {deepRequired} from '../../src/utils/deepRequired'
 import {shallowRequired} from '../../src/utils/shallowRequired'

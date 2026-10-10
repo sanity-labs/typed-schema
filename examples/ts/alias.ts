@@ -1,4 +1,10 @@
-import {document, literal, object, parse, string} from '@sanity/sanitype'
+import {
+  document,
+  literal,
+  object,
+  parse,
+  string,
+} from '@sanity-labs/typed-schema'
 
 const muxPluginVideo = document({
   _type: literal('mux.video'),

@@ -1,4 +1,4 @@
-import {defineForm} from '@sanity/sanitype'
+import {defineForm} from '@sanity-labs/typed-schema'
 
 import {address, person} from './schema'
 

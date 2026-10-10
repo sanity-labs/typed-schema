@@ -3,7 +3,7 @@
 ## Example
 
 ```ts
-import {toClassicSchema} from '@sanity/sanitype'
+import {toClassicSchema} from '@sanity-labs/typed-schema'
 import {visionTool} from '@sanity/vision'
 import {defineConfig} from 'sanity'
 import {deskTool} from 'sanity/desk'

@@ -7,7 +7,7 @@ import {
   parse,
   string,
   union,
-} from '@sanity/sanitype'
+} from '@sanity-labs/typed-schema'
 
 const invalidUnion = union([
   string(),
