@@ -192,7 +192,7 @@ export function parseNumberConstraints(
   if (!constraints) {
     return {status: 'ok', value: input}
   }
-  if (constraints.min && input < constraints.min) {
+  if (constraints.min !== undefined && input < constraints.min) {
     return {
       status: 'fail',
       errors: [
@@ -205,7 +205,7 @@ export function parseNumberConstraints(
       ],
     }
   }
-  if (constraints.gt && input <= constraints.gt) {
+  if (constraints.gt !== undefined && input <= constraints.gt) {
     return {
       status: 'fail',
       errors: [
@@ -218,7 +218,7 @@ export function parseNumberConstraints(
       ],
     }
   }
-  if (constraints.max && input > constraints.max) {
+  if (constraints.max !== undefined && input > constraints.max) {
     return {
       status: 'fail',
       errors: [
@@ -226,12 +226,12 @@ export function parseNumberConstraints(
           path: [],
           code: 'NUM_TOO_BIG',
           input,
-          message: `Input must less than, or equal to ${constraints.max}`,
+          message: `Expected a number less than, or equal to ${constraints.max}`,
         },
       ],
     }
   }
-  if (constraints.lt && input >= constraints.lt) {
+  if (constraints.lt !== undefined && input >= constraints.lt) {
     return {
       status: 'fail',
       errors: [
@@ -244,7 +244,7 @@ export function parseNumberConstraints(
       ],
     }
   }
-  if (constraints.step && input % constraints.step !== 0) {
+  if (constraints.step !== undefined && input % constraints.step !== 0) {
     return {
       status: 'fail',
       errors: [
@@ -264,7 +264,7 @@ export function parseNumber(
   schema: SanityNumber,
   input: unknown,
 ): ParseResult<number> {
-  return typeof input === 'number'
+  return typeof input === 'number' && Number.isFinite(input)
     ? parseNumberConstraints(schema.constraints, input)
     : {
         status: 'fail',
@@ -273,7 +273,7 @@ export function parseNumber(
             path: [],
             code: 'INVALID_TYPE',
             input,
-            message: `Expected a number`,
+            message: `Expected a finite number`,
           },
         ],
       }
@@ -298,7 +298,7 @@ export function parseBoolean(
 }
 
 // see https://es5.github.io/#x15.9.1.15
-const ISO_DATETIME_FORMAT = 'YYYY-MM-DDTHH:mm:ss.sssZ'
+const ISO_DATETIME_FORMAT = 'YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)'
 export function parseDateTime(
   schema: SanityDateTime,
   input: unknown,
@@ -324,7 +324,7 @@ export function parseDateTime(
           path: [],
           code: 'INVALID_TYPE',
           input,
-          message: `Expected a dateTime string on the format "${ISO_DATETIME_FORMAT}"`,
+          message: `Expected an ISO 8601 dateTime string on the format "${ISO_DATETIME_FORMAT}"`,
         },
       ],
     }
@@ -332,8 +332,8 @@ export function parseDateTime(
   return {status: 'ok', value: input}
 }
 
-// date-fns format
-const DATE_FNS_FORMAT = 'yyyy-mm-dd'
+// date-fns format (note: `MM` is month, `mm` would be minutes)
+const DATE_FNS_FORMAT = 'yyyy-MM-dd'
 
 export function parseDate(
   schema: SanityDate,
@@ -706,10 +706,9 @@ export function parsePrimitiveArray<S extends SanityPrimitiveArray>(
           path: [index, ...err.path],
         })),
       )
-    } else {
-      return parsed.value
+      return undefined
     }
-    throw new Error("Parse result is neither 'fail' nor 'ok'")
+    return parsed.value
   }) as any[]
 
   if (errors.length > 0) {

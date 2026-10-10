@@ -17,7 +17,7 @@ export function createSafeLoadDocument(
     DocumentSchema extends SanityDocumentType<SanityDocumentValue>,
   >(schema: MaybeLazy<DocumentSchema>, id: string) {
     const nonlazySchema = isLazySchema(schema) ? schema.get() : schema
-    const fields = Object.keys(nonlazySchema)
+    const fields = Object.keys(nonlazySchema.shape)
     return fetch(id, fields).then(input => safeParse(nonlazySchema, input))
   }
 }

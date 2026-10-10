@@ -7,6 +7,7 @@ import {string} from '../../creators/string'
 import {type Infer} from '../../defs'
 import {type StoredDocument} from '../../lifecycle'
 import {parse} from '../../parse'
+import {createDocumentLoader} from '../createDocumentLoader'
 import {createReferenceLoader} from '../createReferenceLoader'
 
 const country = document({
@@ -48,4 +49,21 @@ test('resolve reference with schema', async () => {
   type LoadedCountry = StoredDocument<Infer<typeof country>>
 
   expectTypeOf(personCountry).toEqualTypeOf<LoadedCountry>()
+})
+
+test('document loader selects the document fields and parses the result', async () => {
+  const fetch = vi.fn().mockResolvedValueOnce({
+    _type: 'country',
+    _id: 'usa',
+    name: 'USA',
+  })
+  const loadDocument = createDocumentLoader(fetch)
+  const usa = await loadDocument(country, 'usa')
+  expect(fetch.mock.calls).toEqual([
+    ['usa', ['_type', '_id', '_createdAt', '_updatedAt', '_rev', 'name']],
+  ])
+  expect(usa).toEqual({_type: 'country', _id: 'usa', name: 'USA'})
+
+  fetch.mockResolvedValueOnce({_type: 'country', _id: 'usa'})
+  await expect(loadDocument(country, 'usa')).rejects.toThrow(/name/)
 })

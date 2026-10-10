@@ -14,7 +14,7 @@ pre-commit:
       skip:
         - run: node scripts/is-agent.js
       glob: '*.{js,mjs,cjs,ts,tsx,mts,json,md,yaml,yml}'
-      run: pnpm exec oxfmt {staged_files}
+      run: pnpm exec oxfmt --no-error-on-unmatched-pattern {staged_files}
       stage_fixed: true
     lint:
       skip:

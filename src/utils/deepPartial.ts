@@ -1,10 +1,12 @@
 import {
+  isDocumentSchema,
   isObjectArraySchema,
   isObjectSchema,
   isObjectUnionSchema,
   isOptionalSchema,
 } from '../asserters'
 import {objectArray} from '../creators/array'
+import {document} from '../creators/document'
 import {object} from '../creators/object'
 import {optional} from '../creators/optional'
 import {union} from '../creators/union'
@@ -64,20 +66,26 @@ export type DeepPartial<S extends SanityType> =
           ? SanityObjectArray<DeepPartial<ElementType>>
           : S
 
+function partialShape(shape: SanityObjectShape): SanityObjectShape {
+  return Object.fromEntries(
+    Object.entries(shape).map(([key, propSchema]) => [
+      key,
+      key === '_type' || isOptionalSchema(propSchema)
+        ? deepPartial(propSchema)
+        : optional(deepPartial(propSchema)),
+    ]),
+  )
+}
+
 export function deepPartial<S extends SanityType>(schema: S): DeepPartial<S> {
   if (isOptionalSchema(schema)) {
     return optional(deepPartial(schema.type)) as any
   }
+  if (isDocumentSchema(schema)) {
+    return document(partialShape(schema.shape) as any) as any
+  }
   if (isObjectSchema(schema)) {
-    const partialShape = Object.entries(schema.shape).map(
-      ([key, propSchema]) => {
-        return [
-          key,
-          key === '_type' ? propSchema : optional(deepPartial(propSchema)),
-        ]
-      },
-    )
-    return object(Object.fromEntries(partialShape)) as any
+    return object(partialShape(schema.shape)) as any
   }
   if (isObjectUnionSchema(schema)) {
     return union(

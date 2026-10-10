@@ -25,7 +25,7 @@ function inspectArray(
 
   const prefix = Array.isArray(iterable) ? '' : iterable.constructor.name
   return `${prefix}[${included
-    .map(s => inspect(s), {maxDepth: maxDepth - 1, maxLength})
+    .map(s => inspect(s, {maxDepth: maxDepth - 1, maxLength}))
     .join(', ')}${capped > 0 ? `, …(+${capped})` : ''}]`
 }
 
@@ -48,10 +48,10 @@ function inspectEnumerable(value: unknown, opts: InspectOpts = {}): string {
   const name = (value as any).constructor.name
 
   return `${name === 'Object' ? '' : name}{${slice
-    .map(([prop, propValue]) => `${prop}: ${inspect(propValue)}`, {
-      maxDepth: maxDepth - 1,
-      maxLength,
-    })
+    .map(
+      ([prop, propValue]) =>
+        `${prop}: ${inspect(propValue, {maxDepth: maxDepth - 1, maxLength})}`,
+    )
     .join(', ')}${remaining > 0 ? `, …(+${remaining})` : ''}}`
 }
 
@@ -64,9 +64,6 @@ const truncate = (str: string, length: number) => {
 
 export function inspect(value: unknown, opts: InspectOpts = {}) {
   const {maxDepth = 3, maxLength = 2, maxFuncLength = 20} = opts
-  if (maxDepth === 0) {
-    return ''
-  }
   const type = typeof value
 
   if (type === 'bigint') {
@@ -86,6 +83,10 @@ export function inspect(value: unknown, opts: InspectOpts = {}) {
   }
   if (typeof value === 'function') {
     return `${truncate(value.toString().replace(/\n+/g, ''), maxFuncLength)}`
+  }
+  // only nested containers count towards depth; primitives always print
+  if (maxDepth <= 0) {
+    return '…'
   }
   if (Array.isArray(value) || value instanceof Set) {
     return inspectArray(value, {maxDepth, maxLength})

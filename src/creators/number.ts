@@ -6,15 +6,19 @@ export function number(constraints?: NumberConstraints): SanityNumber {
 }
 
 export function safeint() {
-  return number({min: Number.MIN_SAFE_INTEGER, max: Number.MAX_SAFE_INTEGER})
+  return number({
+    min: Number.MIN_SAFE_INTEGER,
+    max: Number.MAX_SAFE_INTEGER,
+    step: 1,
+  })
 }
 
 export function uint32() {
-  return number({min: 0, max: 4294967295})
+  return number({min: 0, max: 4294967295, step: 1})
 }
 
 export function int32() {
-  return number({min: -2147483648, max: 2147483647})
+  return number({min: -2147483648, max: 2147483647, step: 1})
 }
 
 export function float32() {

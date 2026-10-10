@@ -100,3 +100,23 @@ describe('date type', () => {
     `)
   })
 })
+
+describe('date validation', () => {
+  const dateSchema = date()
+  test('accepts valid calendar dates', () => {
+    expect(safeParse(dateSchema, '2024-02-29').status).toBe('ok') // leap day
+    expect(safeParse(dateSchema, '2023-01-31').status).toBe('ok')
+    expect(safeParse(dateSchema, '2023-12-31').status).toBe('ok')
+  })
+  test('rejects invalid months and days', () => {
+    expect(safeParse(dateSchema, '2023-45-10').status).toBe('fail')
+    expect(safeParse(dateSchema, '2023-00-10').status).toBe('fail')
+    expect(safeParse(dateSchema, '2023-02-31').status).toBe('fail')
+    expect(safeParse(dateSchema, '2023-02-29').status).toBe('fail') // not a leap year
+    expect(safeParse(dateSchema, '2023-04-31').status).toBe('fail')
+    expect(safeParse(dateSchema, '2023-12-00').status).toBe('fail')
+  })
+  test('rejects date-times', () => {
+    expect(safeParse(dateSchema, '2023-12-06T19:01:07Z').status).toBe('fail')
+  })
+})

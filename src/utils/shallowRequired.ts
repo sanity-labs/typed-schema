@@ -1,4 +1,5 @@
-import {isObjectSchema, isOptionalSchema} from '../asserters'
+import {isDocumentSchema, isObjectSchema} from '../asserters'
+import {document} from '../creators/document'
 import {object} from '../creators/object'
 import {
   type _SanityDocument,
@@ -8,7 +9,7 @@ import {
   type SanityObjectShape,
   type SanityObjectType,
 } from '../defs'
-import {type SanityRequired} from './required'
+import {required, type SanityRequired} from './required'
 
 export type RequiredShape<S> = S extends SanityObjectShape
   ? {
@@ -28,16 +29,18 @@ export type ShallowRequired<S extends SanityObject | SanityDocument> =
 export function shallowRequired<S extends SanityObject | SanityDocument>(
   schema: S,
 ): ShallowRequired<S> {
-  if (isObjectSchema(schema)) {
-    const requiredShape = Object.entries(schema.shape).map(
-      ([key, propSchema]) => {
-        return [
-          key,
-          isOptionalSchema(propSchema) ? propSchema.type : propSchema,
-        ]
-      },
-    )
-    return object(Object.fromEntries(requiredShape)) as any
+  if (!isObjectSchema(schema) && !isDocumentSchema(schema)) {
+    throw new Error('Expected object or document schema')
   }
-  throw new Error('Expected object schema')
+  const requiredShape = Object.fromEntries(
+    Object.entries(schema.shape).map(([key, propSchema]) => [
+      key,
+      required(propSchema),
+    ]),
+  )
+  return (
+    isDocumentSchema(schema)
+      ? document(requiredShape as any)
+      : object(requiredShape)
+  ) as any
 }

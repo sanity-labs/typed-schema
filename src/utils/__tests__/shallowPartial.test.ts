@@ -1,0 +1,41 @@
+import {expect, test} from 'vitest'
+
+import {document} from '../../creators/document'
+import {literal} from '../../creators/literal'
+import {object} from '../../creators/object'
+import {optional} from '../../creators/optional'
+import {string} from '../../creators/string'
+import {parse, safeParse} from '../../parse'
+import {shallowPartial} from '../shallowPartial'
+
+const typeNames = (schema: {shape: Record<string, {typeName: string}>}) =>
+  Object.fromEntries(
+    Object.entries(schema.shape).map(([k, v]) => [k, v.typeName]),
+  )
+
+test('makes top-level fields optional, but not nested ones', () => {
+  const schema = object({
+    _type: literal('thing'),
+    a: string(),
+    b: optional(string()),
+    sub: object({c: string()}),
+  })
+  const partial = shallowPartial(schema)
+  expect(typeNames(partial)).toEqual({
+    _type: 'literal',
+    a: 'optional',
+    b: 'optional',
+    sub: 'optional',
+  })
+  // already-optional fields are not double wrapped
+  expect((partial.shape.b as any).type.typeName).toBe('string')
+  expect(parse(partial, {_type: 'thing'})).toEqual({_type: 'thing'})
+  expect(safeParse(partial, {_type: 'thing', sub: {}}).status).toBe('fail')
+})
+
+test('works on documents and keeps them documents', () => {
+  const doc = document({_type: literal('pet'), name: string()})
+  const partial = shallowPartial(doc)
+  expect(partial.typeName).toBe('document')
+  expect(parse(partial, {_type: 'pet'})).toEqual({_type: 'pet'})
+})

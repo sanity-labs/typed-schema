@@ -3,8 +3,12 @@ packages:
   - 'examples/*'
 allowBuilds:
   esbuild: false
-  lefthook: false
+  # lefthook's postinstall installs the git hooks from lefthook.yml
+  lefthook: true
 
+# Only install package versions published at least a day ago (supply-chain
+# hygiene); the exclusions below were added when a fresh release was needed.
+minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - '@sanity/pkg-utils@13.0.8'
   - '@sanity/tsdown-config@0.28.7'

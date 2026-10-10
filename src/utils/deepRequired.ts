@@ -1,12 +1,13 @@
 import {
+  isDocumentSchema,
   isObjectArraySchema,
   isObjectSchema,
   isObjectUnionSchema,
   isOptionalSchema,
 } from '../asserters'
 import {objectArray} from '../creators/array'
+import {document} from '../creators/document'
 import {object} from '../creators/object'
-import {optional} from '../creators/optional'
 import {union} from '../creators/union'
 import {
   type OutputOf,
@@ -50,22 +51,24 @@ export type DeepRequired<S extends SanityType> =
           ? SanityObjectArray<DeepRequired<ElementType>>
           : S
 
+function requiredShape(shape: SanityObjectShape): SanityObjectShape {
+  return Object.fromEntries(
+    Object.entries(shape).map(([key, propSchema]) => [
+      key,
+      deepRequired(propSchema),
+    ]),
+  )
+}
+
 export function deepRequired<S extends SanityType>(schema: S): DeepRequired<S> {
   if (isOptionalSchema(schema)) {
-    return optional(deepRequired(schema.type)) as any
+    return deepRequired(schema.type) as any
+  }
+  if (isDocumentSchema(schema)) {
+    return document(requiredShape(schema.shape) as any) as any
   }
   if (isObjectSchema(schema)) {
-    const requiredShape = Object.entries(schema.shape).map(
-      ([key, propSchema]) => {
-        return [
-          key,
-          isOptionalSchema(propSchema)
-            ? deepRequired(propSchema.type)
-            : propSchema,
-        ]
-      },
-    )
-    return object(Object.fromEntries(requiredShape)) as any
+    return object(requiredShape(schema.shape)) as any
   }
   if (isObjectUnionSchema(schema)) {
     return union(

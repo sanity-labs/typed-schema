@@ -23,7 +23,7 @@ describe('dateTime type', () => {
           {
             "code": "INVALID_TYPE",
             "input": "2023-12-06",
-            "message": "Expected a dateTime string on the format "YYYY-MM-DDTHH:mm:ss.sssZ"",
+            "message": "Expected an ISO 8601 dateTime string on the format "YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)"",
             "path": [],
           },
         ],
@@ -37,7 +37,7 @@ describe('dateTime type', () => {
             {
               "code": "INVALID_TYPE",
               "input": "2023-12-06T19:01:07  ",
-              "message": "Expected a dateTime string on the format "YYYY-MM-DDTHH:mm:ss.sssZ"",
+              "message": "Expected an ISO 8601 dateTime string on the format "YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)"",
               "path": [],
             },
           ],
@@ -50,7 +50,7 @@ describe('dateTime type', () => {
           {
             "code": "INVALID_TYPE",
             "input": "xyz",
-            "message": "Expected a dateTime string on the format "YYYY-MM-DDTHH:mm:ss.sssZ"",
+            "message": "Expected an ISO 8601 dateTime string on the format "YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)"",
             "path": [],
           },
         ],
@@ -83,5 +83,36 @@ describe('dateTime type', () => {
         "status": "fail",
       }
     `)
+  })
+})
+
+describe('ISO 8601 variants', () => {
+  const dateTimeSchema = dateTime()
+  test('accepts values without milliseconds and with offsets', () => {
+    for (const value of [
+      '2023-12-06T19:01:07Z',
+      '2023-12-06T19:01:07.5Z',
+      '2023-12-06T19:01:07.512345Z',
+      '2023-12-06T19:01Z',
+      '2023-12-06T19:01:07+01:00',
+      '2023-12-06T19:01:07.000-05:30',
+    ]) {
+      expect(safeParse(dateTimeSchema, value), value).toEqual({
+        status: 'ok',
+        value,
+      })
+    }
+  })
+  test('rejects values without a time zone designator or with invalid parts', () => {
+    for (const value of [
+      '2023-12-06T19:01:07',
+      '2023-12-06T19:01:07.512',
+      '2023-12-06 19:01:07Z',
+      '2023-13-06T19:01:07Z',
+      '2023-12-06T25:01:07Z',
+      '2023-12-06T19:01:07+1:00',
+    ]) {
+      expect(safeParse(dateTimeSchema, value).status, value).toBe('fail')
+    }
   })
 })

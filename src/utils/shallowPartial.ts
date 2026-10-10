@@ -1,5 +1,7 @@
-import {isObjectSchema, isOptionalSchema} from '../asserters'
+import {isDocumentSchema, isObjectSchema, isOptionalSchema} from '../asserters'
+import {document} from '../creators/document'
 import {object} from '../creators/object'
+import {optional} from '../creators/optional'
 import {
   type OutputOf,
   type SanityDocument,
@@ -38,16 +40,20 @@ export type ShallowPartialPlain<T> = T extends {_type: string}
 export function shallowPartial<S extends SanityObject | SanityDocument>(
   schema: S,
 ): ShallowPartial<S> {
-  if (isObjectSchema(schema)) {
-    const requiredShape = Object.entries(schema.shape).map(
-      ([key, propSchema]) => {
-        return [
-          key,
-          isOptionalSchema(propSchema) ? propSchema.type : propSchema,
-        ]
-      },
-    )
-    return object(Object.fromEntries(requiredShape)) as any
+  if (!isObjectSchema(schema) && !isDocumentSchema(schema)) {
+    throw new Error('Expected object or document schema')
   }
-  throw new Error('Expected object schema')
+  const partialShape = Object.fromEntries(
+    Object.entries(schema.shape).map(([key, propSchema]) => [
+      key,
+      key === '_type' || isOptionalSchema(propSchema)
+        ? propSchema
+        : optional(propSchema),
+    ]),
+  )
+  return (
+    isDocumentSchema(schema)
+      ? document(partialShape as any)
+      : object(partialShape)
+  ) as any
 }

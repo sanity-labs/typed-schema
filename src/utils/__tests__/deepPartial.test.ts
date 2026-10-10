@@ -1,9 +1,11 @@
 import {expect, test} from 'vitest'
 
 import {array} from '../../creators/array'
+import {document} from '../../creators/document'
 import {literal} from '../../creators/literal'
 import {number} from '../../creators/number'
 import {object} from '../../creators/object'
+import {optional} from '../../creators/optional'
 import {string} from '../../creators/string'
 import {union} from '../../creators/union'
 import {parse} from '../../parse'
@@ -41,4 +43,26 @@ test('deep partial on nested object', () => {
       },
     }
   `)
+})
+
+test('deep partial on documents keeps them documents', () => {
+  const doc = document({
+    _type: literal('pet'),
+    name: string(),
+    owner: object({name: string()}),
+  })
+  const partial = deepPartial(doc)
+  expect(partial.typeName).toBe('document')
+  expect(parse(partial, {_type: 'pet'})).toEqual({_type: 'pet'})
+  expect(parse(partial, {_type: 'pet', owner: {}})).toEqual({
+    _type: 'pet',
+    owner: {},
+  })
+})
+
+test('deep partial does not double wrap optional fields', () => {
+  const schema = object({a: optional(string())})
+  const partial = deepPartial(schema)
+  expect(partial.shape.a.typeName).toBe('optional')
+  expect((partial.shape.a as any).type.typeName).toBe('string')
 })

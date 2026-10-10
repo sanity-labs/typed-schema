@@ -75,3 +75,18 @@ test('default formatting', () => {
     ),
   ).toMatchInlineSnapshot('"Map{a: "a", b: "b", …(+2)}"')
 })
+
+test('maxDepth limits nesting of containers', () => {
+  const nested = {a: {b: {c: {d: {e: 1}}}}}
+  expect(inspect(nested, {maxDepth: 2})).toMatchInlineSnapshot(`"{a: {b: …}}"`)
+  expect(inspect([[[1]]], {maxDepth: 2})).toMatchInlineSnapshot(`"[[…]]"`)
+  expect(inspect(nested)).toMatchInlineSnapshot(`"{a: {b: {c: …}}}"`)
+})
+
+test('does not blow up on circular structures', () => {
+  const circular: any = {name: 'loop'}
+  circular.self = circular
+  expect(inspect(circular)).toMatchInlineSnapshot(
+    `"{name: "loop", self: {name: "loop", self: {name: "loop", self: …}}}"`,
+  )
+})
