@@ -1,6 +1,5 @@
-import {defineForm} from '@sanity-labs/typed-schema'
-
-import {address, person} from './schema'
+import {defineForm} from './creators'
+import {address, person} from './example-schema'
 
 const addressForm = defineForm(address, {
   title: 'Address',

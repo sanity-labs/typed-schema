@@ -1,15 +1,6 @@
-import {literal} from './literal'
-import {number} from './number'
-import {object} from './object'
-import {optional} from './optional'
+import {GEOPOINT} from '../shapeDefs'
 
-const _geopoint = object({
-  _type: literal('geopoint'),
-  lat: number(),
-  lng: number(),
-  alt: optional(number()),
-})
-
+/** A `geopoint` object: `{_type: 'geopoint', lat, lng, alt?}` */
 export function geopoint() {
-  return _geopoint
+  return GEOPOINT
 }

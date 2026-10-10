@@ -1,12 +1,6 @@
 {
   "extends": "../tsconfig.json",
-  "include": [
-    "./forms/**/*.ts",
-    "./migration/**/*.ts",
-    "./studio/**/*.ts",
-    "./ts/**/*.ts",
-    "./ts/**/*.tsx"
-  ],
+  "include": ["./content-migration/**/*.ts", "./ts/**/*.ts", "./ts/**/*.tsx"],
   "compilerOptions": {
     "paths": {
       "@sanity-labs/typed-schema": ["../src"]

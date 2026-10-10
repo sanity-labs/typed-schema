@@ -2,8 +2,6 @@
  *  Generic utility types
  */
 
-import {type SanityDocument, type SanityObject} from '../defs'
-
 /**
  * Combines two object types into a single, uniform type instead of an intersection of the two
  */
@@ -22,25 +20,10 @@ export type Format<A> = A extends {[Key in keyof A]: A[Key]}
 
 export type ExtendsNever<T> = [T] extends [never] ? true : false
 
-/**
- * Extracts all keys from an object type that starts with `_`
- */
-export type UnderscoreKeys<T> = {
-  [K in keyof T]: K extends `_${infer _S}` ? K : never
-}[keyof T]
-
-/**
- * Groups keys of an object type so that underscore keys comes first and other keys comes after
- */
-export type GroupUnderscoreKeys<T> = Combine<
-  Pick<T, UnderscoreKeys<T>>,
-  Omit<T, UnderscoreKeys<T>>
->
-
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type OutputFormatFix = {}
 
-export type AZ =
+type AZ =
   | 'A'
   | 'B'
   | 'C'
@@ -68,46 +51,27 @@ export type AZ =
   | 'Y'
   | 'Z'
 
-export type Digits = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+type Digits = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
 
-export type ValidFieldChar = AZ | '_' | '-' | Digits
-export type ValidFirstChar = AZ
+type ValidFieldChar = AZ | '_' | '-' | Digits
+type ValidFirstChar = AZ
 
-export type GetFirstChar<T extends string> =
+type GetFirstChar<T extends string> =
   T extends `${infer First}${infer _Remainder}` ? First : T
 
-export type FieldErrorCode =
-  | 'FIELD_NAME_CANNOT_CONTAIN_CHARACTER'
-  | 'FIELD_NAME_CANNOT_BEGIN_WITH_UNDERSCORE'
-
-export type FieldError<Code extends FieldErrorCode, Message extends string> = {
-  code: Code
-  message: Message
-}
-
-export type ValidateKeyOf<T extends keyof any> = T extends string
-  ? ValidateFieldName<T>
-  : never
-
-export type ValidateFieldName<T extends string> =
-  Uppercase<GetFirstChar<T>> extends ValidFirstChar
-    ? ValidateFieldChars<T>
-    : FieldError<
-        'FIELD_NAME_CANNOT_BEGIN_WITH_UNDERSCORE',
-        `Invalid field name ${T}: Underscore field names are reserved for system fields`
-      >
-
-export type ValidateFieldChars<T extends string> = T extends ''
+type ValidFieldChars<T extends string> = T extends ''
   ? true
   : T extends `${infer First}${infer Remainder}`
     ? Uppercase<First> extends ValidFieldChar
-      ? ValidateFieldChars<Remainder>
-      : FieldError<
-          'FIELD_NAME_CANNOT_CONTAIN_CHARACTER',
-          `Invalid character in field name: '${First}'.`
-        >
+      ? ValidFieldChars<Remainder>
+      : false
     : never
 
+/**
+ * Resolves to the field name if it is valid for a Sanity object field (starts
+ * with a letter, contains only letters, digits, `_` and `-`), `never` otherwise.
+ * Field names starting with `_` are reserved for system fields.
+ */
 export type ValidFieldName<T extends keyof any> = T extends string
   ? Uppercase<GetFirstChar<T>> extends ValidFirstChar
     ? ValidFieldChars<T> extends true
@@ -115,37 +79,6 @@ export type ValidFieldName<T extends keyof any> = T extends string
       : never
     : never
   : never
-
-export type ValidFieldChars<T extends string> = T extends ''
-  ? true
-  : T extends `${infer First}${infer Remainder}`
-    ? Uppercase<First> extends ValidFieldChar
-      ? ValidateFieldChars<Remainder>
-      : FieldError<
-          'FIELD_NAME_CANNOT_CONTAIN_CHARACTER',
-          `Invalid character in field name: '${First}'.`
-        >
-    : never
-
-type MaybeAddKey<T> =
-  T extends Array<infer E>
-    ? GroupUnderscoreKeys<Combine<MaybeAddKeyToArrayProps<E>, {_key: string}>>[]
-    : T
-
-export type MaybeAddKeyToArrayProps<T> = T extends {
-  [key: string]: any
-}
-  ? {
-      [key in keyof T]: MaybeAddKey<T[key]>
-    }
-  : T
-
-export type GetShapeOf<T extends SanityObject | SanityDocument> =
-  T extends SanityObject<infer Def>
-    ? Def
-    : T extends SanityDocument<infer Def>
-      ? Def
-      : never
 
 export type ElementType<A extends any[] | readonly any[]> =
   A extends readonly (infer T)[] ? T : never

@@ -32,7 +32,7 @@ export function createLiteralValue<T extends SanityType>(
   }
   throw new Error(`Cannot create literal value from "${schema.typeName}"`)
 }
-export function createObject<S extends SanityObject | SanityDocument>(
+function createObject<S extends SanityObject | SanityDocument>(
   schema: S,
 ): InferLiteralValue<S> | undefined {
   const keys: string[] = Object.keys(schema.shape)

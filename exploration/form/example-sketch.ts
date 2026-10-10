@@ -1,10 +1,6 @@
-import {
-  defineForm,
-  document,
-  literal,
-  object,
-  string,
-} from '@sanity-labs/typed-schema'
+import {document, literal, object, string} from '@sanity-labs/typed-schema'
+
+import {defineForm} from './creators'
 
 const pet = document({
   _type: literal('pet'),

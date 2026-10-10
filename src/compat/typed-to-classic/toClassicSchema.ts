@@ -197,7 +197,7 @@ function convertField<S extends SanityAny>(
   return []
 }
 
-export function objectToClassicSchema<S extends SanityObjectLike>(
+function objectToClassicSchema<S extends SanityObjectLike>(
   schema: S,
   hoisted: Map<string, classic.SchemaTypeDefinition[]>,
 ) {
@@ -234,7 +234,7 @@ function referenceToClassicSchema(
 
   return {type: 'reference', to: {type: refTypeName}}
 }
-export function blockToClassicSchema<S extends SanityBlock>(
+function blockToClassicSchema<S extends SanityBlock>(
   schema: S,
   hoisted: Map<string, classic.SchemaTypeDefinition[]>,
 ) {
@@ -253,7 +253,7 @@ export function blockToClassicSchema<S extends SanityBlock>(
   }
 }
 
-export function assetToClassicSchema<S extends SanityAsset>(
+function assetToClassicSchema<S extends SanityAsset>(
   schema: S,
   hoisted: Map<string, classic.SchemaTypeDefinition[]>,
 ) {

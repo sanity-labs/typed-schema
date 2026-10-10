@@ -1,4 +1,4 @@
-import {type SanityType} from '../defs'
+import {type SanityType} from '../../src/defs'
 import {type SanityFormDef} from './types'
 
 export function defineForm<S extends SanityType>(

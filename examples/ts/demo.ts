@@ -4,13 +4,14 @@ import {
   document,
   type Infer,
   literal,
-  loadReference,
   object,
   parse,
   reference,
   string,
 } from '@sanity-labs/typed-schema'
 import {type SanityClient} from '@sanity/client'
+
+import {loadReference} from './loader'
 
 declare const client: SanityClient
 

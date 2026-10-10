@@ -1,7 +1,4 @@
-export * from './asserters'
-export * from './compat/typed-to-classic'
-export * from './content-utils/getInstanceName'
-export * from './content-utils/pickDeep'
+// Schema creators
 export * from './creators/array'
 export * from './creators/block'
 export * from './creators/boolean'
@@ -16,42 +13,83 @@ export * from './creators/image'
 export * from './creators/imageAsset'
 export * from './creators/lazy'
 export * from './creators/literal'
+export * from './creators/never'
 export * from './creators/number'
 export * from './creators/object'
 export * from './creators/optional'
+export * from './creators/portableText'
 export * from './creators/reference'
 export * from './creators/string'
 export * from './creators/union'
+
+// Schema type definitions and type guards
+export * from './asserters'
 export * from './defs'
-export * from './form/creators'
-export * from './form/types'
 export type {
-  AZ,
+  AssetBaseShape,
+  AssetSourceSpecShape,
+  FileAssetShape,
+  GeopointShape,
+  ImageAssetShape,
+  ImageDimensionsShape,
+  ImageMetadataShape,
+  ImagePaletteName,
+  ImagePaletteShape,
+  ImageSwatchShape,
+  ReferenceBase,
+  SanityArrayValue,
+  SanityDocumentShape,
+  SanityDocumentValue,
+  SanityFileShape,
+  SanityImageShape,
+  SanityReferenceShape,
+  SanityReferenceValue,
+} from './shapeDefs'
+export type {
   Combine,
-  Digits,
   ElementType,
   ExtendsNever,
-  FieldError,
-  FieldErrorCode,
   Format,
-  GetFirstChar,
   OutputFormatFix,
   RequireSome,
-  ValidateFieldChars,
-  ValidFieldChar,
-  ValidFieldChars,
   ValidFieldName,
-  ValidFirstChar,
 } from './helpers/utilTypes'
-export * from './lifecycle'
-export * from './loader/createDocumentLoader'
-export * from './loader/createReferenceLoader'
-export * from './loader/stub'
-export * from './parse'
-export * from './shapeDefs'
+
+// Parsing
+export {
+  type ErrorCode,
+  parse,
+  ParseError,
+  type ParseErrorDetails,
+  type ParseFail,
+  type ParseOk,
+  type ParseResult,
+  type Path,
+  safeParse,
+} from './parse'
+
+// Schema transforms
 export * from './utils/deepPartial'
+export * from './utils/deepRequired'
 export * from './utils/extend'
 export * from './utils/omit'
 export * from './utils/pick'
-export type {SanityRequired} from './utils/required'
-export type {RequiredShape} from './utils/shallowRequired'
+export * from './utils/rename'
+export * from './utils/required'
+export * from './utils/shallowPartial'
+export * from './utils/shallowRequired'
+export * from './lifecycle'
+
+// Strict mode (unique type names, required for GraphQL deployment)
+export {safeStrictMode, strictMode, StrictModeError} from './helpers/strictMode'
+
+// Loading documents and references
+export * from './loader/createDocumentLoader'
+export * from './loader/createLoader'
+export * from './loader/createReferenceLoader'
+
+// Content helpers
+export * from './content-utils/getInstanceName'
+
+// Classic (Studio) schema interop
+export * from './compat/typed-to-classic'

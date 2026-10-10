@@ -8,7 +8,7 @@ import {
 import {type DocumentLike} from './loader/createReferenceLoader'
 import {type DeepPartial, deepPartial} from './utils/deepPartial'
 import {required} from './utils/required'
-import {type RequiredShape} from './utils/shallowRequired'
+import {type ShallowRequiredShape} from './utils/shallowRequired'
 
 export const STORED_KEYS = [
   '_type',
@@ -27,7 +27,8 @@ export type StoredDocument<T extends DocumentLike> = Format<
 export type Stored<T extends SanityDocument> =
   T extends SanityDocument<infer DocShape>
     ? SanityDocument<
-        RequiredShape<Pick<DocShape, StoredKeys>> & Omit<DocShape, StoredKeys>
+        ShallowRequiredShape<Pick<DocShape, StoredKeys>> &
+          Omit<DocShape, StoredKeys>
       >
     : never
 

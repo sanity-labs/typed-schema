@@ -3,8 +3,6 @@ import {
   document,
   lazy,
   literal,
-  loadDocument,
-  loadReference,
   object,
   reference,
   type SanityArrayValue,
@@ -13,6 +11,8 @@ import {
   type SanityReferenceValue,
   string,
 } from '@sanity-labs/typed-schema'
+
+import {loadDocument, loadReference} from './loader'
 
 // todo: define a "human" document schema with name: {first, last}
 

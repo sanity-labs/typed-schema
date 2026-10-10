@@ -70,8 +70,7 @@
     "test:ui": "vitest --ui",
     "test:watch": "vitest --typecheck",
     "typecheck": "tsc",
-    "typecheck:examples": "tsc -p ./examples/tsconfig.json",
-    "typecheck:examples:watch": "tsc -p ./examples/tsconfig.json --watch",
+    "typecheck:examples": "tsc -p ./examples/tsconfig.json && tsc -p ./exploration/tsconfig.json",
     "typecheck:watch": "tsc --watch"
   },
   "dependencies": {

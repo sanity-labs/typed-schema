@@ -19,7 +19,7 @@ import {
   type SanityString,
   type SanityType,
   type SanityTypedObject,
-} from '../defs'
+} from '../../src/defs'
 
 export type CommonFormOptions = {
   readonly?: boolean

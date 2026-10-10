@@ -11,7 +11,7 @@ import {
 } from '../defs'
 import {required, type SanityRequired} from './required'
 
-export type RequiredShape<S> = S extends SanityObjectShape
+export type ShallowRequiredShape<S> = S extends SanityObjectShape
   ? {
       [K in keyof S]: SanityRequired<S[K]>
     }
@@ -21,9 +21,9 @@ export type ShallowRequired<S extends SanityObject | SanityDocument> =
   S extends SanityObject<infer Shape>
     ? SanityObjectShape extends Shape
       ? SanityObjectType<Required<OutputOf<S>>>
-      : SanityObject<RequiredShape<Shape>>
+      : SanityObject<ShallowRequiredShape<Shape>>
     : S extends _SanityDocument<infer Shape>
-      ? SanityDocument<RequiredShape<Shape>>
+      ? SanityDocument<ShallowRequiredShape<Shape>>
       : never
 
 export function shallowRequired<S extends SanityObject | SanityDocument>(

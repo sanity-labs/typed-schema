@@ -24,7 +24,6 @@ import {
   type SanityBoolean,
   type SanityDate,
   type SanityDateTime,
-  type SanityDocument,
   type SanityEnum,
   type SanityLiteral,
   type SanityNever,
@@ -162,7 +161,7 @@ export function parse<T extends SanityType>(
   }
   return safeResult.value
 }
-export function parseString(
+function parseString(
   schema: SanityString,
   input: unknown,
 ): ParseResult<string> {
@@ -181,7 +180,7 @@ export function parseString(
       }
 }
 
-export function parseNumberConstraints(
+function parseNumberConstraints(
   constraints: SanityNumber['constraints'],
   input: number,
 ): ParseResult<number> {
@@ -256,7 +255,7 @@ export function parseNumberConstraints(
   return {status: 'ok', value: input}
 }
 
-export function parseNumber(
+function parseNumber(
   schema: SanityNumber,
   input: unknown,
 ): ParseResult<number> {
@@ -274,7 +273,7 @@ export function parseNumber(
         ],
       }
 }
-export function parseBoolean(
+function parseBoolean(
   schema: SanityBoolean,
   input: unknown,
 ): ParseResult<boolean> {
@@ -295,7 +294,7 @@ export function parseBoolean(
 
 // see https://es5.github.io/#x15.9.1.15
 const ISO_DATETIME_FORMAT = 'YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)'
-export function parseDateTime(
+function parseDateTime(
   schema: SanityDateTime,
   input: unknown,
 ): ParseResult<string> {
@@ -331,10 +330,7 @@ export function parseDateTime(
 // date-fns format (note: `MM` is month, `mm` would be minutes)
 const DATE_FNS_FORMAT = 'yyyy-MM-dd'
 
-export function parseDate(
-  schema: SanityDate,
-  input: unknown,
-): ParseResult<string> {
+function parseDate(schema: SanityDate, input: unknown): ParseResult<string> {
   if (typeof input !== 'string') {
     return {
       status: 'fail',
@@ -364,7 +360,7 @@ export function parseDate(
   }
   return {status: 'ok', value: input}
 }
-export function parseOptional<T extends SanityType>(
+function parseOptional<T extends SanityType>(
   schema: SanityOptional<T>,
   input: unknown,
 ): ParseResult<T | undefined> {
@@ -373,7 +369,7 @@ export function parseOptional<T extends SanityType>(
     : safeParse(schema.type, input)
 }
 
-export function parseNever<T extends SanityType>(
+function parseNever<T extends SanityType>(
   schema: SanityNever,
   input: unknown,
 ): ParseResult<T | undefined> {
@@ -390,7 +386,7 @@ export function parseNever<T extends SanityType>(
   }
 }
 
-export function parseLiteral<S extends SanityLiteral<any>>(
+function parseLiteral<S extends SanityLiteral<any>>(
   schema: S,
   input: unknown,
 ): ParseResult<OutputOf<S>> {
@@ -409,7 +405,7 @@ export function parseLiteral<S extends SanityLiteral<any>>(
       }
 }
 
-export function parseReference<S extends SanityReference<any>>(
+function parseReference<S extends SanityReference<any>>(
   schema: S,
   input: unknown,
 ): ParseResult<OutputOf<S>> {
@@ -429,7 +425,7 @@ export function parseReference<S extends SanityReference<any>>(
   }
 }
 
-export function parsePrimitiveUnion<S extends SanityPrimitiveUnion>(
+function parsePrimitiveUnion<S extends SanityPrimitiveUnion>(
   schema: S,
   input: unknown,
 ): ParseResult<OutputOf<S>> {
@@ -455,7 +451,7 @@ export function parsePrimitiveUnion<S extends SanityPrimitiveUnion>(
   }
 }
 
-export function parseEnum<S extends SanityEnum>(
+function parseEnum<S extends SanityEnum>(
   schema: S,
   input: unknown,
 ): ParseResult<OutputOf<S>> {
@@ -518,7 +514,7 @@ function findUnionSchemaForType(
 function hasTypeField(input: any): input is {_type: string} {
   return '_type' in input
 }
-export function parseObjectUnion<S extends SanityObjectUnion>(
+function parseObjectUnion<S extends SanityObjectUnion>(
   schema: S,
   input: unknown,
 ): ParseResult<OutputOf<S>> {
@@ -571,14 +567,7 @@ type PlainObject = {[key: string]: unknown}
 const isPlainObject = (value: unknown): value is {[key: string]: unknown} => {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
-export function parseDocument<S extends SanityDocument>(
-  schema: S,
-  input: unknown,
-): ParseResult<OutputOf<S>> {
-  return parseObject(schema, input)
-}
-
-export function parseObject<S extends SanityObjectLike>(
+function parseObject<S extends SanityObjectLike>(
   schema: S,
   input: unknown,
 ): ParseResult<OutputOf<S>> {
@@ -628,7 +617,7 @@ function isKeyedObject(value: unknown): value is {_key: string} {
   return isPlainObject(value) && typeof value._key === 'string'
 }
 
-export function parseObjectArray<S extends SanityObjectArray>(
+function parseObjectArray<S extends SanityObjectArray>(
   schema: S,
   input: unknown,
 ): ParseResult<OutputOf<S>> {
@@ -676,7 +665,7 @@ export function parseObjectArray<S extends SanityObjectArray>(
   return {status: 'ok', value}
 }
 
-export function parsePrimitiveArray<S extends SanityPrimitiveArray>(
+function parsePrimitiveArray<S extends SanityPrimitiveArray>(
   schema: S,
   input: unknown,
 ): ParseResult<OutputOf<S>> {
