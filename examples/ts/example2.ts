@@ -28,7 +28,7 @@ type Person = Infer<typeof Person>
 
 const aPerson = parse(Person, {})
 const resolve = createReferenceLoader(async () => {})
-console.log(aPerson.favoritePet.__schema__)
+console.log(aPerson.favoritePet.$refSchema)
 const allPets = await Promise.all(
   aPerson.pets.map(aPersonsPet => resolve(aPersonsPet)),
 )

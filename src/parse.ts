@@ -17,7 +17,7 @@ import {
 } from './asserters'
 import {
   type Infer,
-  INTERNAL_REF_TYPE_SCHEMA,
+  REF_SCHEMA,
   type OutputOf,
   type SanityAsset,
   type SanityBlock,
@@ -419,7 +419,7 @@ function parseReference<S extends SanityReference<any>>(
     ...parsed,
     value: defineNonEnumerableGetter(
       parsed.value,
-      INTERNAL_REF_TYPE_SCHEMA,
+      REF_SCHEMA,
       () => schema.referenceType,
     ),
   }

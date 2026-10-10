@@ -11,11 +11,7 @@ import {optional} from '../creators/optional'
 import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
-import {
-  INTERNAL_REF_TYPE_SCHEMA,
-  type SanityObjectType,
-  type SanityType,
-} from '../defs'
+import {REF_SCHEMA, type SanityObjectType, type SanityType} from '../defs'
 import {parse, safeParse} from '../parse'
 import {type SanityDocumentValue} from '../shapeDefs'
 
@@ -153,7 +149,7 @@ describe('object parsing', () => {
         _type: 'reference',
       },
     })
-    assertType<SanityType<Human>>(parsed.owner.__schema__)
+    assertType<SanityType<Human>>(parsed.owner.$refSchema!)
   })
 })
 
@@ -248,12 +244,28 @@ describe('reference parsing', () => {
       _type: 'reference',
     })
 
-    expect(parsed[INTERNAL_REF_TYPE_SCHEMA].typeName).toBe('document')
+    expect(parsed[REF_SCHEMA]?.typeName).toBe('document')
 
     expect(parsed).toEqual({
       _ref: 'some-person',
       _type: 'reference',
     })
+  })
+
+  test('the referenced schema never serializes and is lost on copy', () => {
+    const Person = document({_type: literal('person'), name: string()})
+    const parsed = parse(reference(Person), {
+      _ref: 'some-person',
+      _type: 'reference',
+    })
+
+    expect(parsed.$refSchema).toBe(Person)
+    expect(Object.keys(parsed)).not.toContain('$refSchema')
+    expect(JSON.parse(JSON.stringify(parsed))).toEqual({
+      _ref: 'some-person',
+      _type: 'reference',
+    })
+    expect({...parsed}.$refSchema).toBeUndefined()
   })
 })
 

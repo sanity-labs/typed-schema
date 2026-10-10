@@ -2,11 +2,7 @@ import {describe, expectTypeOf, test} from 'vitest'
 
 import {file} from '../creators/file'
 import {string} from '../creators/string'
-import {
-  type Infer,
-  type INTERNAL_REF_TYPE_SCHEMA,
-  type SanityDocument,
-} from '../defs'
+import {type Infer, type REF_SCHEMA, type SanityDocument} from '../defs'
 import {type FileAssetShape} from '../shapeDefs'
 
 describe('file type', () => {
@@ -19,7 +15,7 @@ describe('file type', () => {
         _type: 'reference'
         _ref: string
         _weak?: boolean
-        [INTERNAL_REF_TYPE_SCHEMA]: SanityDocument<FileAssetShape>
+        [REF_SCHEMA]?: SanityDocument<FileAssetShape>
       }
     }
 
@@ -36,7 +32,7 @@ describe('file type', () => {
         _type: 'reference'
         _ref: string
         _weak?: boolean
-        [INTERNAL_REF_TYPE_SCHEMA]: SanityDocument<FileAssetShape>
+        [REF_SCHEMA]?: SanityDocument<FileAssetShape>
       }
       caption: string
     }

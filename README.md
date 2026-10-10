@@ -505,11 +505,11 @@ All functions are named exports of `@sanity-labs/typed-schema`.
 
 ### Arrays, unions and references
 
-| Creator               | Notes                                                                                                                                             |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `array(element)`      | Object-like elements get a required `_key`; primitive elements do not. Arrays of arrays are a type error                                          |
-| `union([...members])` | All primitives (including literals and dates) or all typed objects, references, images, files and blocks. Nested unions are flattened             |
-| `reference(doc)`      | `{_type: 'reference'; _ref: string; _weak?: boolean}`. The referenced schema travels with the parsed value so `loadReference` can type its result |
+| Creator               | Notes                                                                                                                                                                                                                 |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `array(element)`      | Object-like elements get a required `_key`; primitive elements do not. Arrays of arrays are a type error                                                                                                              |
+| `union([...members])` | All primitives (including literals and dates) or all typed objects, references, images, files and blocks. Nested unions are flattened                                                                                 |
+| `reference(doc)`      | `{_type: 'reference'; _ref: string; _weak?: boolean}`. Values returned by `parse` also carry the referenced schema as `$refSchema`, which `loadReference` uses. It is not serialized, and you never need to supply it |
 
 ### Portable Text
 
