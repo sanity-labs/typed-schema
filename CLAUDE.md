@@ -15,7 +15,7 @@ pnpm test                 # vitest run --typecheck (runtime tests + *.test-d.ts 
 pnpm vitest run src/__tests__/union.parse.test.ts   # single test file
 pnpm vitest run -t "name"                           # single test by name
 pnpm typecheck            # tsc on src (TypeScript 7)
-pnpm typecheck:examples   # tsc on examples/{ts,content-migration} and exploration/
+pnpm typecheck:examples   # tsc on examples/{ts,content-migration} and experiments/
 pnpm lint / lint:fix      # oxlint (config: oxlint.config.ts)
 pnpm format / format:check # oxfmt (config: oxfmt.config.ts)
 pnpm knip                 # unused files/deps/exports (config: knip.ts)
@@ -51,7 +51,7 @@ The central idea: every schema type is a plain object carrying `typeName` plus a
 - `src/loader/*`: `createLoader(fetchImpl)` is client-agnostic; given a `(id, fieldSelection) => Promise<unknown>` it returns typed `loadDocument`/`loadReference` helpers that parse what comes back against the schema.
 - `src/compat/typed-to-classic/` is a proof of concept (drops referenced types, required-ness and block metadata); treat its output as a starting point.
 
-`examples/ts`, `examples/content-migration` and `exploration/` are loose scratch folders without their own `package.json`; they are typechecked (`typecheck:examples`) but not built, and vitest excludes `exploration/`. `exploration/form/` is the experimental form-definition sketch that used to ship from the package.
+`examples/ts`, `examples/content-migration` and `experiments/` are loose folders without their own `package.json`; they are typechecked (`typecheck:examples`) but not built, and vitest excludes `experiments/`. `experiments/form/` is the experimental form-definition sketch that used to ship from the package.
 
 ## Conventions
 

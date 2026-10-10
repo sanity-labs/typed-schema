@@ -1,7 +1,7 @@
 import {configDefaults, defineConfig} from 'vitest/config'
 
-// exploration/ holds scratch code with its own tests; keep it out of the suite
-const EXCLUDE = ['.tmp/**', 'exploration/**']
+// experiments/ has its own tests; keep them out of the package suite
+const EXCLUDE = ['.tmp/**', 'experiments/**']
 
 export default defineConfig({
   test: {

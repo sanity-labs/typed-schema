@@ -617,12 +617,12 @@ pnpm install
 | ---------------------------- | -------------------------------------------------------------------------------- |
 | `pnpm dev`                   | Build, typecheck and tests in watch mode                                         |
 | `pnpm test`                  | Runtime tests and `.test-d.ts` type tests                                        |
-| `pnpm typecheck`             | `tsc` on `src/`; `pnpm typecheck:examples` covers `examples/` and `exploration/` |
+| `pnpm typecheck`             | `tsc` on `src/`; `pnpm typecheck:examples` covers `examples/` and `experiments/` |
 | `pnpm lint`, `pnpm format`   | oxlint and oxfmt                                                                 |
 | `pnpm check`                 | Everything CI runs                                                               |
 | `pnpm example:compat-studio` | A Sanity Studio using `toClassicSchema`                                          |
 
-`examples/` holds small, typechecked examples; a branch with a new example is a good way to report a bug or a gap. `exploration/` holds sketches that are not part of the package.
+`examples/` holds small, typechecked examples; a branch with a new example is a good way to report a bug or a gap. `experiments/` holds code that is not part of the package.
 
 ### Releasing
 

@@ -8,19 +8,19 @@ const config: KnipConfig = {
   },
   workspaces: {
     '.': {
-      // examples/{ts,content-migration} and exploration/ are loose
+      // examples/{ts,content-migration} and experiments/ are loose
       // scratch folders without their own package.json, so they resolve
       // against the root dependencies
       entry: [
         'taze.config.ts',
         'scripts/*.js',
-        'exploration/**/*.ts',
+        'experiments/**/*.ts',
         'examples/{ts,content-migration}/**/*.{ts,tsx}',
       ],
       project: [
         'src/**/*.ts',
         'scripts/*.js',
-        'exploration/**/*.ts',
+        'experiments/**/*.ts',
         'examples/{ts,content-migration}/**/*.{ts,tsx}',
       ],
     },

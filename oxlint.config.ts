@@ -28,7 +28,7 @@ export default defineConfig({
   overrides: [
     {
       // scratch/demo files: unused variables and types are the point
-      files: ['examples/**', 'exploration/**'],
+      files: ['examples/**', 'experiments/**'],
       rules: {
         'no-unused-vars': 'off',
       },
@@ -36,7 +36,7 @@ export default defineConfig({
     {
       files: [
         'examples/**',
-        'exploration/**',
+        'experiments/**',
         'scripts/**',
         '**/*.test.ts',
         '**/*.test-d.ts',
