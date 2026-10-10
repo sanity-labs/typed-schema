@@ -20,13 +20,12 @@ interface Human extends SanityDocumentValue {
   coworkers: SanityArrayValue<SanityReferenceValue<Human>>
 }
 
-const human = lazy(
-  (): SanityDocumentType<Human> =>
-    document({
-      _type: literal('human'),
-      name: object({first: string(), last: string()}),
-      coworkers: array(reference(human)),
-    }),
+const human = lazy((): SanityDocumentType<Human> =>
+  document({
+    _type: literal('human'),
+    name: object({first: string(), last: string()}),
+    coworkers: array(reference(human)),
+  }),
 )
 
 // todo: fetch a human

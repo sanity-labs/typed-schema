@@ -11,8 +11,8 @@ import {type DeepPartial} from '../utils/deepPartial'
 
 /**
  * Assigns values to a schema, but only if the schema has a matching key.
- * @param schema
- * @param value
+ * @param schema - the schema to pick values for
+ * @param value - the value to pick from
  */
 export function pickDeep<S extends SanityAny>(
   schema: S,

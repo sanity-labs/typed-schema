@@ -20,17 +20,13 @@ const myDocumentDraft = draft(myDocument)
 
 // Schema for myDocument as stored
 const myDocumentStored = stored(myDocument)
-const storedMyDocument = parse(myDocumentStored, {
-  /* input */
-})
+const storedMyDocument = parse(myDocumentStored, {/* input */})
 // _rev is defined because it's stored!
 console.log(storedMyDocument._rev.toUpperCase())
 
 // Schema for myDocument as a stored draft
 const myDocumentStoredDraft = stored(myDocumentDraft)
-const storedDraft = parse(myDocumentStoredDraft, {
-  /* input */
-})
+const storedDraft = parse(myDocumentStoredDraft, {/* input */})
 
 // _id is defined because it's stored!
 console.log(storedDraft._id.toUpperCase())

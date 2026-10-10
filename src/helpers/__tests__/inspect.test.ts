@@ -22,9 +22,7 @@ test('default formatting', () => {
     '"Set[1, Set[2], 3]"',
   )
 
-  expect(inspect(new Promise(resolve => {}))).toMatchInlineSnapshot(
-    '"Promise{}"',
-  )
+  expect(inspect(new Promise(() => {}))).toMatchInlineSnapshot('"Promise{}"')
   expect(inspect(new Error('oof'))).toMatchInlineSnapshot('"Error{}"')
   expect(inspect(new ArrayBuffer(10))).toMatchInlineSnapshot('"ArrayBuffer{}"')
 
@@ -40,9 +38,9 @@ test('default formatting', () => {
   )
 
   expect(inspect(Symbol('ok'))).toMatchInlineSnapshot('"Symbol(ok)"')
-  expect(inspect(() => {})).toMatchInlineSnapshot('"() => {  }"')
+  expect(inspect(() => {})).toMatchInlineSnapshot(`"() => {}"`)
   expect(inspect(function foo() {})).toMatchInlineSnapshot(
-    '"function foo() {  }"',
+    `"function foo() {}"`,
   )
 
   expect(
@@ -50,7 +48,7 @@ test('default formatting', () => {
       // eslint-disable-next-line no-console
       console.log('testing')
     }),
-  ).toMatchInlineSnapshot('"function foo() {   …"')
+  ).toMatchInlineSnapshot(`"function foo() {		/…"`)
 
   expect(inspect(CustomClass)).toMatchInlineSnapshot('"class CustomClass {…"')
   expect(inspect(new CustomClass('hello'))).toMatchInlineSnapshot(

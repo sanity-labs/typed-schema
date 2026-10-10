@@ -1,4 +1,3 @@
-
 # Open questions
 
 1. Should schema types allow for _some_ degree of metadata? E.g. feels like it should at least support a general `description`. Although, this metadata should probably be seen as more like metadata about the _content model_ itself, rather than something to guide the editor when doing content entry. Alternatively, metadata could be provided in the form of code comments/tsdocs, but that requires more effort to extract.

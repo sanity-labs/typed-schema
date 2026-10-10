@@ -19,26 +19,26 @@
 ## Schema type features
 
 - [ ] **Parse error formatters**:
-  Parse errors are currently represented as a content structure containing array of node paths and errors - there should be some basic utils for formatting these nicely
-    - [ ] Terminal (optionally w/colors)
-    - [ ] React
-    - [ ] Plain HTML
+      Parse errors are currently represented as a content structure containing array of node paths and errors - there should be some basic utils for formatting these nicely
+  - [ ] Terminal (optionally w/colors)
+  - [ ] React
+  - [ ] Plain HTML
 - [x] Life cycle augmentations
 
-    - [x] Draft
-    - [x] Published
-    - [x] Stored
+  - [x] Draft
+  - [x] Published
+  - [x] Stored
 
 - [ ] **Serializer (maybe even deserializer)**
-    - Serialize TS schema to JSON (easy except for lazy/recursive types), potentially also from JSON to TS schemas too (this might be pretty tricky!)
+  - Serialize TS schema to JSON (easy except for lazy/recursive types), potentially also from JSON to TS schemas too (this might be pretty tricky!)
 -
 - [ ] **Validation**
-  A lot of validation is taken care of by the type system already, but we still need things like:
-    - [ ] numbers min/max, decimals, etc
-    - [ ] string: max/min length, regex, etc.
-    - [ ] array: min, max entries
-      In addition, validation needs the following
-    - [ ] custom validation rules with custom messages (or i18n-keys)
+      A lot of validation is taken care of by the type system already, but we still need things like:
+  - [ ] numbers min/max, decimals, etc
+  - [ ] string: max/min length, regex, etc.
+  - [ ] array: min, max entries
+        In addition, validation needs the following
+  - [ ] custom validation rules with custom messages (or i18n-keys)
 - [ ] Transformations
 - [ ] Refinements
 - [x] Partial / deep partial and required/deep required objects

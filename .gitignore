@@ -1,4 +1,5 @@
-dist
+/dist
+/.tmpdist
 node_modules
 tsconfig.vitest-temp.json
 tmp

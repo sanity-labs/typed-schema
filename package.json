@@ -2,47 +2,70 @@
   "name": "@sanity/sanitype",
   "version": "0.6.2",
   "description": "Experimental TypeScript-first schemas for Sanity",
-  "keywords": [],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sanity-io/sanitype.git"
+  "keywords": [
+    "sanity",
+    "schema",
+    "type-inference",
+    "types",
+    "typescript",
+    "validation"
+  ],
+  "homepage": "https://github.com/sanity-io/sanitype#readme",
+  "bugs": {
+    "url": "https://github.com/sanity-io/sanitype/issues"
   },
   "license": "MIT",
   "author": "Bjørge Næss <bjoerge@gmail.com>",
-  "sideEffects": false,
-  "type": "module",
-  "exports": {
-    ".": {
-      "source": "./src/index.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "default": "./dist/index.js"
-    },
-    "./package.json": "./package.json"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sanity-io/sanitype.git"
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "files": [
     "dist",
     "src",
     "README.md",
     "package.json"
   ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": "./dist/index.js",
+      "./package.json": "./package.json"
+    },
+    "access": "public"
+  },
   "scripts": {
-    "build": "run-s pkg:build pkg:check",
-    "check": "npm-run-all --serial clean pkg:build --parallel typecheck lint test pkg:check",
+    "build": "run-s pkg:build pkg:check check:publint check:attw",
+    "changeset": "changeset",
+    "check": "npm-run-all --serial clean pkg:build --parallel typecheck lint format:check knip test pkg:check check:publint check:attw",
+    "check:attw": "pnpm pack --out .tmp/package.tgz && attw .tmp/package.tgz --profile esm-only",
+    "check:publint": "publint --strict --pack pnpm",
     "clean": "rimraf dist",
     "coverage": "vitest run --coverage",
     "dev": "run-p pkg:watch typecheck:watch test:watch",
     "example:compat-studio": "(cd examples/compat-studio && npm run dev)",
     "examples": "run-p example:*",
-    "format": "prettier --write --cache --ignore-unknown .",
-    "lint": "eslint . --quiet",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "knip": "knip",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
     "pkg:build": "pkg build --strict",
     "pkg:check": "pkg check --strict",
     "pkg:watch": "pkg watch --strict",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "pnpm run build",
+    "release": "changeset publish",
     "test": "vitest run --typecheck",
     "test:ui": "vitest --ui",
     "test:watch": "vitest --typecheck",
@@ -51,40 +74,36 @@
     "typecheck:examples:watch": "tsc -p ./examples/tsconfig.json --watch",
     "typecheck:watch": "tsc --watch"
   },
-  "browserslist": "extends @sanity/browserslist-config",
   "dependencies": {
-    "@sanity/types": "^4.10.2",
-    "date-fns": "^4.1.0"
+    "@sanity/types": "^6.18.0",
+    "date-fns": "^4.4.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.37.0",
-    "@sanity/client": "^7.12.0",
-    "@sanity/pkg-utils": "^8.1.17",
-    "@typescript-eslint/eslint-plugin": "^8.46.0",
-    "@typescript-eslint/parser": "^8.46.0",
-    "@vitest/coverage-v8": "3.2.4",
-    "@vitest/ui": "^3.2.4",
-    "eslint": "^9.37.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-prettier": "^5.5.4",
-    "eslint-plugin-simple-import-sort": "^12.1.1",
-    "eslint-plugin-unused-imports": "^4.2.0",
-    "npm-run-all": "^4.1.5",
-    "prettier": "^3.6.2",
-    "prettier-plugin-packagejson": "^2.5.19",
-    "rimraf": "^6.0.1",
-    "tsx": "^4.20.6",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.0",
-    "vite": "^7.1.9",
-    "vitest": "^3.2.4"
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@changesets/changelog-github": "^1.0.1",
+    "@changesets/cli": "^3.0.3",
+    "@sanity/client": "^8.9.0",
+    "@sanity/pkg-utils": "^13.0.8",
+    "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "^5.0.3",
+    "@vitest/ui": "^5.0.3",
+    "knip": "^6.41.0",
+    "lefthook": "^2.2.1",
+    "npm-run-all2": "^9.0.3",
+    "oxfmt": "^0.72.0",
+    "oxlint": "^1.87.0",
+    "publint": "^0.3.25",
+    "rimraf": "^6.1.3",
+    "std-env": "^4.3.0",
+    "taze": "^21.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.3"
   },
-  "packageManager": "pnpm@9.6.0",
+  "browserslist": "extends @sanity/browserslist-config",
   "engines": {
-    "node": ">= 18"
+    "node": ">=22.18.0"
   },
-  "publishConfig": {
-    "access": "public"
-  }
+  "packageManager": "pnpm@12.11.2"
 }

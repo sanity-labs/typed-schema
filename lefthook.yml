@@ -1,0 +1,46 @@
+# Git hooks managed by lefthook — https://lefthook.dev
+# Installed automatically on `pnpm install` (lefthook is in allowBuilds), or run
+# `pnpm exec lefthook install`. Skip a run with `git commit --no-verify`.
+#
+# scripts/is-agent.js routes humans vs agents (via std-env's isAgent):
+#   - humans get fast, auto-fixing checks on staged files only
+#   - agents run the full project suite (held to a higher bar)
+
+pre-commit:
+  parallel: true
+  commands:
+    # --- Humans: fast auto-fixing checks, staged files only ---
+    format:
+      skip:
+        - run: node scripts/is-agent.js
+      glob: '*.{js,mjs,cjs,ts,tsx,mts,json,md,yaml,yml}'
+      run: pnpm exec oxfmt {staged_files}
+      stage_fixed: true
+    lint:
+      skip:
+        - run: node scripts/is-agent.js
+      glob: '*.{js,mjs,cjs,ts,tsx,mts}'
+      run: pnpm exec oxlint --fix {staged_files}
+      stage_fixed: true
+
+    # --- Agents: full project checks ---
+    agent-format:
+      only:
+        - run: node scripts/is-agent.js
+      run: pnpm format:check
+    agent-lint:
+      only:
+        - run: node scripts/is-agent.js
+      run: pnpm lint
+    agent-typecheck:
+      only:
+        - run: node scripts/is-agent.js
+      run: pnpm typecheck
+    agent-knip:
+      only:
+        - run: node scripts/is-agent.js
+      run: pnpm knip
+    agent-test:
+      only:
+        - run: node scripts/is-agent.js
+      run: pnpm test

@@ -10,7 +10,7 @@ import {
 } from '../defs'
 import {type ElementType, type Format} from '../helpers/utilTypes'
 
-export type OmitShape<
+export type OmitObjectLike<
   T extends SanityObject | SanityDocument,
   K extends Array<keyof OutputOf<T>>,
 > =
@@ -27,7 +27,7 @@ export type OmitShape<
 export function omit<
   T extends SanityObject | SanityDocument,
   K extends Array<keyof OutputOf<T>>,
->(type: T, keys: K): OmitShape<T, K> {
+>(type: T, keys: K): OmitObjectLike<T, K> {
   const shape = Object.fromEntries(
     Object.entries(type.shape).filter(([key]) => !keys.includes(key)),
   )

@@ -14,7 +14,7 @@ export type Combine<A, B> = {
   : never
 
 /**
- * Formats an intersection object type, so it outputs as `{"foo": 1, "bar": 1}` instead of `{"foo": 1} & {"bar": 2}``
+ * Formats an intersection object type, so it outputs as `{"foo": 1, "bar": 1}` instead of `{"foo": 1} & {"bar": 2}`
  */
 export type Format<A> = A extends {[Key in keyof A]: A[Key]}
   ? {[Key in keyof A]: A[Key]}
@@ -26,7 +26,7 @@ export type ExtendsNever<T> = [T] extends [never] ? true : false
  * Extracts all keys from an object type that starts with `_`
  */
 export type UnderscoreKeys<T> = {
-  [K in keyof T]: K extends `_${infer S}` ? K : never
+  [K in keyof T]: K extends `_${infer _S}` ? K : never
 }[keyof T]
 
 /**
@@ -74,7 +74,7 @@ export type ValidFieldChar = AZ | '_' | '-' | Digits
 export type ValidFirstChar = AZ
 
 export type GetFirstChar<T extends string> =
-  T extends `${infer First}${infer Remainder}` ? First : T
+  T extends `${infer First}${infer _Remainder}` ? First : T
 
 export type FieldErrorCode =
   | 'FIELD_NAME_CANNOT_CONTAIN_CHARACTER'

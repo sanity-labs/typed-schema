@@ -31,7 +31,7 @@ const person = document({
 })
 
 test('define a basic nested form', () => {
-  const personForm = defineForm(person, {
+  defineForm(person, {
     fields: {
       firstName: {
         title: 'Name',

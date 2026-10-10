@@ -1,9 +1,9 @@
 import {defineNonEnumerableGetter} from './defineNonEnumerableGetter'
 
 /**
- *@internal
- * defineType
- * @param target
+ * @internal
+ * Attaches the phantom `output` getter to a schema definition
+ * @param target - the schema definition object
  */
 export function defineType<T>(target: T): T & {output: never} {
   return defineNonEnumerableGetter(target, 'output', () => {

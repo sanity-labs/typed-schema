@@ -1,13 +1,13 @@
 # Sanity Studio with typed schemas using compat layer
 
-
 ## Example
+
 ```ts
+import {toClassicSchema} from '@sanity/sanitype'
 import {visionTool} from '@sanity/vision'
 import {defineConfig} from 'sanity'
 import {deskTool} from 'sanity/desk'
 
-import {toClassicSchema} from '@sanity/sanitype'
 import {human} from './schemas/human'
 
 export default defineConfig({
@@ -21,8 +21,7 @@ export default defineConfig({
 
   schema: {
     types: toClassicSchema(human),
-    //      ^--- this is all you need 
+    //      ^--- this is all you need
   },
 })
-
 ```

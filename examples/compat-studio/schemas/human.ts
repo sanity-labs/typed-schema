@@ -35,19 +35,19 @@ export const human = document({
     union([
       block({
         _type: literal('myCustomBlock'),
-        styles: [literal('normal'), literal('h1'), literal('h2')],
-        lists: [literal('bullet'), literal('number')],
-        inlineTypes: [
+        style: union([literal('normal'), literal('h1'), literal('h2')]),
+        list: union([literal('bullet'), literal('number')]),
+        inline: union([
           object({
             _type: literal('author'),
             name: string(),
           }),
-        ],
-        decorators: [literal('strong'), literal('em')],
-        annotations: [
+        ]),
+        decorator: union([literal('strong'), literal('em')]),
+        annotation: union([
           object({_type: literal('author'), foo: number()}),
           object({_type: literal('book'), bar: number()}),
-        ],
+        ]),
       }),
       image({}),
     ]),

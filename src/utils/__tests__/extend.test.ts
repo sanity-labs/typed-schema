@@ -71,7 +71,6 @@ describe('extends helper', () => {
     // @ts-expect-error extended type has been refined to literal and is no longer compatible with string
     assertType<typeof parsed.changedFromStringToLiteralString>('' as string)
 
-    const f = parsed.changedFromNumberToString
     // @ts-expect-error extended type has been changed from number to string
     assertType<number>(parsed.changedFromNumberToString)
   })
@@ -131,7 +130,7 @@ describe('extends helper', () => {
       }),
     ])
 
-    const human = document({
+    const _human = document({
       _type: literal('human'),
       name: string(),
       address: object({

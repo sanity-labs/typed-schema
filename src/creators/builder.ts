@@ -25,9 +25,9 @@ export abstract class Builder<Output> implements SanityType {
 }
 
 export class OptionalBuilder<
-    Type extends SanityType,
-    Output = UndefinedOptional<OutputOf<Type>> | undefined,
-  >
+  Type extends SanityType,
+  Output = UndefinedOptional<OutputOf<Type>> | undefined,
+>
   extends Builder<Output>
   implements SanityOptional<Type>
 {

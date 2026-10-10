@@ -1,5 +1,4 @@
 import {
-  type Infer,
   type SanityAny,
   type SanityArray,
   type SanityAsset,
@@ -116,8 +115,6 @@ export type NamedTypeMap<T extends SanityObjectArray> =
       : never
     : never
 
-type Test<T extends SanityObjectArray> = T['element']
-
 export type Simple = SanityObjectArray<
   SanityObject<{_type: SanityLiteral<'foo'>; fooProp: SanityString}>
 >
@@ -131,20 +128,6 @@ export type ArrayTypeMap<T extends SanityObjectArray> = {
 }
 
 export type TypeNames<T extends SanityTypedObject> = GetType<Pluck<T, '_type'>>
-
-type Test1 = Infer<UnionArray['element']>
-type Test3 = NamedTypeMap<Simple>
-type Test4 = NamedTypeMap<UnionArray>
-type SS1 = ArrayItemTypeNames<UnionArray>
-type SS2 = ArrayTypeMap<UnionArray>
-
-type SS3 = UnpackShapes<
-  SanityObjectUnion<
-    | SanityObject<{_type: SanityLiteral<'foo'>}>
-    | SanityObject<{_type: SanityLiteral<'bar'>}>
-    | SanityObject<{_type: SanityLiteral<'baz'>; anonymous: SanityBoolean}>
-  >
->
 
 export type ObjectArrayFormDef<TMap extends ArrayTypeMap<any>> =
   CommonFormOptions & {
@@ -172,9 +155,9 @@ export type ObjectUnionFormDef<
     | SanityNever,
 > = CommonFormOptions & {
   types: {
-    [Name in GetType<
-      Exclude<T, SanityNever>['shape']['_type']
-    >]: UnionTypeOptions<FindTypeByName<Exclude<T, SanityNever>, Name>>
+    [
+      Name in GetType<Exclude<T, SanityNever>['shape']['_type']>
+    ]: UnionTypeOptions<FindTypeByName<Exclude<T, SanityNever>, Name>>
   }
 }
 
@@ -190,12 +173,12 @@ export type PrimitiveUnionFormDef<
       types: ['TODO']
     }
 
-export type PrimitiveArrayFormDef<T extends SanityPrimitiveArray> =
+export type PrimitiveArrayFormDef<_T extends SanityPrimitiveArray> =
   CommonFormOptions & {
     draggable?: boolean
   }
 
-export type StringFormDef<T extends SanityString> = CommonFormOptions & {
+export type StringFormDef<_T extends SanityString> = CommonFormOptions & {
   multiline?: boolean
 }
 

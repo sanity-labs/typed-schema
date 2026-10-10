@@ -177,15 +177,16 @@ export interface SanityFile<
   shape: Shape
 }
 
-export interface SanityLazy<T extends SanityType>
-  extends SanityType<OutputOf<T>> {
+export interface SanityLazy<T extends SanityType> extends SanityType<
+  OutputOf<T>
+> {
   typeName: 'lazy'
   get: () => T
 }
 
 export interface SanityReference<
-  RefType extends
-    SanityType<SanityDocumentValue> = SanityType<SanityDocumentValue>,
+  RefType extends SanityType<SanityDocumentValue> =
+    SanityType<SanityDocumentValue>,
 > extends SanityType<WithRefTypeDef<RefType>> {
   typeName: 'reference'
   referenceType: RefType
@@ -193,8 +194,9 @@ export interface SanityReference<
   shape: SanityReferenceShape
 }
 
-export interface SanityOptional<Type extends SanityType>
-  extends SanityType<OutputOf<Type> | undefined> {
+export interface SanityOptional<Type extends SanityType> extends SanityType<
+  OutputOf<Type> | undefined
+> {
   typeName: 'optional'
   type: Type
 }
@@ -314,9 +316,11 @@ export type Infer<T> = T extends () => infer R
     : T
 
 export type LiteralKeys<T extends SanityObjectShape> = {
-  [K in keyof T as T[K] extends SanityLiteral | SanityObject | SanityDocument
-    ? K
-    : never]: InferLiteralValue<T[K]>
+  [
+    K in keyof T as T[K] extends SanityLiteral | SanityObject | SanityDocument
+      ? K
+      : never
+  ]: InferLiteralValue<T[K]>
 } & OutputFormatFix
 
 export type InferDeepLiteralValue<T extends SanityObjectShape> =

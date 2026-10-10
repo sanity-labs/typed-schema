@@ -13,7 +13,7 @@ import {
 import {type ElementType} from '../helpers/utilTypes'
 
 // lil helper to avoid having to alias types everywhere
-declare function pass<T>(): any
+declare function pass<_T>(): any
 
 describe('Type level constraints', () => {
   test('multidimensional arrays not allowed', () => {

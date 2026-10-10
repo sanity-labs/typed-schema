@@ -1,7 +1,7 @@
 import {defineConfig} from '@sanity/pkg-utils'
 
 export default defineConfig({
-  extract: {
+  tsdoc: {
     rules: {
       'ae-missing-release-tag': 'off',
       // do not require internal members to be prefixed with `_`
