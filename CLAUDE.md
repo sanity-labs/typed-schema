@@ -63,6 +63,7 @@ The central idea: every schema type is a plain object carrying `typeName` plus a
 - Schema constants are PascalCase and share their name with the inferred type: `const Pet = document({...})`, `type Pet = Infer<typeof Pet>`. Creator and transform functions stay camelCase, `_type` literals stay camelCase (`literal('pet')`), and instances stay camelCase (`const pet = parse(Pet, data)`). This applies to README snippets, examples and tests alike; throwaway test locals like `schema` or `doc` are the only exception.
 - Type-only imports must be inline: `import {type Foo} from './x'` (enforced by oxlint).
 - Sanity system fields (`_type`, `_id`, `_ref`, `_key`) are the only identifiers allowed to start with `_`; user-defined schema fields starting with `_` are a compile-time error by design.
+- A type-level check that rejects a schema resolves to `SchemaError<'what is wrong'>` (from `src/helpers/utilTypes.ts`) at the offending spot, not to `never`, so the type error says what to fix. Test the message with `expectTypeOf`, next to the `@ts-expect-error` cases.
 - When changing inference, add or update a `.test-d.ts` test and run `pnpm test`; `tsc` alone will not catch regressions in `expectTypeOf` assertions.
 - `pkg build --strict` runs TSDoc checks; TSDoc, where present, must parse (`@param name -` hyphen form, balanced backticks).
 - Commit messages are a single subject line with no body. Context belongs in the PR description or the changeset. Never mention branch names, base branches, stacking, worktrees or how the work was assembled.

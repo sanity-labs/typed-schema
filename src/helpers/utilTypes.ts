@@ -65,7 +65,7 @@ type AZ =
 
 type Digits = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
 
-type ValidFieldChar = AZ | '_' | '-' | Digits
+type ValidFieldChar = AZ | '_' | Digits
 type ValidFirstChar = AZ
 
 type GetFirstChar<T extends string> =
@@ -79,16 +79,44 @@ type ValidFieldChars<T extends string> = T extends ''
       : false
     : never
 
+declare const schemaError: unique symbol
+
+/**
+ * The expected type at a spot where a schema breaks a rule, in place of
+ * `never`. No value has the `unique symbol` key, so the check always fails,
+ * and the type error names `SchemaError` and shows `Message`. Unlike a bare
+ * string literal, it does not collapse to `never` when intersected with a
+ * primitive.
+ */
+export type SchemaError<Message extends string> = {
+  readonly [schemaError]: Message
+}
+
+/**
+ * Resolves to a message saying why `Name` is not a valid field name, `never`
+ * if it is valid.
+ */
+export type FieldNameError<Name extends PropertyKey> = Name extends number
+  ? FieldNameError<`${Name}`>
+  : Name extends string
+    ? Name extends `_${string}`
+      ? `Field name '${Name}' is reserved: names starting with '_' are for system fields`
+      : Uppercase<GetFirstChar<Name>> extends ValidFirstChar
+        ? ValidFieldChars<Name> extends true
+          ? never
+          : `Field name '${Name}' can only contain letters A-Z, digits and underscores`
+        : `Field name '${Name}' must start with a letter A-Z`
+    : 'Field names must be strings'
+
 /**
  * Resolves to the field name if it is valid for a Sanity object field (starts
- * with a letter, contains only letters, digits, `_` and `-`), `never` otherwise.
+ * with a letter A-Z and contains only letters A-Z, digits and `_`), `never`
+ * otherwise.
  * Field names starting with `_` are reserved for system fields.
  */
 export type ValidFieldName<T extends keyof any> = T extends string
-  ? Uppercase<GetFirstChar<T>> extends ValidFirstChar
-    ? ValidFieldChars<T> extends true
-      ? T
-      : never
+  ? [FieldNameError<T>] extends [never]
+    ? T
     : never
   : never
 
