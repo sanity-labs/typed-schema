@@ -23,7 +23,7 @@ import {
   number,
   object,
   optional,
-  parse,
+  parseOrThrow,
   reference,
   string,
   type Infer,
@@ -46,10 +46,10 @@ export const Tags = array(object({_type: literal('tag'), label: string()}))
 
 export const PersonRef = reference(Person)
 
-export const fido = parse(Pet, {_type: 'pet', name: 'Fido'})
-export const address = parse(Address, {street: 'Main St'})
-export const tags = parse(Tags, [])
-export const personRef = parse(PersonRef, {_type: 'reference', _ref: 'p1'})
+export const fido = parseOrThrow(Pet, {_type: 'pet', name: 'Fido'})
+export const address = parseOrThrow(Address, {street: 'Main St'})
+export const tags = parseOrThrow(Tags, [])
+export const personRef = parseOrThrow(PersonRef, {_type: 'reference', _ref: 'p1'})
 
 // A type alias is emitted as written, so read the inferred types back
 // through a value whose type the compiler has to print

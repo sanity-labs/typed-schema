@@ -1,4 +1,4 @@
-import {assertType, expectTypeOf, test} from 'vitest'
+import {assert, assertType, expectTypeOf, test} from 'vitest'
 
 import {lazy} from '../../creators/lazy'
 import {literal} from '../../creators/literal'
@@ -197,7 +197,9 @@ test('deep partial on circular object type', () => {
   })
 
   const PartialLazyPerson = deepPartial(LazyPerson)
-  const res = parse(PartialLazyPerson, {})
+  const resResult = parse(PartialLazyPerson, {})
+  assert(resResult.ok)
+  const res = resResult.value
 
   expectTypeOf(res).toEqualTypeOf<{
     _type: 'person'

@@ -47,7 +47,29 @@ import {
   isStrictlyFormatted,
 } from './helpers/strictDateParse'
 
-export type Path = Array<string | number | {_key: string}>
+/**
+ * Where in the input a {@link ParseIssue} was found: object field names,
+ * primitive array indexes and, for keyed object arrays, the item's `_key`
+ * together with its `index` in the input array.
+ */
+export type Path = Array<string | number | {_key: string; index: number}>
+
+/**
+ * Formats a {@link Path} the way Sanity paths are written: `author.name`,
+ * `tags[0]`, `body[_key=="abc"].text`. The empty path is `<root>`.
+ */
+export function formatPath(path: Path): string {
+  if (path.length === 0) return '<root>'
+  return path
+    .map((segment, i) => {
+      if (typeof segment === 'number') return `[${segment}]`
+      if (typeof segment === 'object') {
+        return `[_key=="${segment._key.replace(/["\\]/g, '\\$&')}"]`
+      }
+      return i === 0 ? segment : `.${segment}`
+    })
+    .join('')
+}
 
 export type ErrorCode =
   | 'INVALID_TYPE'
@@ -58,21 +80,44 @@ export type ErrorCode =
   | 'NUM_NOT_MULTIPLE_OF'
   | 'INVALID_OBJECT_UNION'
   | 'ARRAY_ELEMENT_NOT_KEYED_OBJECT'
-export interface ParseErrorDetails {
+/** One problem found while parsing: where it is, what was there and why it was rejected. */
+export interface ParseIssue {
   path: Path
   input: unknown
   code: ErrorCode
   message: string
 }
-export type ParseOk<T> = {status: 'ok'; value: T}
-export type ParseFail = {status: 'fail'; errors: ParseErrorDetails[]}
+export type ParseOk<T> = {ok: true; value: T}
+export type ParseFail = {ok: false; error: ParseError}
 
+/** What {@link parse} returns: the parsed value, or a {@link ParseError} listing every issue found in the input. */
 export type ParseResult<T> = ParseOk<T> | ParseFail
 
-export function safeParse<T extends SanityType>(
-  _schema: T,
+/**
+ * Validates `input` against `schema` and returns a {@link ParseResult}. It never
+ * throws for invalid input; use {@link parseOrThrow} for that.
+ *
+ * @param _schema - the schema to validate against
+ * @param input - the value to validate
+ */
+export function parse<T extends SanityType>(
+  schema: T,
   input: unknown,
 ): ParseResult<Parsed<T>> {
+  const result = parseInternal(schema, input)
+  return result.ok ? result : {ok: false, error: new ParseError(result.issues)}
+}
+
+/**
+ * The result the per-type parsers pass around: plain issue arrays, so that a
+ * nested failure is not wrapped in an Error until the public `parse` returns.
+ */
+type InternalResult<T> = ParseOk<T> | {ok: false; issues: ParseIssue[]}
+
+function parseInternal<T extends SanityType>(
+  _schema: T,
+  input: unknown,
+): InternalResult<Parsed<T>> {
   const schema = getLazySchema(_schema)
   if (isOptionalSchema(schema)) {
     return parseOptional(schema, input) as any
@@ -122,8 +167,8 @@ export function safeParse<T extends SanityType>(
   }
 
   return {
-    status: 'fail',
-    errors: [
+    ok: false,
+    issues: [
       {
         path: [],
         code: 'INVALID_TYPE',
@@ -135,41 +180,51 @@ export function safeParse<T extends SanityType>(
     ],
   }
 }
+/**
+ * The `error` of a failed {@link parse} result, and what {@link parseOrThrow}
+ * throws. `message` summarises the first issue; `issues` holds all of them.
+ */
 export class ParseError extends Error {
-  constructor(public errors: ParseErrorDetails[]) {
-    const firstError = errors[0]
-    const formattedError = [
-      'Invalid input',
-      firstError
-        ? ` at "${firstError.path.join('.') || '<root>'}": ${
-            firstError.message
-          }`
-        : ': <unknown>',
-      errors.length > 1 ? ` (+ ${errors.length - 1})` : '',
-    ]
-    super(formattedError.join(''))
+  constructor(public issues: ParseIssue[]) {
+    const first = issues[0]
+    super(
+      [
+        'Invalid input',
+        first
+          ? ` at "${formatPath(first.path)}": ${first.message}`
+          : ': <unknown>',
+        issues.length > 1 ? ` (+ ${issues.length - 1})` : '',
+      ].join(''),
+    )
   }
 }
 
-export function parse<T extends SanityType>(
+/**
+ * Like {@link parse}, but returns the parsed value directly and throws a
+ * {@link ParseError} when the input is invalid.
+ *
+ * @param schema - the schema to validate against
+ * @param input - the value to validate
+ */
+export function parseOrThrow<T extends SanityType>(
   schema: T,
   input: unknown,
 ): Parsed<T> {
-  const safeResult = safeParse(schema, input)
-  if (safeResult.status === 'fail') {
-    throw new ParseError(safeResult.errors)
+  const result = parse(schema, input)
+  if (!result.ok) {
+    throw result.error
   }
-  return safeResult.value
+  return result.value
 }
 function parseString(
   schema: SanityString,
   input: unknown,
-): ParseResult<string> {
+): InternalResult<string> {
   return typeof input === 'string'
-    ? {status: 'ok', value: input}
+    ? {ok: true, value: input}
     : {
-        status: 'fail',
-        errors: [
+        ok: false,
+        issues: [
           {
             path: [],
             code: 'INVALID_TYPE',
@@ -183,14 +238,14 @@ function parseString(
 function parseNumberConstraints(
   constraints: SanityNumber['constraints'],
   input: number,
-): ParseResult<number> {
+): InternalResult<number> {
   if (!constraints) {
-    return {status: 'ok', value: input}
+    return {ok: true, value: input}
   }
   if (constraints.min !== undefined && input < constraints.min) {
     return {
-      status: 'fail',
-      errors: [
+      ok: false,
+      issues: [
         {
           path: [],
           code: 'NUM_TOO_SMALL',
@@ -202,8 +257,8 @@ function parseNumberConstraints(
   }
   if (constraints.gt !== undefined && input <= constraints.gt) {
     return {
-      status: 'fail',
-      errors: [
+      ok: false,
+      issues: [
         {
           path: [],
           code: 'NUM_TOO_SMALL',
@@ -215,8 +270,8 @@ function parseNumberConstraints(
   }
   if (constraints.max !== undefined && input > constraints.max) {
     return {
-      status: 'fail',
-      errors: [
+      ok: false,
+      issues: [
         {
           path: [],
           code: 'NUM_TOO_BIG',
@@ -228,8 +283,8 @@ function parseNumberConstraints(
   }
   if (constraints.lt !== undefined && input >= constraints.lt) {
     return {
-      status: 'fail',
-      errors: [
+      ok: false,
+      issues: [
         {
           path: [],
           code: 'NUM_TOO_BIG',
@@ -241,8 +296,8 @@ function parseNumberConstraints(
   }
   if (constraints.step !== undefined && input % constraints.step !== 0) {
     return {
-      status: 'fail',
-      errors: [
+      ok: false,
+      issues: [
         {
           path: [],
           code: 'NUM_NOT_MULTIPLE_OF',
@@ -252,18 +307,18 @@ function parseNumberConstraints(
       ],
     }
   }
-  return {status: 'ok', value: input}
+  return {ok: true, value: input}
 }
 
 function parseNumber(
   schema: SanityNumber,
   input: unknown,
-): ParseResult<number> {
+): InternalResult<number> {
   return typeof input === 'number' && Number.isFinite(input)
     ? parseNumberConstraints(schema.constraints, input)
     : {
-        status: 'fail',
-        errors: [
+        ok: false,
+        issues: [
           {
             path: [],
             code: 'INVALID_TYPE',
@@ -276,12 +331,12 @@ function parseNumber(
 function parseBoolean(
   schema: SanityBoolean,
   input: unknown,
-): ParseResult<boolean> {
+): InternalResult<boolean> {
   return typeof input === 'boolean'
-    ? {status: 'ok', value: input}
+    ? {ok: true, value: input}
     : {
-        status: 'fail',
-        errors: [
+        ok: false,
+        issues: [
           {
             path: [],
             code: 'INVALID_TYPE',
@@ -297,11 +352,11 @@ const ISO_DATETIME_FORMAT = 'YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)'
 function parseDateTime(
   schema: SanityDateTime,
   input: unknown,
-): ParseResult<string> {
+): InternalResult<string> {
   if (typeof input !== 'string') {
     return {
-      status: 'fail',
-      errors: [
+      ok: false,
+      issues: [
         {
           path: [],
           code: 'INVALID_TYPE',
@@ -313,8 +368,8 @@ function parseDateTime(
   }
   if (!isStrictlyDateTime(input)) {
     return {
-      status: 'fail',
-      errors: [
+      ok: false,
+      issues: [
         {
           path: [],
           code: 'INVALID_TYPE',
@@ -324,17 +379,17 @@ function parseDateTime(
       ],
     }
   }
-  return {status: 'ok', value: input}
+  return {ok: true, value: input}
 }
 
 // date-fns format (note: `MM` is month, `mm` would be minutes)
 const DATE_FNS_FORMAT = 'yyyy-MM-dd'
 
-function parseDate(schema: SanityDate, input: unknown): ParseResult<string> {
+function parseDate(schema: SanityDate, input: unknown): InternalResult<string> {
   if (typeof input !== 'string') {
     return {
-      status: 'fail',
-      errors: [
+      ok: false,
+      issues: [
         {
           path: [],
           code: 'INVALID_TYPE',
@@ -347,8 +402,8 @@ function parseDate(schema: SanityDate, input: unknown): ParseResult<string> {
 
   if (!isStrictlyFormatted(input, DATE_FNS_FORMAT)) {
     return {
-      status: 'fail',
-      errors: [
+      ok: false,
+      issues: [
         {
           path: [],
           code: 'INVALID_TYPE',
@@ -358,24 +413,24 @@ function parseDate(schema: SanityDate, input: unknown): ParseResult<string> {
       ],
     }
   }
-  return {status: 'ok', value: input}
+  return {ok: true, value: input}
 }
 function parseOptional<T extends SanityType>(
   schema: SanityOptional<T>,
   input: unknown,
-): ParseResult<T | undefined> {
+): InternalResult<T | undefined> {
   return input === undefined
-    ? {status: 'ok', value: input}
-    : safeParse(schema.type, input)
+    ? {ok: true, value: input}
+    : parseInternal(schema.type, input)
 }
 
 function parseNever<T extends SanityType>(
   schema: SanityNever,
   input: unknown,
-): ParseResult<T | undefined> {
+): InternalResult<T | undefined> {
   return {
-    status: 'fail',
-    errors: [
+    ok: false,
+    issues: [
       {
         path: [],
         code: 'INVALID_TYPE',
@@ -389,12 +444,12 @@ function parseNever<T extends SanityType>(
 function parseLiteral<S extends SanityLiteral<any>>(
   schema: S,
   input: unknown,
-): ParseResult<OutputOf<S>> {
+): InternalResult<OutputOf<S>> {
   return input === schema.value
-    ? {status: 'ok', value: input}
+    ? {ok: true, value: input}
     : {
-        status: 'fail',
-        errors: [
+        ok: false,
+        issues: [
           {
             path: [],
             code: 'INVALID_TYPE',
@@ -408,11 +463,11 @@ function parseLiteral<S extends SanityLiteral<any>>(
 function parseReference<S extends SanityReference<any>>(
   schema: S,
   input: unknown,
-): ParseResult<OutputOf<S>> {
+): InternalResult<OutputOf<S>> {
   // parse against the schema's own shape rather than the static reference
   // base, so that `_key` (added for array items) and extended shapes apply
   const parsed = parseObject(schema, input)
-  if (parsed.status === 'fail') {
+  if (!parsed.ok) {
     return parsed
   }
   return {
@@ -428,25 +483,25 @@ function parseReference<S extends SanityReference<any>>(
 function parsePrimitiveUnion<S extends SanityPrimitiveUnion>(
   schema: S,
   input: unknown,
-): ParseResult<OutputOf<S>> {
-  const errors: ParseErrorDetails[] = []
+): InternalResult<OutputOf<S>> {
+  const issues: ParseIssue[] = []
   for (const unionTypeDef of schema.union) {
-    const result = safeParse(unionTypeDef, input)
-    if (result.status === 'ok') {
+    const result = parseInternal(unionTypeDef, input)
+    if (result.ok) {
       return result
     }
-    errors.push(...result.errors)
+    issues.push(...result.issues)
   }
   return {
-    status: 'fail',
-    errors: [
+    ok: false,
+    issues: [
       {
         code: 'INVALID_PRIMITIVE_UNION',
         input,
         path: [],
         message: "Input doesn't match any of the valid union types",
       },
-      ...errors,
+      ...issues,
     ],
   }
 }
@@ -454,26 +509,24 @@ function parsePrimitiveUnion<S extends SanityPrimitiveUnion>(
 function parseEnum<S extends SanityEnum>(
   schema: S,
   input: unknown,
-): ParseResult<OutputOf<S>> {
-  const errors: ParseErrorDetails[] = []
+): InternalResult<OutputOf<S>> {
   for (const [, enumVal] of Object.entries(schema.enum)) {
     if (enumVal === input) {
       return {
-        status: 'ok',
+        ok: true,
         value: enumVal,
       }
     }
   }
   return {
-    status: 'fail',
-    errors: [
+    ok: false,
+    issues: [
       {
         code: 'INVALID_ENUM_VALUE',
         input,
         path: [],
         message: "Input doesn't match any of the valid enum values",
       },
-      ...errors,
     ],
   }
 }
@@ -517,11 +570,11 @@ function hasTypeField(input: any): input is {_type: string} {
 function parseObjectUnion<S extends SanityObjectUnion>(
   schema: S,
   input: unknown,
-): ParseResult<OutputOf<S>> {
+): InternalResult<OutputOf<S>> {
   if (!isPlainObject(input) || !hasTypeField(input)) {
     return {
-      status: 'fail',
-      errors: [
+      ok: false,
+      issues: [
         {
           code: 'INVALID_OBJECT_UNION',
           input,
@@ -534,8 +587,8 @@ function parseObjectUnion<S extends SanityObjectUnion>(
   const unionSchema = input._type && findUnionSchemaForType(schema, input._type)
   if (!unionSchema) {
     return {
-      status: 'fail',
-      errors: [
+      ok: false,
+      issues: [
         {
           code: 'INVALID_OBJECT_UNION',
           input,
@@ -545,20 +598,20 @@ function parseObjectUnion<S extends SanityObjectUnion>(
       ],
     }
   }
-  const result = safeParse(unionSchema, input)
-  if (result.status === 'ok') {
+  const result = parseInternal(unionSchema, input)
+  if (result.ok) {
     return result as any
   }
   return {
-    status: 'fail',
-    errors: [
+    ok: false,
+    issues: [
       {
         code: 'INVALID_OBJECT_UNION',
         input,
         path: [],
         message: `Cannot parse input as union type "${input._type}"`,
       },
-      ...result.errors,
+      ...result.issues,
     ],
   }
 }
@@ -570,7 +623,7 @@ const isPlainObject = (value: unknown): value is {[key: string]: unknown} => {
 function parseObject<S extends SanityObjectLike>(
   schema: S,
   input: unknown,
-): ParseResult<OutputOf<S>> {
+): InternalResult<OutputOf<S>> {
   // This isn't strictly correct: there may be additional keys present, however,
   // other approaches break type inference for objects that have both known
   // and unknown keys (such as assets).
@@ -580,8 +633,8 @@ function parseObject<S extends SanityObjectLike>(
 
   if (!isPlainObject(input)) {
     return {
-      status: 'fail',
-      errors: [
+      ok: false,
+      issues: [
         {
           path: [],
           code: 'INVALID_TYPE',
@@ -591,14 +644,14 @@ function parseObject<S extends SanityObjectLike>(
       ],
     }
   }
-  const errors: ParseErrorDetails[] = []
+  const issues: ParseIssue[] = []
   const value: PlainObject = {}
 
   keys.forEach(key => {
-    const parsed = safeParse(schema.shape[key]!, input[key])
-    if (parsed.status === 'fail') {
-      errors.push(
-        ...parsed.errors.map(err => ({
+    const parsed = parseInternal(schema.shape[key]!, input[key])
+    if (!parsed.ok) {
+      issues.push(
+        ...parsed.issues.map(err => ({
           ...err,
           path: [key, ...err.path],
         })),
@@ -607,10 +660,10 @@ function parseObject<S extends SanityObjectLike>(
       value[key] = parsed.value
     }
   })
-  if (errors.length > 0) {
-    return {status: 'fail', errors}
+  if (issues.length > 0) {
+    return {ok: false, issues}
   }
-  return {status: 'ok', value}
+  return {ok: true, value}
 }
 
 function isKeyedObject(value: unknown): value is {_key: string} {
@@ -620,59 +673,11 @@ function isKeyedObject(value: unknown): value is {_key: string} {
 function parseObjectArray<S extends SanityObjectArray>(
   schema: S,
   input: unknown,
-): ParseResult<OutputOf<S>> {
+): InternalResult<OutputOf<S>> {
   if (!Array.isArray(input)) {
     return {
-      status: 'fail',
-      errors: [
-        {
-          path: [],
-          code: 'INVALID_TYPE',
-          input,
-          message: `Expected an array"`,
-        },
-      ],
-    }
-  }
-
-  const errors: ParseErrorDetails[] = []
-  const value = (input as unknown[]).map((item, index) => {
-    if (!isKeyedObject(item)) {
-      errors.push({
-        code: 'ARRAY_ELEMENT_NOT_KEYED_OBJECT',
-        input,
-        path: [index],
-        message: 'Expected an object with a "_key" property',
-      })
-      return
-    }
-    const parsed = safeParse(schema.element, item)
-    if (parsed.status === 'fail') {
-      errors.push(
-        ...parsed.errors.map(err => ({
-          ...err,
-          path: [item._key, ...err.path],
-        })),
-      )
-      return undefined
-    }
-    return parsed.value
-  }) as {_key: string}[]
-
-  if (errors.length > 0) {
-    return {status: 'fail', errors}
-  }
-  return {status: 'ok', value}
-}
-
-function parsePrimitiveArray<S extends SanityPrimitiveArray>(
-  schema: S,
-  input: unknown,
-): ParseResult<OutputOf<S>> {
-  if (!Array.isArray(input)) {
-    return {
-      status: 'fail',
-      errors: [
+      ok: false,
+      issues: [
         {
           path: [],
           code: 'INVALID_TYPE',
@@ -683,12 +688,60 @@ function parsePrimitiveArray<S extends SanityPrimitiveArray>(
     }
   }
 
-  const errors: ParseErrorDetails[] = []
+  const issues: ParseIssue[] = []
   const value = (input as unknown[]).map((item, index) => {
-    const parsed = safeParse(schema.element, item)
-    if (parsed.status === 'fail') {
-      errors.push(
-        ...parsed.errors.map(err => ({
+    if (!isKeyedObject(item)) {
+      issues.push({
+        code: 'ARRAY_ELEMENT_NOT_KEYED_OBJECT',
+        input: item,
+        path: [index],
+        message: 'Expected an object with a "_key" property',
+      })
+      return
+    }
+    const parsed = parseInternal(schema.element, item)
+    if (!parsed.ok) {
+      issues.push(
+        ...parsed.issues.map(err => ({
+          ...err,
+          path: [{_key: item._key, index}, ...err.path],
+        })),
+      )
+      return undefined
+    }
+    return parsed.value
+  }) as {_key: string}[]
+
+  if (issues.length > 0) {
+    return {ok: false, issues}
+  }
+  return {ok: true, value}
+}
+
+function parsePrimitiveArray<S extends SanityPrimitiveArray>(
+  schema: S,
+  input: unknown,
+): InternalResult<OutputOf<S>> {
+  if (!Array.isArray(input)) {
+    return {
+      ok: false,
+      issues: [
+        {
+          path: [],
+          code: 'INVALID_TYPE',
+          input,
+          message: `Expected an array`,
+        },
+      ],
+    }
+  }
+
+  const issues: ParseIssue[] = []
+  const value = (input as unknown[]).map((item, index) => {
+    const parsed = parseInternal(schema.element, item)
+    if (!parsed.ok) {
+      issues.push(
+        ...parsed.issues.map(err => ({
           ...err,
           path: [index, ...err.path],
         })),
@@ -698,8 +751,8 @@ function parsePrimitiveArray<S extends SanityPrimitiveArray>(
     return parsed.value
   }) as any[]
 
-  if (errors.length > 0) {
-    return {status: 'fail', errors}
+  if (issues.length > 0) {
+    return {ok: false, issues}
   }
-  return {status: 'ok', value}
+  return {ok: true, value}
 }

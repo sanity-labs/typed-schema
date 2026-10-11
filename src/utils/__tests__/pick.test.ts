@@ -1,4 +1,4 @@
-import {expect, test} from 'vitest'
+import {assert, expect, test} from 'vitest'
 
 import {document} from '../../creators/document'
 import {literal} from '../../creators/literal'
@@ -14,12 +14,14 @@ test('pick from a document', () => {
     foo: string(),
     bar: number(),
   })
-  const res = parse(pick(doc, ['foo']), {
+  const resResult = parse(pick(doc, ['foo']), {
     _id: 'some-id',
     _type: 'something',
     foo: 'Foo',
     bar: 1,
   })
+  assert(resResult.ok)
+  const res = resResult.value
   expect(res).toEqual({
     _id: 'some-id',
     _type: 'something',
@@ -37,10 +39,12 @@ test('pick from an object', () => {
     foo: string(),
     bar: number(),
   })
-  const res = parse(pick(obj, ['foo']), {
+  const resResult = parse(pick(obj, ['foo']), {
     foo: 'Foo',
     bar: 1,
   })
+  assert(resResult.ok)
+  const res = resResult.value
   expect(res).toEqual({
     foo: 'Foo',
   })

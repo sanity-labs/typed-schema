@@ -8,7 +8,7 @@ import {literal} from '../creators/literal'
 import {object} from '../creators/object'
 import {string} from '../creators/string'
 import {deferGetters} from '../helpers/deferGetters'
-import {safeParse} from '../parse'
+import {parse} from '../parse'
 import {extend} from '../utils/extend'
 
 // Typed as `any` so the runtime check is exercised even where the creator's
@@ -61,11 +61,11 @@ describe('fields the type-level check skips', () => {
   test('a getter returning a non-schema throws when the field is first parsed', () => {
     const schema = object({
       _type: literal('x'),
-      get foo(): any {
+      get foo() {
         return 'bar'
       },
     })
-    expect(() => safeParse(schema, {_type: 'x', foo: 'x'})).toThrow(
+    expect(() => parse(schema, {_type: 'x', foo: 'x'})).toThrow(
       'Field "foo" is not a schema',
     )
   })

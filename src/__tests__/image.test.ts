@@ -2,7 +2,7 @@ import {describe, expect, test} from 'vitest'
 
 import {image} from '../creators/image'
 import {string} from '../creators/string'
-import {safeParse} from '../parse'
+import {parse} from '../parse'
 
 const PlainImage = image()
 
@@ -13,7 +13,7 @@ const CustomImage = image({
 describe('image type', () => {
   test('image type definition', () => {
     expect(
-      safeParse(PlainImage, {
+      parse(PlainImage, {
         _type: 'image',
         asset: {
           _type: 'reference',
@@ -22,7 +22,7 @@ describe('image type', () => {
       }),
     ).toMatchInlineSnapshot(`
       {
-        "status": "ok",
+        "ok": true,
         "value": {
           "_type": "image",
           "asset": {
@@ -33,7 +33,7 @@ describe('image type', () => {
       }
     `)
     expect(
-      safeParse(CustomImage, {
+      parse(CustomImage, {
         _type: 'image',
         asset: {
           _type: 'reference',
@@ -43,7 +43,7 @@ describe('image type', () => {
       }),
     ).toMatchInlineSnapshot(`
       {
-        "status": "ok",
+        "ok": true,
         "value": {
           "_type": "image",
           "asset": {
@@ -57,13 +57,13 @@ describe('image type', () => {
   })
   test('without a shape, unknown fields are stripped', () => {
     expect(
-      safeParse(image(), {
+      parse(image(), {
         _type: 'image',
         asset: {_type: 'reference', _ref: '123'},
         caption: 'not declared',
       }),
     ).toEqual({
-      status: 'ok',
+      ok: true,
       value: {_type: 'image', asset: {_type: 'reference', _ref: '123'}},
     })
   })
@@ -72,56 +72,62 @@ describe('image type', () => {
   })
   test('errors', () => {
     expect(
-      safeParse(PlainImage, {
+      parse(PlainImage, {
         _type: 'image',
       }),
     ).toMatchInlineSnapshot(`
       {
-        "errors": [
-          {
-            "code": "INVALID_TYPE",
-            "input": undefined,
-            "message": "Expected an object with keys {_type, _ref, _weak}",
-            "path": [
-              "asset",
-            ],
-          },
-        ],
-        "status": "fail",
+        "error": ParseError {
+          "issues": [
+            {
+              "code": "INVALID_TYPE",
+              "input": undefined,
+              "message": "Expected an object with keys {_type, _ref, _weak}",
+              "path": [
+                "asset",
+              ],
+            },
+          ],
+          "message": "Invalid input at "asset": Expected an object with keys {_type, _ref, _weak}",
+        },
+        "ok": false,
       }
     `)
     expect(
-      safeParse(PlainImage, {
+      parse(PlainImage, {
         _type: 'image',
         asset: {},
       }),
     ).toMatchInlineSnapshot(`
       {
-        "errors": [
-          {
-            "code": "INVALID_TYPE",
-            "input": undefined,
-            "message": "Expected literal value "reference"",
-            "path": [
-              "asset",
-              "_type",
-            ],
-          },
-          {
-            "code": "INVALID_TYPE",
-            "input": undefined,
-            "message": "Expected a string",
-            "path": [
-              "asset",
-              "_ref",
-            ],
-          },
-        ],
-        "status": "fail",
+        "error": ParseError {
+          "issues": [
+            {
+              "code": "INVALID_TYPE",
+              "input": undefined,
+              "message": "Expected literal value "reference"",
+              "path": [
+                "asset",
+                "_type",
+              ],
+            },
+            {
+              "code": "INVALID_TYPE",
+              "input": undefined,
+              "message": "Expected a string",
+              "path": [
+                "asset",
+                "_ref",
+              ],
+            },
+          ],
+          "message": "Invalid input at "asset._type": Expected literal value "reference" (+ 1)",
+        },
+        "ok": false,
       }
     `)
     expect(
-      safeParse(CustomImage, {
+      parse(CustomImage, {
         _type: 'image',
         asset: {
           _type: 'reference',
@@ -130,17 +136,20 @@ describe('image type', () => {
       }),
     ).toMatchInlineSnapshot(`
       {
-        "errors": [
-          {
-            "code": "INVALID_TYPE",
-            "input": undefined,
-            "message": "Expected a string",
-            "path": [
-              "caption",
-            ],
-          },
-        ],
-        "status": "fail",
+        "error": ParseError {
+          "issues": [
+            {
+              "code": "INVALID_TYPE",
+              "input": undefined,
+              "message": "Expected a string",
+              "path": [
+                "caption",
+              ],
+            },
+          ],
+          "message": "Invalid input at "caption": Expected a string",
+        },
+        "ok": false,
       }
     `)
   })

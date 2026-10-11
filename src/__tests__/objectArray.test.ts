@@ -8,7 +8,7 @@ import {object} from '../creators/object'
 import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
-import {parse, safeParse} from '../parse'
+import {parse} from '../parse'
 
 const Pet = document({_type: literal('pet'), name: string()})
 
@@ -17,10 +17,8 @@ describe('arrays of object-like types are keyed object arrays', () => {
     const Pets = array(reference(Pet))
     expect(Pets.typeName).toBe('objectArray')
     const value = [{_type: 'reference', _ref: 'fido', _key: 'k1'}]
-    expect(parse(Pets, value)).toEqual(value)
-    expect(safeParse(Pets, [{_type: 'reference', _ref: 'fido'}]).status).toBe(
-      'fail',
-    )
+    expect(parse(Pets, value)).toEqual({ok: true, value})
+    expect(parse(Pets, [{_type: 'reference', _ref: 'fido'}]).ok).toBe(false)
   })
 
   test('array of images', () => {
@@ -33,7 +31,7 @@ describe('arrays of object-like types are keyed object arrays', () => {
         asset: {_type: 'reference', _ref: 'image-abc-100x100-png'},
       },
     ]
-    expect(parse(Images, value)).toEqual(value)
+    expect(parse(Images, value)).toEqual({ok: true, value})
   })
 
   test('array of a union containing non-object types', () => {
@@ -49,10 +47,8 @@ describe('arrays of object-like types are keyed object arrays', () => {
         asset: {_type: 'reference', _ref: 'image-abc-100x100-png'},
       },
     ]
-    expect(parse(Items, value)).toEqual(value)
-    expect(safeParse(Items, [{_type: 'note', text: 'no key'}]).status).toBe(
-      'fail',
-    )
+    expect(parse(Items, value)).toEqual({ok: true, value})
+    expect(parse(Items, [{_type: 'note', text: 'no key'}]).ok).toBe(false)
   })
 
   test('array of nested unions', () => {
@@ -67,8 +63,8 @@ describe('arrays of object-like types are keyed object arrays', () => {
       {_type: 'a', _key: 'k1'},
       {_type: 'c', _key: 'k2'},
     ]
-    expect(parse(Items, value)).toEqual(value)
-    expect(safeParse(Items, [{_type: 'c'}]).status).toBe('fail')
+    expect(parse(Items, value)).toEqual({ok: true, value})
+    expect(parse(Items, [{_type: 'c'}]).ok).toBe(false)
   })
 
   test('arrays of primitives stay primitive arrays', () => {

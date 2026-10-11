@@ -6,7 +6,7 @@ import {object} from '../creators/object'
 import {portableText} from '../creators/portableText'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
-import {parse, safeParse} from '../parse'
+import {parse} from '../parse'
 
 describe('parsing blocks', () => {
   const RichBlock = block({
@@ -31,7 +31,7 @@ describe('parsing blocks', () => {
         {_type: 'mention', _key: 'm1', userId: 'u1'},
       ],
     }
-    expect(parse(RichBlock, value)).toEqual(value)
+    expect(parse(RichBlock, value)).toEqual({ok: true, value})
   })
 
   test('style, listItem, level and markDefs are optional', () => {
@@ -39,7 +39,7 @@ describe('parsing blocks', () => {
       _type: 'block',
       children: [{_type: 'span', _key: 's1', text: 'hi', marks: []}],
     }
-    expect(parse(RichBlock, value)).toEqual(value)
+    expect(parse(RichBlock, value)).toEqual({ok: true, value})
   })
 
   test('rejects values outside the configured styles and lists', () => {
@@ -47,22 +47,20 @@ describe('parsing blocks', () => {
       _type: 'block',
       children: [{_type: 'span', _key: 's1', text: 'hi', marks: []}],
     }
-    expect(safeParse(RichBlock, {...base, style: 'h3'}).status).toBe('fail')
-    expect(safeParse(RichBlock, {...base, listItem: 'checkbox'}).status).toBe(
-      'fail',
-    )
+    expect(parse(RichBlock, {...base, style: 'h3'}).ok).toBe(false)
+    expect(parse(RichBlock, {...base, listItem: 'checkbox'}).ok).toBe(false)
     expect(
-      safeParse(RichBlock, {
+      parse(RichBlock, {
         ...base,
         children: [{_type: 'span', text: 'no key', marks: []}],
-      }).status,
-    ).toBe('fail')
+      }).ok,
+    ).toBe(false)
     expect(
-      safeParse(RichBlock, {
+      parse(RichBlock, {
         ...base,
         markDefs: [{_type: 'other', _key: 'x'}],
-      }).status,
-    ).toBe('fail')
+      }).ok,
+    ).toBe(false)
   })
 
   test('an unconfigured block accepts any style and no markDefs', () => {
@@ -73,11 +71,10 @@ describe('parsing blocks', () => {
       markDefs: [],
       children: [{_type: 'span', _key: 's1', text: 'hi', marks: []}],
     }
-    expect(parse(Plain, value)).toEqual(value)
+    expect(parse(Plain, value)).toEqual({ok: true, value})
     expect(
-      safeParse(Plain, {...value, markDefs: [{_type: 'link', _key: 'k'}]})
-        .status,
-    ).toBe('fail')
+      parse(Plain, {...value, markDefs: [{_type: 'link', _key: 'k'}]}).ok,
+    ).toBe(false)
   })
 })
 
@@ -98,13 +95,12 @@ describe('parsing portable text', () => {
       },
       {_type: 'image', _key: 'i1', url: 'https://example.com/a.png'},
     ]
-    expect(parse(Body, value)).toEqual(value)
+    expect(parse(Body, value)).toEqual({ok: true, value})
   })
 
   test('requires _key on every element', () => {
     expect(
-      safeParse(Body, [{_type: 'image', url: 'https://example.com/a.png'}])
-        .status,
-    ).toBe('fail')
+      parse(Body, [{_type: 'image', url: 'https://example.com/a.png'}]).ok,
+    ).toBe(false)
   })
 })

@@ -2,7 +2,7 @@ import {describe, expect, test} from 'vitest'
 
 import {file} from '../creators/file'
 import {string} from '../creators/string'
-import {safeParse} from '../parse'
+import {parse} from '../parse'
 
 const PlainFile = file()
 
@@ -13,7 +13,7 @@ const CustomFile = file({
 describe('file type', () => {
   test('file type definition', () => {
     expect(
-      safeParse(PlainFile, {
+      parse(PlainFile, {
         _type: 'file',
         asset: {
           _type: 'reference',
@@ -22,7 +22,7 @@ describe('file type', () => {
       }),
     ).toMatchInlineSnapshot(`
       {
-        "status": "ok",
+        "ok": true,
         "value": {
           "_type": "file",
           "asset": {
@@ -33,7 +33,7 @@ describe('file type', () => {
       }
     `)
     expect(
-      safeParse(CustomFile, {
+      parse(CustomFile, {
         _type: 'file',
         asset: {
           _type: 'reference',
@@ -43,7 +43,7 @@ describe('file type', () => {
       }),
     ).toMatchInlineSnapshot(`
       {
-        "status": "ok",
+        "ok": true,
         "value": {
           "_type": "file",
           "asset": {
@@ -57,13 +57,13 @@ describe('file type', () => {
   })
   test('without a shape, unknown fields are stripped', () => {
     expect(
-      safeParse(file(), {
+      parse(file(), {
         _type: 'file',
         asset: {_type: 'reference', _ref: '123'},
         caption: 'not declared',
       }),
     ).toEqual({
-      status: 'ok',
+      ok: true,
       value: {_type: 'file', asset: {_type: 'reference', _ref: '123'}},
     })
   })
@@ -72,56 +72,62 @@ describe('file type', () => {
   })
   test('errors', () => {
     expect(
-      safeParse(PlainFile, {
+      parse(PlainFile, {
         _type: 'file',
       }),
     ).toMatchInlineSnapshot(`
       {
-        "errors": [
-          {
-            "code": "INVALID_TYPE",
-            "input": undefined,
-            "message": "Expected an object with keys {_type, _ref, _weak}",
-            "path": [
-              "asset",
-            ],
-          },
-        ],
-        "status": "fail",
+        "error": ParseError {
+          "issues": [
+            {
+              "code": "INVALID_TYPE",
+              "input": undefined,
+              "message": "Expected an object with keys {_type, _ref, _weak}",
+              "path": [
+                "asset",
+              ],
+            },
+          ],
+          "message": "Invalid input at "asset": Expected an object with keys {_type, _ref, _weak}",
+        },
+        "ok": false,
       }
     `)
     expect(
-      safeParse(PlainFile, {
+      parse(PlainFile, {
         _type: 'file',
         asset: {},
       }),
     ).toMatchInlineSnapshot(`
       {
-        "errors": [
-          {
-            "code": "INVALID_TYPE",
-            "input": undefined,
-            "message": "Expected literal value "reference"",
-            "path": [
-              "asset",
-              "_type",
-            ],
-          },
-          {
-            "code": "INVALID_TYPE",
-            "input": undefined,
-            "message": "Expected a string",
-            "path": [
-              "asset",
-              "_ref",
-            ],
-          },
-        ],
-        "status": "fail",
+        "error": ParseError {
+          "issues": [
+            {
+              "code": "INVALID_TYPE",
+              "input": undefined,
+              "message": "Expected literal value "reference"",
+              "path": [
+                "asset",
+                "_type",
+              ],
+            },
+            {
+              "code": "INVALID_TYPE",
+              "input": undefined,
+              "message": "Expected a string",
+              "path": [
+                "asset",
+                "_ref",
+              ],
+            },
+          ],
+          "message": "Invalid input at "asset._type": Expected literal value "reference" (+ 1)",
+        },
+        "ok": false,
       }
     `)
     expect(
-      safeParse(CustomFile, {
+      parse(CustomFile, {
         _type: 'file',
         asset: {
           _type: 'reference',
@@ -130,17 +136,20 @@ describe('file type', () => {
       }),
     ).toMatchInlineSnapshot(`
       {
-        "errors": [
-          {
-            "code": "INVALID_TYPE",
-            "input": undefined,
-            "message": "Expected a string",
-            "path": [
-              "caption",
-            ],
-          },
-        ],
-        "status": "fail",
+        "error": ParseError {
+          "issues": [
+            {
+              "code": "INVALID_TYPE",
+              "input": undefined,
+              "message": "Expected a string",
+              "path": [
+                "caption",
+              ],
+            },
+          ],
+          "message": "Invalid input at "caption": Expected a string",
+        },
+        "ok": false,
       }
     `)
   })

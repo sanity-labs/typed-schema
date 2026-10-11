@@ -1,4 +1,4 @@
-import {expectTypeOf, test} from 'vitest'
+import {assert, expectTypeOf, test} from 'vitest'
 
 import {document} from '../../creators/document'
 import {lazy} from '../../creators/lazy'
@@ -30,12 +30,14 @@ const Person = document({
   birthplace: reference(lazy(() => Country)),
 })
 
-const person = parse(Person, {
+const personResult = parse(Person, {
   _type: 'person',
   name: 'Carl',
   country: {_type: 'reference', _ref: 'usa'},
   birthplace: {_type: 'reference', _ref: 'usa'},
 })
+assert(personResult.ok)
+const person = personResult.value
 
 const fetch = () => Promise.resolve(undefined)
 
@@ -118,11 +120,13 @@ test('loadReference stays typed for a recursive schema annotated with SanityRefe
     parent: optional(lazy(() => reference(TreeNode))),
   })
   const loadReference = createReferenceLoader(fetch)
-  const child = parse(TreeNode, {
+  const childResult = parse(TreeNode, {
     _type: 'node',
     name: 'child',
     parent: {_type: 'reference', _ref: 'root'},
   })
+  assert(childResult.ok)
+  const child = childResult.value
   const parent = await loadReference(child.parent!)
   expectTypeOf(parent).toEqualTypeOf<Parsed<Committed<typeof TreeNode>>>()
   expectTypeOf(parent).toEqualTypeOf<{

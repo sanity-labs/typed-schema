@@ -26,13 +26,16 @@ declare const personOutput: Infer<typeof Person>
 
 type Person = Infer<typeof Person>
 
-const aPerson = parse(Person, {})
+const result = parse(Person, {})
 const resolve = createReferenceLoader(async () => {})
-console.log(aPerson.favoritePet.$refSchema)
-const allPets = await Promise.all(
-  aPerson.pets.map(aPersonsPet => resolve(aPersonsPet)),
-)
+if (result.ok) {
+  const aPerson = result.value
+  console.log(aPerson.favoritePet.$refSchema)
+  const allPets = await Promise.all(
+    aPerson.pets.map(aPersonsPet => resolve(aPersonsPet)),
+  )
 
-const fetchedPet = await resolve(aPerson.favoritePet)
+  const fetchedPet = await resolve(aPerson.favoritePet)
 
-console.log(aPerson.favoritePet)
+  console.log(aPerson.favoritePet)
+}

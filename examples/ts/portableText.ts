@@ -33,6 +33,8 @@ type MyPTArray = Infer<typeof MyPTArray>
 
 const myPTArrayValue = parse(MyPTArray, [])
 
-myPTArrayValue.map(
-  element => element._type, // 'someBlock'
-)
+if (myPTArrayValue.ok) {
+  myPTArrayValue.value.map(
+    element => element._type, // 'someBlock'
+  )
+}

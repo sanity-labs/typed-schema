@@ -1,4 +1,4 @@
-import {describe, expect, test} from 'vitest'
+import {assert, describe, expect, test} from 'vitest'
 
 import {array} from '../creators/array'
 import {document} from '../creators/document'
@@ -21,42 +21,50 @@ describe('parse attaches the referenced schema at every depth', () => {
       _type: literal('pet'),
       details: object({owner: reference(Person)}),
     })
-    const pet = parse(Pet, {
+    const petResult = parse(Pet, {
       _type: 'pet',
       details: {owner: {_type: 'reference', _ref: 'knut'}},
     })
+    assert(petResult.ok)
+    const pet = petResult.value
     expect(pet.details.owner[REF_SCHEMA]).toBe(Person)
     expect(Object.keys(pet.details.owner)).not.toContain(REF_SCHEMA)
   })
 
   test('array item', () => {
     const Owners = array(reference(Person))
-    const owners = parse(Owners, [
+    const ownersResult = parse(Owners, [
       {_key: 'a', _type: 'reference', _ref: 'knut'},
     ])
+    assert(ownersResult.ok)
+    const owners = ownersResult.value
     expect(owners[0]?.[REF_SCHEMA]).toBe(Person)
   })
 
   test('union member', () => {
     const Either = union([reference(Person), reference(Company)])
-    const either = parse(Either, {_type: 'reference', _ref: 'acme'})
+    const eitherResult = parse(Either, {_type: 'reference', _ref: 'acme'})
+    assert(eitherResult.ok)
+    const either = eitherResult.value
     // both members share the reference `_type`; the first match wins
     expect(either[REF_SCHEMA]).toBe(Person)
   })
 
   test('optional', () => {
     const Pet = object({owner: optional(reference(Person))})
-    expect(parse(Pet, {}).owner).toBeUndefined()
-    expect(
-      parse(Pet, {owner: {_type: 'reference', _ref: 'knut'}}).owner?.[
-        REF_SCHEMA
-      ],
-    ).toBe(Person)
+    const without = parse(Pet, {})
+    assert(without.ok)
+    expect(without.value.owner).toBeUndefined()
+    const withOwner = parse(Pet, {owner: {_type: 'reference', _ref: 'knut'}})
+    assert(withOwner.ok)
+    expect(withOwner.value.owner?.[REF_SCHEMA]).toBe(Person)
   })
 
   test('lazy', () => {
     const Pet = object({owner: lazy(() => reference(Person))})
-    const pet = parse(Pet, {owner: {_type: 'reference', _ref: 'knut'}})
+    const petResult = parse(Pet, {owner: {_type: 'reference', _ref: 'knut'}})
+    assert(petResult.ok)
+    const pet = petResult.value
     expect(pet.owner[REF_SCHEMA]).toBe(Person)
   })
 })

@@ -6,7 +6,7 @@ import {
 import {optional} from '../creators/optional'
 import {type OutputOf, type SanityAny} from '../defs'
 import {isObjectLike} from '../helpers/isObjectLike'
-import {safeParse} from '../parse'
+import {parse} from '../parse'
 import {type DeepPartial} from '../utils/deepPartial'
 
 /**
@@ -36,8 +36,8 @@ export function pickDeep<S extends SanityAny>(
   }
 
   if (isPrimitiveSchema(schema)) {
-    const parsed = safeParse(optional(schema), value)
-    return parsed.status === 'ok' ? parsed.value : undefined
+    const parsed = parse(optional(schema), value)
+    return parsed.ok ? parsed.value : undefined
   }
   return undefined
 }

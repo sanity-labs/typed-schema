@@ -47,8 +47,12 @@ const jaraAsJson = client.fetch('*[_type == "pet" && _id=="jara"][0]')
 
 const jaraTheDog = parse(Pet, jaraAsJson)
 
-const humansOfJara = await Promise.all(
-  jaraTheDog.humans.map(humanReference => loadReference(humanReference)),
-)
+if (jaraTheDog.ok) {
+  const humansOfJara = await Promise.all(
+    jaraTheDog.value.humans.map(humanReference =>
+      loadReference(humanReference),
+    ),
+  )
 
-humansOfJara.forEach(humanOfJara => console.log(humanOfJara))
+  humansOfJara.forEach(humanOfJara => console.log(humanOfJara))
+}

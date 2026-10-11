@@ -1,4 +1,4 @@
-import {assertType, describe, expect, test} from 'vitest'
+import {assert, assertType, describe, expect, test} from 'vitest'
 
 import {array} from '../creators/array'
 import {document} from '../creators/document'
@@ -12,24 +12,24 @@ import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {REF_SCHEMA, type SanityObjectType, type SanityType} from '../defs'
-import {parse, safeParse} from '../parse'
+import {formatPath, parse, ParseError, parseOrThrow} from '../parse'
 import {type SanityDocumentValue} from '../shapeDefs'
 
 describe('string parsing', () => {
   test('successful parsing', () => {
     const schema = string()
-    const parsed = safeParse(schema, 'foo')
+    const parsed = parse(schema, 'foo')
     expect(parsed).toMatchObject({
-      status: 'ok',
+      ok: true,
       value: 'foo',
     })
   })
   test('failed parsing', () => {
     const schema = string()
-    const parsed = safeParse(schema, undefined)
+    const parsed = parse(schema, undefined)
     expect(parsed).toMatchObject({
-      status: 'fail',
-      errors: [{path: [], code: 'INVALID_TYPE', message: /.+/}],
+      ok: false,
+      error: {issues: [{path: [], code: 'INVALID_TYPE', message: /.+/}]},
     })
   })
 })
@@ -37,9 +37,9 @@ describe('string parsing', () => {
 describe('object parsing', () => {
   test('parsing of simple object', () => {
     const schema = object({foo: string()})
-    const parsed = safeParse(schema, {foo: 'bar'})
+    const parsed = parse(schema, {foo: 'bar'})
     expect(parsed).toMatchObject({
-      status: 'ok',
+      ok: true,
       value: {foo: 'bar'},
     })
   })
@@ -48,12 +48,12 @@ describe('object parsing', () => {
       title: string(),
       nested: object({something: string()}),
     })
-    const parsed = safeParse(schema, {
+    const parsed = parse(schema, {
       title: 'hello',
       nested: {something: 'world'},
     })
     expect(parsed).toMatchObject({
-      status: 'ok',
+      ok: true,
       value: {title: 'hello', nested: {something: 'world'}},
     })
   })
@@ -62,13 +62,15 @@ describe('object parsing', () => {
       title: string(),
       nested: object({something: string()}),
     })
-    const parsed = safeParse(schema, {title: 'hello', nested: {something: 1}})
+    const parsed = parse(schema, {title: 'hello', nested: {something: 1}})
 
     expect(parsed).toMatchObject({
-      status: 'fail',
-      errors: [
-        {path: ['nested', 'something'], code: 'INVALID_TYPE', message: /.+/},
-      ],
+      ok: false,
+      error: {
+        issues: [
+          {path: ['nested', 'something'], code: 'INVALID_TYPE', message: /.+/},
+        ],
+      },
     })
   })
   describe('circular/lazy types', () => {
@@ -82,13 +84,13 @@ describe('object parsing', () => {
         parent: optional(lazy(() => Person)),
       })
 
-      const parsed = safeParse(Person, {
+      const parsed = parse(Person, {
         name: 'Tester',
         parent: {name: "Tester's parent"},
       })
 
       expect(parsed).toEqual({
-        status: 'ok',
+        ok: true,
         value: {name: 'Tester', parent: {name: "Tester's parent"}},
       })
     })
@@ -106,11 +108,13 @@ describe('object parsing', () => {
       parent: optional(lazy(() => Person)),
     })
 
-    const parsed = parse(Person, {
+    const parsedResult = parse(Person, {
       _type: 'person',
       name: 'foo',
       parent: {_type: 'person', name: 'another'},
     })
+    assert(parsedResult.ok)
+    const parsed = parsedResult.value
 
     expect(parsed).toEqual({
       _type: 'person',
@@ -136,11 +140,13 @@ describe('object parsing', () => {
       owner: reference(Human),
     })
 
-    const parsed = parse(Pet, {
+    const parsedResult = parse(Pet, {
       _type: 'pet',
       name: 'Jara',
       owner: {_type: 'reference', _ref: 'knut'},
     })
+    assert(parsedResult.ok)
+    const parsed = parsedResult.value
     expect(parsed).toEqual({
       _type: 'pet',
       name: 'Jara',
@@ -156,9 +162,9 @@ describe('object parsing', () => {
 describe('object array parsing', () => {
   test('parsing of simple array', () => {
     const schema = array(object({foo: string()}))
-    const parsed = safeParse(schema, [{_key: 'akey', foo: 'bar'}])
+    const parsed = parse(schema, [{_key: 'akey', foo: 'bar'}])
     expect(parsed).toMatchObject({
-      status: 'ok',
+      ok: true,
       value: [{_key: 'akey', foo: 'bar'}],
     })
   })
@@ -166,11 +172,9 @@ describe('object array parsing', () => {
     const schema = array(
       union([object({_type: literal('foo'), foo: string()})]),
     )
-    const parsed = safeParse(schema, [
-      {_key: 'somekey', _type: 'foo', foo: 'bar'},
-    ])
+    const parsed = parse(schema, [{_key: 'somekey', _type: 'foo', foo: 'bar'}])
     expect(parsed).toMatchObject({
-      status: 'ok',
+      ok: true,
       value: [{_key: 'somekey', _type: 'foo', foo: 'bar'}],
     })
   })
@@ -181,11 +185,11 @@ describe('object array parsing', () => {
         object({_type: literal('bar'), barProp: string()}),
       ]),
     )
-    const parsed = safeParse(schema, [
+    const parsed = parse(schema, [
       {_type: 'foo', _key: 'somekey', fooProp: 'foo'},
     ])
     expect(parsed).toMatchObject({
-      status: 'ok',
+      ok: true,
       value: [{_type: 'foo', _key: 'somekey', fooProp: 'foo'}],
     })
   })
@@ -196,39 +200,48 @@ describe('object array parsing', () => {
         object({_type: literal('bar'), barProp: string()}),
       ]),
     )
-    const parsed = safeParse(schema, [
+    const parsed = parse(schema, [
       {_type: 'foo', _key: 'key213s', nested: {foo: 1}},
     ])
 
     expect(parsed).toMatchInlineSnapshot(`
       {
-        "errors": [
-          {
-            "code": "INVALID_OBJECT_UNION",
-            "input": {
-              "_key": "key213s",
-              "_type": "foo",
-              "nested": {
-                "foo": 1,
+        "error": ParseError {
+          "issues": [
+            {
+              "code": "INVALID_OBJECT_UNION",
+              "input": {
+                "_key": "key213s",
+                "_type": "foo",
+                "nested": {
+                  "foo": 1,
+                },
               },
+              "message": "Cannot parse input as union type "foo"",
+              "path": [
+                {
+                  "_key": "key213s",
+                  "index": 0,
+                },
+              ],
             },
-            "message": "Cannot parse input as union type "foo"",
-            "path": [
-              "key213s",
-            ],
-          },
-          {
-            "code": "INVALID_TYPE",
-            "input": 1,
-            "message": "Expected a string",
-            "path": [
-              "key213s",
-              "nested",
-              "foo",
-            ],
-          },
-        ],
-        "status": "fail",
+            {
+              "code": "INVALID_TYPE",
+              "input": 1,
+              "message": "Expected a string",
+              "path": [
+                {
+                  "_key": "key213s",
+                  "index": 0,
+                },
+                "nested",
+                "foo",
+              ],
+            },
+          ],
+          "message": "Invalid input at "[_key=="key213s"]": Cannot parse input as union type "foo" (+ 1)",
+        },
+        "ok": false,
       }
     `)
   })
@@ -239,10 +252,12 @@ describe('reference parsing', () => {
     const Person = document({_type: literal('person'), name: string()})
     const Reference = reference(Person)
 
-    const parsed = parse(Reference, {
+    const parsedResult = parse(Reference, {
       _ref: 'some-person',
       _type: 'reference',
     })
+    assert(parsedResult.ok)
+    const parsed = parsedResult.value
 
     expect(parsed[REF_SCHEMA]?.typeName).toBe('document')
 
@@ -254,10 +269,12 @@ describe('reference parsing', () => {
 
   test('the referenced schema never serializes and is lost on copy', () => {
     const Person = document({_type: literal('person'), name: string()})
-    const parsed = parse(reference(Person), {
+    const parsedResult = parse(reference(Person), {
       _ref: 'some-person',
       _type: 'reference',
     })
+    assert(parsedResult.ok)
+    const parsed = parsedResult.value
 
     expect(parsed.$refSchema).toBe(Person)
     expect(Object.keys(parsed)).not.toContain('$refSchema')
@@ -273,7 +290,7 @@ describe('asset parsing', () => {
   test('parsing of image', () => {
     const ImageSchema = image({caption: string()})
 
-    const parsed = parse(ImageSchema, {
+    const parsedResult = parse(ImageSchema, {
       _type: 'image',
       caption: 'A nice pic of my favourite lizard, Leon.',
       asset: {
@@ -281,6 +298,8 @@ describe('asset parsing', () => {
         _ref: 'xxx',
       },
     })
+    assert(parsedResult.ok)
+    const parsed = parsedResult.value
 
     expect(parsed).toEqual({
       _type: 'image',
@@ -294,7 +313,7 @@ describe('asset parsing', () => {
   test('parsing of file', () => {
     const FileSchema = file({caption: string()})
 
-    const parsed = parse(FileSchema, {
+    const parsedResult = parse(FileSchema, {
       _type: 'file',
       asset: {
         _type: 'reference',
@@ -302,6 +321,8 @@ describe('asset parsing', () => {
       },
       caption: 'An absolutely tip-top file for you.',
     })
+    assert(parsedResult.ok)
+    const parsed = parsedResult.value
 
     expect(parsed).toEqual({
       _type: 'file',
@@ -311,5 +332,66 @@ describe('asset parsing', () => {
       },
       caption: 'An absolutely tip-top file for you.',
     })
+  })
+})
+
+describe('ParseError', () => {
+  test('parseOrThrow throws the error a failed parse result holds', () => {
+    const schema = object({name: string()})
+    const result = parse(schema, {name: 1})
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.error).toBeInstanceOf(ParseError)
+    let thrown: unknown
+    try {
+      parseOrThrow(schema, {name: 1})
+    } catch (err) {
+      thrown = err
+    }
+    expect(thrown).toBeInstanceOf(ParseError)
+    expect((thrown as ParseError).message).toBe(result.error.message)
+    expect((thrown as ParseError).issues).toEqual(result.error.issues)
+  })
+
+  test('message summarises the first issue with its path', () => {
+    const schema = object({
+      items: array(object({_type: literal('item'), text: string()})),
+    })
+    const result = parse(schema, {
+      items: [{_type: 'item', _key: 'k1', text: 1}],
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.error.message).toBe(
+      'Invalid input at "items[_key=="k1"].text": Expected a string',
+    )
+  })
+
+  test('array items without a _key report the item as input', () => {
+    const schema = array(object({_type: literal('item')}))
+    const result = parse(schema, [{_type: 'item'}])
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.error.issues).toEqual([
+      {
+        code: 'ARRAY_ELEMENT_NOT_KEYED_OBJECT',
+        input: {_type: 'item'},
+        path: [0],
+        message: 'Expected an object with a "_key" property',
+      },
+    ])
+  })
+})
+
+describe('formatPath', () => {
+  test('renders fields, indexes and keys like a Sanity path', () => {
+    expect(formatPath([])).toBe('<root>')
+    expect(formatPath(['name'])).toBe('name')
+    expect(formatPath(['tags', 0])).toBe('tags[0]')
+    expect(
+      formatPath(['body', {_key: 'abc', index: 2}, 'children', 0, 'text']),
+    ).toBe('body[_key=="abc"].children[0].text')
+    expect(formatPath([0, 'a'])).toBe('[0].a')
+    expect(formatPath([{_key: 'a"b', index: 0}])).toBe('[_key=="a\\"b"]')
   })
 })

@@ -27,7 +27,12 @@ const Pet = document({
   human: Human,
 })
 
-const myPet = parse(Pet, {name: 'fido', owner: {_type: 'human', name: 'bob'}})
-// @ts-expect-error - should not have _foo property
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-myPet._foo
+const myPet = parse(Pet, {
+  name: 'fido',
+  owner: {_type: 'human', name: 'bob'},
+})
+if (myPet.ok) {
+  // @ts-expect-error - should not have _foo property
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  myPet.value._foo
+}

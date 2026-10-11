@@ -46,7 +46,10 @@ describe('~standard', () => {
     expect(result.issues).toEqual([
       {path: ['name'], message: 'Expected a string'},
       {path: ['age'], message: 'Expected a finite number'},
-      {path: ['toys', 'a', 'name'], message: 'Expected a string'},
+      {
+        path: ['toys', {key: 0, _key: 'a'}, 'name'],
+        message: 'Expected a string',
+      },
     ])
   })
 

@@ -1,4 +1,4 @@
-import {describe, expectTypeOf, test} from 'vitest'
+import {assert, describe, expectTypeOf, test} from 'vitest'
 
 import {array} from '../creators/array'
 import {document} from '../creators/document'
@@ -16,7 +16,7 @@ import {
   type SanityType,
 } from '../defs'
 import {type Format} from '../helpers/utilTypes'
-import {parse, safeParse} from '../parse'
+import {parse, parseOrThrow, type ParseError} from '../parse'
 import {
   type SanityArrayValue,
   type SanityDocumentValue,
@@ -132,20 +132,23 @@ describe('parse returns Parsed', () => {
     owner: reference(Person),
   })
 
-  test('parse', () => {
-    expectTypeOf(parse(Pet, {})).toEqualTypeOf<Parsed<typeof Pet>>()
-    expectTypeOf(parse(Pet, {}).owner.$refSchema).toEqualTypeOf<typeof Person>()
+  test('parseOrThrow', () => {
+    expectTypeOf(parseOrThrow(Pet, {})).toEqualTypeOf<Parsed<typeof Pet>>()
   })
 
-  test('safeParse', () => {
-    const result = safeParse(Pet, {})
-    if (result.status === 'ok') {
+  test('parse', () => {
+    const result = parse(Pet, {})
+    if (result.ok) {
       expectTypeOf(result.value).toEqualTypeOf<Parsed<typeof Pet>>()
+    } else {
+      expectTypeOf(result.error).toEqualTypeOf<ParseError>()
     }
   })
 
   test('Parsed is assignable to Infer, not the other way around', () => {
-    const parsed = parse(Pet, {})
+    const parsedResult = parse(Pet, {})
+    assert(parsedResult.ok)
+    const parsed = parsedResult.value
     const inferred: Infer<typeof Pet> = parsed
     // @ts-expect-error - $refSchema is required on Parsed
     const back: Parsed<typeof Pet> = inferred

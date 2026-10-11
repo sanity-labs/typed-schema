@@ -1,4 +1,4 @@
-import {expect, test, vi} from 'vitest'
+import {assert, expect, test, vi} from 'vitest'
 
 import {document} from '../../creators/document'
 import {lazy} from '../../creators/lazy'
@@ -35,13 +35,15 @@ const Person = document({
 })
 
 test('resolve reference with schema', async () => {
-  const person = parse(Person, {
+  const personResult = parse(Person, {
     _id: 'carl',
     _type: 'person',
     firstName: 'Carl',
     lastName: 'Sagan',
     country: {_type: 'reference', _ref: 'usa'},
   })
+  assert(personResult.ok)
+  const person = personResult.value
 
   const usa = {_type: 'country', _id: 'usa', ...committedFields, name: 'USA'}
   const fetch = vi.fn().mockResolvedValueOnce(usa)
@@ -53,12 +55,14 @@ test('resolve reference with schema', async () => {
 })
 
 test('loadReference rejects a target without the committed fields', async () => {
-  const person = parse(Person, {
+  const personResult = parse(Person, {
     _type: 'person',
     firstName: 'Carl',
     lastName: 'Sagan',
     country: {_type: 'reference', _ref: 'usa'},
   })
+  assert(personResult.ok)
+  const person = personResult.value
   const fetch = vi.fn().mockResolvedValueOnce({
     _type: 'country',
     _id: 'usa',
@@ -69,12 +73,14 @@ test('loadReference rejects a target without the committed fields', async () => 
 })
 
 test('loadReference rejects when the target does not match its schema', async () => {
-  const person = parse(Person, {
+  const personResult = parse(Person, {
     _type: 'person',
     firstName: 'Carl',
     lastName: 'Sagan',
     country: {_type: 'reference', _ref: 'usa'},
   })
+  assert(personResult.ok)
+  const person = personResult.value
   const fetch = vi.fn().mockResolvedValueOnce({
     _type: 'country',
     _id: 'usa',
@@ -85,12 +91,14 @@ test('loadReference rejects when the target does not match its schema', async ()
 })
 
 test('createLoader loads references and documents in bulk', async () => {
-  const person = parse(Person, {
+  const personResult = parse(Person, {
     _type: 'person',
     firstName: 'Carl',
     lastName: 'Sagan',
     country: {_type: 'reference', _ref: 'usa'},
   })
+  assert(personResult.ok)
+  const person = personResult.value
   const fetch = vi.fn((id: string) =>
     Promise.resolve({
       _type: 'country',
@@ -182,11 +190,13 @@ test('loadReference stays typed for a recursive schema annotated with SanityRefe
   const root = {_type: 'node', _id: 'root', ...committedFields, name: 'root'}
   const fetch = vi.fn().mockResolvedValueOnce(root)
   const loadReference = createReferenceLoader(fetch)
-  const child = parse(TreeNode, {
+  const childResult = parse(TreeNode, {
     _type: 'node',
     name: 'child',
     parent: {_type: 'reference', _ref: 'root'},
   })
+  assert(childResult.ok)
+  const child = childResult.value
 
   const parent = await loadReference(child.parent!)
   expect(parent).toEqual(root)

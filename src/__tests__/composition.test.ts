@@ -1,4 +1,4 @@
-import {assertType, test} from 'vitest'
+import {assert, assertType, test} from 'vitest'
 
 import {array, primitiveArray} from '../creators/array'
 import {boolean} from '../creators/boolean'
@@ -72,7 +72,7 @@ test('Schema composition', () => {
   assertType<MyObj['composed']['otherField']>('' as number)
 
   // test validation output type
-  const res = parse(MyObj, {
+  const resResult = parse(MyObj, {
     str: 'string',
     num: 2,
     lit: 'literal value',
@@ -83,6 +83,8 @@ test('Schema composition', () => {
     arr1: [],
     composed: {someField: 'foo', otherField: 'bar'},
   })
+  assert(resResult.ok)
+  const res = resResult.value
   assertType<typeof res.str>(stringVal)
   assertType<typeof res.num>(numVal)
   assertType<typeof res.bool>(false as boolean)

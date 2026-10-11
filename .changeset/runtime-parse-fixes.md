@@ -4,7 +4,7 @@
 
 Fix several runtime behaviours that disagreed with the static types:
 
-- `safeParse` on an array of primitives now returns a failure for invalid elements instead of throwing
+- `parse` on an array of primitives now returns a failure for invalid elements instead of throwing
 - `date()` validates the month (the format used `mm`, minutes, instead of `MM`)
 - `dateTime()` accepts any ISO 8601 date-time with a zone designator, including values without milliseconds and with `±HH:mm` offsets
 - `number()` constraints treat `0` as a real boundary, reject `NaN`/`Infinity`, and `safeint()`/`int32()`/`uint32()` reject non-integers

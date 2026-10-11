@@ -1,4 +1,4 @@
-import {expect, test} from 'vitest'
+import {assert, expect, test} from 'vitest'
 
 import {document} from '../../creators/document'
 import {literal} from '../../creators/literal'
@@ -14,12 +14,14 @@ test('omit from a document', () => {
     foo: string(),
     bar: number(),
   })
-  const res = parse(omit(doc, ['bar']), {
+  const resResult = parse(omit(doc, ['bar']), {
     _id: 'some-id',
     _type: 'something',
     foo: 'Foo',
     bar: 1,
   })
+  assert(resResult.ok)
+  const res = resResult.value
   expect(res).toEqual({
     _id: 'some-id',
     _type: 'something',
@@ -37,11 +39,13 @@ test('omit from an object', () => {
     foo: string(),
     bar: number(),
   })
-  const res = parse(omit(obj, ['bar']), {
+  const resResult = parse(omit(obj, ['bar']), {
     _type: 'something',
     foo: 'Foo',
     bar: 1,
   })
+  assert(resResult.ok)
+  const res = resResult.value
   expect(res).toEqual({
     _type: 'something',
     foo: 'Foo',

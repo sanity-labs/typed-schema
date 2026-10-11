@@ -7,7 +7,7 @@ import {
 } from '../defs'
 import {getLazySchema} from '../helpers/getLazySchema'
 import {type Committed, committed} from '../lifecycle'
-import {ParseError, type ParseOk, type ParseResult, safeParse} from '../parse'
+import {type ParseOk, type ParseResult, parse} from '../parse'
 import {
   DocumentBase,
   type ReferenceBase,
@@ -26,7 +26,7 @@ export type ReferenceWithOptionalRefType<RefTypeDef> = ReferenceLike &
   Partial<Conceal<RefTypeDef>>
 
 const NO_REF: Promise<ParseOk<any>> = Promise.resolve({
-  status: 'ok',
+  ok: true,
   value: undefined,
 })
 
@@ -56,10 +56,10 @@ export type LoadedReference<
   >,
 > = Parsed<Committed<ReferencedSchema<RefValue>>>
 
-export function createSafeLoadReference(
+export function createLoadReferenceResult(
   fetch: (id: string, fieldSelection: string[]) => Promise<unknown>,
 ) {
-  return function safeResolve<
+  return function loadReferenceResult<
     RefValue extends ReferenceWithOptionalRefType<
       SanityType<SanityDocumentValue>
     >,
@@ -73,7 +73,7 @@ export function createSafeLoadReference(
 
     const target = getLazySchema(reference[REF_SCHEMA] || DocumentBase)
     return fetch(reference._ref, fieldSelection || []).then(input =>
-      safeParse(committed(target as any), input),
+      parse(committed(target as any), input),
     ) as any
   }
 }
@@ -81,17 +81,15 @@ export function createSafeLoadReference(
 export function createReferenceLoader(
   fetch: (ref: string, fieldSelection: string[]) => Promise<unknown>,
 ) {
-  const safeResolve = createSafeLoadReference(fetch)
+  const loadReferenceResult = createLoadReferenceResult(fetch)
 
   return function loadReference<
     RefValue extends ReferenceWithOptionalRefType<
       SanityType<SanityDocumentValue>
     >,
   >(reference: RefValue): Promise<LoadedReference<RefValue>> {
-    return safeResolve(reference).then(result =>
-      result.status === 'ok'
-        ? result.value
-        : Promise.reject(new ParseError(result.errors)),
+    return loadReferenceResult(reference).then(result =>
+      result.ok ? result.value : Promise.reject(result.error),
     )
   }
 }

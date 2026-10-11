@@ -5,7 +5,7 @@ import {literal} from '../../creators/literal'
 import {object} from '../../creators/object'
 import {optional} from '../../creators/optional'
 import {string} from '../../creators/string'
-import {safeParse} from '../../parse'
+import {parse} from '../../parse'
 import {shallowRequired} from '../shallowRequired'
 
 const typeNames = (schema: {shape: Record<string, {typeName: string}>}) =>
@@ -21,8 +21,8 @@ test('makes top-level fields required, but not nested ones', () => {
   const req = shallowRequired(schema)
   expect(typeNames(req)).toEqual({a: 'string', sub: 'object'})
   expect(typeNames(req.shape.sub as any)).toEqual({c: 'optional'})
-  expect(safeParse(req, {a: 'x'}).status).toBe('fail')
-  expect(safeParse(req, {a: 'x', sub: {}}).status).toBe('ok')
+  expect(parse(req, {a: 'x'}).ok).toBe(false)
+  expect(parse(req, {a: 'x', sub: {}}).ok).toBe(true)
 })
 
 test('works on documents and keeps them documents', () => {
