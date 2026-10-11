@@ -1,0 +1,44 @@
+:root {
+  --vp-c-brand-1: #f03e2f;
+  --vp-c-brand-2: #d9301f;
+  --vp-c-brand-3: #c02617;
+  --vp-c-brand-soft: rgba(240, 62, 47, 0.14);
+}
+
+.dark {
+  --vp-c-brand-1: #ff6f61;
+  --vp-c-brand-2: #f45a4b;
+  --vp-c-brand-3: #f03e2f;
+  --vp-c-brand-soft: rgba(255, 111, 97, 0.16);
+}
+
+/*
+ * `^?` query results render as a line inside the code block (`queryRendering:
+ * 'line'` in config.ts). VitePress styles their <code> like inline code in
+ * prose; match the hover tooltips instead.
+ */
+.vp-doc .twoslash-query-line .twoslash-popup-container {
+  border-radius: 6px;
+  box-shadow: var(--vp-shadow-2);
+}
+
+.vp-doc .twoslash-query-line .twoslash-popup-code {
+  /* the library sets this padding with !important; this matches its hover
+     tooltip padding */
+  padding: 6px 12px !important;
+  border-radius: 0;
+  background: transparent;
+  font-size: inherit;
+}
+
+/* VitePress pads, scrolls and resizes every <pre> and <code> in a code block,
+   including the ones inside the query result */
+.vp-doc .twoslash-query-line .twoslash-popup-code pre {
+  padding: 0;
+  overflow: visible;
+}
+
+.vp-doc .twoslash-query-line .twoslash-popup-code pre code {
+  padding: 0;
+  font-size: inherit;
+}
