@@ -9,16 +9,7 @@ import {
 import {getInstanceName} from '../content-utils/getInstanceName'
 import {type SanityType} from '../defs'
 
-type Err<V> = {
-  ok: false
-  value: V
-}
-type Ok<V> = {
-  ok: true
-  value: V
-}
-
-export class StrictModeError extends Error {
+export class DuplicateTypeNameError extends Error {
   constructor(
     message: string,
     public duplicates: TypeNameInfo[],
@@ -27,35 +18,24 @@ export class StrictModeError extends Error {
   }
 }
 
-export function strictMode<S extends SanityType>(schema: S): S {
-  const res = safeStrictMode(schema)
-  if (res.ok) {
-    return res.value
-  }
-  throw new StrictModeError(res.value.message, res.value.duplicates)
-}
-export function safeStrictMode<S extends SanityType>(
-  schema: S,
-): Ok<S> | Err<{message: string; duplicates: TypeNameInfo[]}> {
-  const res = collectTypeNames(schema)
-  const duplicates = Object.values(res).filter(info => info.paths.length > 1)
+export function verifyUniqueTypeNames<S extends SanityType>(schema: S): S {
+  const duplicates = Object.values(collectTypeNames(schema)).filter(
+    info => info.paths.length > 1,
+  )
   if (duplicates.length === 0) {
-    return {ok: true, value: schema}
+    return schema
   }
-  return {
-    ok: false,
-    value: {
-      message: `GraphQL Strict Mode error: Duplicate named types found in schema: ${duplicates
-        .map(
-          dupe =>
-            `Found object with _type: "${dupe.name}" at ${dupe.paths
-              .map(p => (p.length === 0 ? '(root)' : p.join(' -> ')))
-              .join(', ')}`,
-        )
-        .join('\n')}`,
-      duplicates,
-    },
-  }
+  throw new DuplicateTypeNameError(
+    `Duplicate type names in schema: ${duplicates
+      .map(
+        dupe =>
+          `_type "${dupe.name}" at ${dupe.paths
+            .map(p => (p.length === 0 ? '(root)' : p.join(' -> ')))
+            .join(', ')}`,
+      )
+      .join('\n')}`,
+    duplicates,
+  )
 }
 
 interface TypeNameInfo {
@@ -82,7 +62,7 @@ export function collectTypeNames<S extends SanityType>(
   path: string[] = [],
 ): Record<string, TypeNameInfo> {
   if (isOptionalSchema(schema)) {
-    return collectTypeNames(schema.type)
+    return collectTypeNames(schema.type, path)
   }
   if (isObjectSchema(schema) || isDocumentSchema(schema)) {
     const instanceName = getInstanceName(schema)
@@ -100,7 +80,7 @@ export function collectTypeNames<S extends SanityType>(
     return info
   }
   if (isObjectArraySchema(schema)) {
-    return collectTypeNames(schema.element)
+    return collectTypeNames(schema.element, path)
   }
   if (isObjectUnionSchema(schema)) {
     const info: CollectedTypeNameInfo = {}

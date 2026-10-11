@@ -4,7 +4,7 @@
 
 Curate the public API and unify the asset document shapes.
 
-Now exported, as the README already described: `rename`, `required`, `deepRequired`, `shallowPartial`, `shallowRequired`, `strictMode`, `safeStrictMode`, `StrictModeError`, `never`, `portableText`, `createLoader`.
+Now exported, as the README already described: `rename`, `required`, `deepRequired`, `shallowPartial`, `shallowRequired`, `verifyUniqueTypeNames`, `DuplicateTypeNameError`, `never`, `portableText`, `createLoader`.
 
 No longer exported:
 

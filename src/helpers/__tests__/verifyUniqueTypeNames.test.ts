@@ -8,19 +8,28 @@ import {object} from '../../creators/object'
 import {optional} from '../../creators/optional'
 import {string} from '../../creators/string'
 import {union} from '../../creators/union'
-import {strictMode} from '../strictMode'
+import {
+  DuplicateTypeNameError,
+  verifyUniqueTypeNames,
+} from '../verifyUniqueTypeNames'
 
-test('valid strict mode types', () => {
-  expect(() => strictMode(string())).not.toThrow()
-  expect(() => strictMode(number())).not.toThrow()
-  expect(() => strictMode(union([string(), number()]))).not.toThrow()
-  expect(() => strictMode(array(union([string(), number()])))).not.toThrow()
-  expect(() => strictMode(literal('foo'))).not.toThrow()
-  expect(() => strictMode(object({foo: string()}))).not.toThrow()
-  expect(() => strictMode(object({_type: literal('bar')}))).not.toThrow()
-  expect(() => strictMode(array(object({_type: literal('bar')})))).not.toThrow()
+test('accepts schemas with unique type names', () => {
+  expect(() => verifyUniqueTypeNames(string())).not.toThrow()
+  expect(() => verifyUniqueTypeNames(number())).not.toThrow()
+  expect(() => verifyUniqueTypeNames(union([string(), number()]))).not.toThrow()
   expect(() =>
-    strictMode(
+    verifyUniqueTypeNames(array(union([string(), number()]))),
+  ).not.toThrow()
+  expect(() => verifyUniqueTypeNames(literal('foo'))).not.toThrow()
+  expect(() => verifyUniqueTypeNames(object({foo: string()}))).not.toThrow()
+  expect(() =>
+    verifyUniqueTypeNames(object({_type: literal('bar')})),
+  ).not.toThrow()
+  expect(() =>
+    verifyUniqueTypeNames(array(object({_type: literal('bar')}))),
+  ).not.toThrow()
+  expect(() =>
+    verifyUniqueTypeNames(
       array(
         union([
           object({_type: literal('foo')}),
@@ -30,7 +39,7 @@ test('valid strict mode types', () => {
     ),
   ).not.toThrow()
   expect(() =>
-    strictMode(
+    verifyUniqueTypeNames(
       document({
         _type: literal('testdoc'),
         nested: array(
@@ -51,15 +60,14 @@ test('valid strict mode types', () => {
   ).not.toThrow()
 })
 
-test('invalid strict mode types', () => {
+test('rejects schemas with duplicate type names', () => {
   expect(() =>
-    strictMode(
+    verifyUniqueTypeNames(
       object({_type: literal('bar'), inner: object({_type: literal('bar')})}),
     ),
-  ).toThrow(/GraphQL Strict Mode error/)
-  expect(() => strictMode(array(object({_type: literal('bar')})))).not.toThrow()
+  ).toThrow(DuplicateTypeNameError)
   expect(() =>
-    strictMode(
+    verifyUniqueTypeNames(
       array(
         union([
           object({_type: literal('foo')}),
@@ -71,10 +79,10 @@ test('invalid strict mode types', () => {
       ),
     ),
   ).toThrowErrorMatchingInlineSnapshot(
-    `[Error: GraphQL Strict Mode error: Duplicate named types found in schema: Found object with _type: "bar" at bar, bar -> inner]`,
+    `[Error: Duplicate type names in schema: _type "bar" at bar, bar -> inner]`,
   )
   expect(() =>
-    strictMode(
+    verifyUniqueTypeNames(
       document({
         _type: literal('test'),
         nested: array(
@@ -93,6 +101,24 @@ test('invalid strict mode types', () => {
       }),
     ),
   ).toThrowErrorMatchingInlineSnapshot(
-    `[Error: GraphQL Strict Mode error: Duplicate named types found in schema: Found object with _type: "bar" at (root), bar]`,
+    `[Error: Duplicate type names in schema: _type "bar" at nested -> foo -> optional, nested -> bar]`,
   )
+})
+
+test('returns the schema and lists duplicates on the error', () => {
+  const schema = object({_type: literal('foo'), name: string()})
+  expect(verifyUniqueTypeNames(schema)).toBe(schema)
+
+  let error: unknown
+  try {
+    verifyUniqueTypeNames(
+      object({_type: literal('bar'), inner: object({_type: literal('bar')})}),
+    )
+  } catch (err) {
+    error = err
+  }
+  expect(error).toBeInstanceOf(DuplicateTypeNameError)
+  expect((error as DuplicateTypeNameError).duplicates).toEqual([
+    {name: 'bar', paths: [[], ['inner']]},
+  ])
 })

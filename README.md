@@ -51,7 +51,7 @@ const fido = parse(Pet, {_type: 'pet', name: 'Fido'})
   - [Document lifecycles](#document-lifecycles)
   - [Recursive schemas](#recursive-schemas)
   - [Loading documents and references](#loading-documents-and-references)
-  - [Unique type names (GraphQL strict mode)](#unique-type-names-graphql-strict-mode)
+  - [Unique type names for GraphQL](#unique-type-names-for-graphql)
   - [Using a typed schema in Sanity Studio](#using-a-typed-schema-in-sanity-studio)
 - [Limitations](#limitations)
 - [API reference](#api-reference)
@@ -461,20 +461,20 @@ const writer = await loadReference(welcome.author) // Parsed<Committed<typeof Au
 
 `loadDocument` returns `Parsed<Committed<typeof Post>>`, where each reference value includes the schema it points to under a hidden `$refSchema` key. That is how `loadReference(welcome.author)` knows to parse the result as an `Author`. A reference typed as `Infer<typeof Post>['author']`, for example one built by hand or read straight from the client, has no `$refSchema`, so `loadReference` falls back to parsing only the document system fields: the result is typed as a committed document with `_type`, `_id`, `_rev`, `_createdAt` and `_updatedAt` and nothing else.
 
-### Unique type names (GraphQL strict mode)
+### Unique type names for GraphQL
 
-Sanity's GraphQL API needs every `_type` in a schema to map to exactly one shape. `strictMode(schema)` walks the schema and throws a `StrictModeError` if the same `_type` literal appears in more than one place; `safeStrictMode` returns the duplicates instead of throwing.
+Sanity's GraphQL API needs every `_type` in a schema to map to exactly one shape. `verifyUniqueTypeNames(schema)` walks the schema and returns it unchanged, or throws a `DuplicateTypeNameError` if the same `_type` literal appears in more than one place. The error's `duplicates` lists each duplicated name and the paths where it appears.
 
 ```ts
 import {
   document,
   literal,
   object,
-  strictMode,
   string,
+  verifyUniqueTypeNames,
 } from '@sanity-labs/typed-schema'
 
-const Post = strictMode(
+const Post = verifyUniqueTypeNames(
   document({
     _type: literal('post'),
     author: object({_type: literal('person'), name: string()}),
@@ -636,13 +636,13 @@ Each returns a new schema. Types follow the runtime change.
 
 ### Lifecycle helpers
 
-| Export                                                  | Notes                                                                                                                 |
-| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `partial(doc)`                                          | `deepPartial` for documents: every field but `_type` becomes optional, recursively. Returns `DeepPartial<typeof doc>` |
-| `committed(doc)`                                        | `_id`, `_rev`, `_createdAt`, `_updatedAt` become required                                                             |
-| `Committed<typeof doc>`                                 | The schema type `committed()` returns; `Infer<Committed<typeof doc>>` is a document as the API returns it             |
-| `COMMITTED_KEYS`, `CommittedKeys`                       | The fields `committed()` requires, as a constant and as a union of their names                                        |
-| `strictMode(s)`, `safeStrictMode(s)`, `StrictModeError` | See [Unique type names](#unique-type-names-graphql-strict-mode)                                                       |
+| Export                                               | Notes                                                                                                                 |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `partial(doc)`                                       | `deepPartial` for documents: every field but `_type` becomes optional, recursively. Returns `DeepPartial<typeof doc>` |
+| `committed(doc)`                                     | `_id`, `_rev`, `_createdAt`, `_updatedAt` become required                                                             |
+| `Committed<typeof doc>`                              | The schema type `committed()` returns; `Infer<Committed<typeof doc>>` is a document as the API returns it             |
+| `COMMITTED_KEYS`, `CommittedKeys`                    | The fields `committed()` requires, as a constant and as a union of their names                                        |
+| `verifyUniqueTypeNames(s)`, `DuplicateTypeNameError` | See [Unique type names](#unique-type-names-for-graphql)                                                               |
 
 ### Loaders
 

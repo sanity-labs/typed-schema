@@ -2,7 +2,7 @@ import {expect, test} from 'vitest'
 
 import {literal} from '../../creators/literal'
 import {object} from '../../creators/object'
-import {collectTypeNames} from '../strictMode'
+import {collectTypeNames} from '../verifyUniqueTypeNames'
 
 test('collectTypeNames', () => {
   expect(
