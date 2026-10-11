@@ -303,9 +303,9 @@ export type SanityObjectUnionMemberKind =
 
 export type SanityArray<
   ElementType extends
-    | (SanityObjectLike | SanityObjectUnion)
+    | (SanityObjectLikeKind | SanityObjectUnionKind)
     | (SanityPrimitive | SanityPrimitiveUnion),
-> = ElementType extends SanityObjectLike | SanityObjectUnion
+> = ElementType extends SanityObjectLikeKind | SanityObjectUnionKind
   ? SanityObjectArray<ElementType>
   : ElementType extends SanityPrimitive | SanityPrimitiveUnion
     ? SanityPrimitiveArray<ElementType>
