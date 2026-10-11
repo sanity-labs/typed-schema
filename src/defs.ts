@@ -44,7 +44,7 @@ export interface SanityType<Output = any> {
   output: Output
   /**
    * The {@link https://standardschema.dev | Standard Schema} properties:
-   * `validate` runs `safeParse`, and the input type is the value as stored
+   * `validate` runs `parse`, and the input type is the value as stored
    * ({@link Infer}) while the output type is what `parse` returns
    * ({@link Parsed}). Not enumerable, so `JSON.stringify` ignores it.
    *
@@ -68,7 +68,7 @@ export interface StandardProps<Output> extends StandardSchemaV1.Props<
   StripRefSchema<Output>,
   Output
 > {
-  /** Validates `value` against the schema with `safeParse`, synchronously */
+  /** Validates `value` against the schema with `parse`, synchronously */
   readonly validate: (value: unknown) => StandardSchemaV1.Result<Output>
 }
 
@@ -422,7 +422,7 @@ export type WithRefTypeDef<RefType extends SanityReferenceTarget> = Flatten<
 >
 
 /**
- * The type of a value returned by `parse`, `safeParse` and the document
+ * The type of a value returned by `parse`, `parseOrThrow` and the document
  * loaders. Same as {@link Infer}, except that reference values include the
  * schema of the document they point to under {@link REF_SCHEMA}, which is what
  * lets `loadReference` type and validate what it fetches.

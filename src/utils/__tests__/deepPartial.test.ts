@@ -24,7 +24,7 @@ test('deep partial on nested object', () => {
     }),
   })
 
-  expect(parse(deepPartial(obj), {})).toEqual({})
+  expect(parse(deepPartial(obj), {})).toEqual({ok: true, value: {}})
   expect(
     parse(deepPartial(obj), {
       sub: {
@@ -33,13 +33,16 @@ test('deep partial on nested object', () => {
     }),
   ).toMatchInlineSnapshot(`
     {
-      "sub": {
-        "array": [
-          {
-            "_key": "xyz",
-            "_type": "some",
-          },
-        ],
+      "ok": true,
+      "value": {
+        "sub": {
+          "array": [
+            {
+              "_key": "xyz",
+              "_type": "some",
+            },
+          ],
+        },
       },
     }
   `)
@@ -53,10 +56,16 @@ test('deep partial on documents keeps them documents', () => {
   })
   const partial = deepPartial(doc)
   expect(partial.typeName).toBe('document')
-  expect(parse(partial, {_type: 'pet'})).toEqual({_type: 'pet'})
+  expect(parse(partial, {_type: 'pet'})).toEqual({
+    ok: true,
+    value: {_type: 'pet'},
+  })
   expect(parse(partial, {_type: 'pet', owner: {}})).toEqual({
-    _type: 'pet',
-    owner: {},
+    ok: true,
+    value: {
+      _type: 'pet',
+      owner: {},
+    },
   })
 })
 

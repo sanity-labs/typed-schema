@@ -1,4 +1,4 @@
-import {assertType, describe, expect, test} from 'vitest'
+import {assert, assertType, describe, expect, test} from 'vitest'
 
 import {array} from '../../creators/array'
 import {boolean} from '../../creators/boolean'
@@ -19,12 +19,14 @@ describe('extends helper', () => {
     const obj = object({str: string(), num: number()})
     const extended = extend(obj, {extendedStr: string(), extendedNum: number()})
 
-    const parsed = parse(extended, {
+    const parsedResult = parse(extended, {
       str: 'foo',
       num: 1,
       extendedStr: 'bar',
       extendedNum: 1,
     })
+    assert(parsedResult.ok)
+    const parsed = parsedResult.value
 
     assertType<{
       str: string
@@ -55,10 +57,12 @@ describe('extends helper', () => {
       changedFromNumberToString: string(),
     })
 
-    const parsed = parse(extended, {
+    const parsedResult = parse(extended, {
       changedFromStringToLiteralString: 'literally this',
       changedFromNumberToString: 'a string',
     })
+    assert(parsedResult.ok)
+    const parsed = parsedResult.value
 
     assertType<'literally this'>(parsed.changedFromStringToLiteralString)
     assertType<{
@@ -93,7 +97,7 @@ describe('extends helper', () => {
       ),
     })
 
-    const parsed = parse(LazyPerson, {
+    const parsedResult = parse(LazyPerson, {
       _type: 'person',
       name: 'foo',
       parent: {
@@ -102,6 +106,8 @@ describe('extends helper', () => {
         foo: 'ok',
       },
     })
+    assert(parsedResult.ok)
+    const parsed = parsedResult.value
     expect(parsed).toEqual({
       _type: 'person',
       name: 'foo',

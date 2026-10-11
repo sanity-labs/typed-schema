@@ -28,9 +28,9 @@ test('recursive schemas stay plain, serializable objects after parsing', () => {
     name: 'Ann',
     friends: [{_type: 'reference', _ref: 'bob', _key: 'k1'}],
   }
-  expect(parse(person, value)).toEqual(value)
+  expect(parse(person, value)).toEqual({ok: true, value})
   // parse again to exercise the cache
-  expect(parse(person, value)).toEqual(value)
+  expect(parse(person, value)).toEqual({ok: true, value})
 
   expect(Object.keys(person.shape.friends as object)).toEqual([
     'typeName',
@@ -43,6 +43,6 @@ test('nested lazy schemas resolve', () => {
   const schema = object({
     nested: lazy(() => lazy(() => optional(string()))),
   })
-  expect(parse(schema, {nested: 'x'})).toEqual({nested: 'x'})
-  expect(parse(schema, {})).toEqual({})
+  expect(parse(schema, {nested: 'x'})).toEqual({ok: true, value: {nested: 'x'}})
+  expect(parse(schema, {})).toEqual({ok: true, value: {}})
 })

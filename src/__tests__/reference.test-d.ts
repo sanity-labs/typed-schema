@@ -1,4 +1,4 @@
-import {describe, expectTypeOf, test} from 'vitest'
+import {assert, describe, expectTypeOf, test} from 'vitest'
 
 import {array} from '../creators/array'
 import {document} from '../creators/document'
@@ -52,12 +52,16 @@ describe('reference type', () => {
   })
 
   test('parsed values include the referenced schema', () => {
-    const parsed = parse(Pet, {})
+    const parsedResult = parse(Pet, {})
+    assert(parsedResult.ok)
+    const parsed = parsedResult.value
     expectTypeOf(parsed.owner.$refSchema).toEqualTypeOf<typeof Person>()
   })
 
   test('a parsed value is assignable to the inferred type', () => {
-    const parsed = parse(Pet, {})
+    const parsedResult = parse(Pet, {})
+    assert(parsedResult.ok)
+    const parsed = parsedResult.value
     const value: Infer<typeof Pet> = parsed
     expectTypeOf(value).toEqualTypeOf<Infer<typeof Pet>>()
   })

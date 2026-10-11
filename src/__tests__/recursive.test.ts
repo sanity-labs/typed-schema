@@ -15,7 +15,7 @@ import {union} from '../creators/union'
 import {type SanityObjectArray} from '../defs'
 import {getLazySchema} from '../helpers/getLazySchema'
 import {verifyUniqueTypeNames} from '../helpers/verifyUniqueTypeNames'
-import {parse, safeParse} from '../parse'
+import {parse} from '../parse'
 import {deepPartial} from '../utils/deepPartial'
 import {deepRequired} from '../utils/deepRequired'
 import {extend} from '../utils/extend'
@@ -72,29 +72,32 @@ describe('recursive schemas declared with getters', () => {
         },
       ],
     }
-    expect(parse(Category, value)).toEqual(value)
+    expect(parse(Category, value)).toEqual({ok: true, value})
   })
 
   test('report errors at depth', () => {
-    const result = safeParse(Category, {
+    const result = parse(Category, {
       _type: 'category',
       name: 'a',
       subcategories: [
         {_type: 'category', _key: 'k1', name: 1, subcategories: []},
       ],
     })
-    expect(result.status).toBe('fail')
-    expect(result.status === 'fail' && result.errors[0]?.path).toEqual([
+    expect(result.ok).toBe(false)
+    expect(!result.ok && result.error.issues[0]?.path).toEqual([
       'subcategories',
-      'k1',
+      {_key: 'k1', index: 0},
       'name',
     ])
   })
 
   test('optional self-reference', () => {
     expect(parse(Node, {_type: 'node', value: 'a'})).toEqual({
-      _type: 'node',
-      value: 'a',
+      ok: true,
+      value: {
+        _type: 'node',
+        value: 'a',
+      },
     })
     expect(
       parse(Node, {
@@ -102,11 +105,13 @@ describe('recursive schemas declared with getters', () => {
         value: 'a',
         next: {_type: 'node', value: 'b'},
       }),
-    ).toEqual({_type: 'node', value: 'a', next: {_type: 'node', value: 'b'}})
+    ).toEqual({
+      ok: true,
+      value: {_type: 'node', value: 'a', next: {_type: 'node', value: 'b'}},
+    })
     expect(
-      safeParse(Node, {_type: 'node', value: 'a', next: {_type: 'nope'}})
-        .status,
-    ).toBe('fail')
+      parse(Node, {_type: 'node', value: 'a', next: {_type: 'nope'}}).ok,
+    ).toBe(false)
   })
 
   test('documents referencing themselves', () => {
@@ -116,7 +121,7 @@ describe('recursive schemas declared with getters', () => {
       name: 'Ann',
       friends: [{_type: 'reference', _ref: 'bob', _key: 'k1'}],
     }
-    expect(parse(Person, value)).toEqual(value)
+    expect(parse(Person, value)).toEqual({ok: true, value})
   })
 
   test('self-reference through a union', () => {
@@ -128,7 +133,7 @@ describe('recursive schemas declared with getters', () => {
         {_type: 'folder', _key: 'k2', name: 'sub', children: []},
       ],
     }
-    expect(parse(Folder, value)).toEqual(value)
+    expect(parse(Folder, value)).toEqual({ok: true, value})
   })
 
   test('getters are not invoked when the schema is created', () => {
@@ -175,33 +180,41 @@ describe('recursive schemas declared with getters', () => {
       _type: 'category',
       subcategories: [{_type: 'category', _key: 'k1', subcategories: []}],
     }
-    expect(parse(Partial, {_type: 'category'})).toEqual({_type: 'category'})
-    expect(parse(Partial, value)).toEqual(value)
+    expect(parse(Partial, {_type: 'category'})).toEqual({
+      ok: true,
+      value: {
+        _type: 'category',
+      },
+    })
+    expect(parse(Partial, value)).toEqual({ok: true, value})
 
     const Required = deepRequired(Node)
     expect(
-      safeParse(Required, {
+      parse(Required, {
         _type: 'node',
         value: 'a',
         next: {_type: 'node', value: 'b'},
-      }).status,
-    ).toBe('fail')
+      }).ok,
+    ).toBe(false)
   })
 
   test('shallowRequired and required unwrap optional getter fields', () => {
     const Required = shallowRequired(Node)
-    expect(safeParse(Required, {_type: 'node', value: 'a'}).status).toBe('fail')
+    expect(parse(Required, {_type: 'node', value: 'a'}).ok).toBe(false)
     expect(
       parse(Required, {
         _type: 'node',
         value: 'a',
         next: {_type: 'node', value: 'b'},
       }),
-    ).toEqual({_type: 'node', value: 'a', next: {_type: 'node', value: 'b'}})
+    ).toEqual({
+      ok: true,
+      value: {_type: 'node', value: 'a', next: {_type: 'node', value: 'b'}},
+    })
 
     const RequiredString = required(lazy(() => optional(string())))
-    expect(safeParse(RequiredString, undefined).status).toBe('fail')
-    expect(parse(RequiredString, 'x')).toBe('x')
+    expect(parse(RequiredString, undefined).ok).toBe(false)
+    expect(parse(RequiredString, 'x')).toEqual({ok: true, value: 'x'})
   })
 
   test('extend keeps getters deferred', () => {
@@ -216,7 +229,10 @@ describe('recursive schemas declared with getters', () => {
         name: 'a',
         parent: {_type: 'tree', name: 'b'},
       }),
-    ).toEqual({_type: 'tree', name: 'a', parent: {_type: 'tree', name: 'b'}})
+    ).toEqual({
+      ok: true,
+      value: {_type: 'tree', name: 'a', parent: {_type: 'tree', name: 'b'}},
+    })
   })
 
   test('self-reference inside image and file fields', () => {
@@ -253,12 +269,12 @@ describe('recursive schemas declared with getters', () => {
         gallery: {_type: 'gallery', title: 'c'},
       },
     }
-    expect(parse(Gallery, value)).toEqual(value)
+    expect(parse(Gallery, value)).toEqual({ok: true, value})
     expect(
-      safeParse(Gallery, {
+      parse(Gallery, {
         ...value,
         cover: {...value.cover, related: {_type: 'gallery', title: 1}},
-      }).status,
-    ).toBe('fail')
+      }).ok,
+    ).toBe(false)
   })
 })

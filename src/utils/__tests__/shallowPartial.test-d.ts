@@ -1,4 +1,4 @@
-import {assertType, expectTypeOf, test} from 'vitest'
+import {assert, assertType, expectTypeOf, test} from 'vitest'
 
 import {document} from '../../creators/document'
 import {literal} from '../../creators/literal'
@@ -64,7 +64,9 @@ test('shallow partial on document schema', () => {
     name: string(),
     owner: object({name: string()}),
   })
-  const pet = parse(shallowPartial(Pet), {_type: 'pet'})
+  const petResult = parse(shallowPartial(Pet), {_type: 'pet'})
+  assert(petResult.ok)
+  const pet = petResult.value
   expectTypeOf(pet).not.toBeNever()
   expectTypeOf(pet).toEqualTypeOf<{
     _type: 'pet'
@@ -88,7 +90,9 @@ test('shallow partial on document schema', () => {
 
 test('shallow partial keeps _type required on typed objects', () => {
   const Thing = object({_type: literal('thing'), name: optional(string())})
-  expectTypeOf(parse(shallowPartial(Thing), {_type: 'thing'})).toEqualTypeOf<{
+  const result = parse(shallowPartial(Thing), {_type: 'thing'})
+  assert(result.ok)
+  expectTypeOf(result.value).toEqualTypeOf<{
     _type: 'thing'
     name?: string | undefined
   }>()

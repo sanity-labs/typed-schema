@@ -27,4 +27,6 @@ const somePet = parse(Pet, {})
 
 type Pet = Infer<typeof Pet>
 
-const someHuman = somePet.humans[0]
+if (somePet.ok) {
+  const someHuman = somePet.value.humans[0]
+}

@@ -5,6 +5,7 @@ const EXCLUDE = ['.tmp/**', 'experiments/**']
 
 export default defineConfig({
   test: {
+    setupFiles: ['./src/__tests__/setup.ts'],
     typecheck: {
       exclude: [...(configDefaults.typecheck?.exclude || []), ...EXCLUDE],
     },

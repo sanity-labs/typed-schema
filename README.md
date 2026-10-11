@@ -27,8 +27,12 @@ export const Pet = document({
 // {_type: 'pet'; name: string; birthYear?: number; _id?: string; _rev?: string; ...}
 export type Pet = Infer<typeof Pet>
 
-// throws a ParseError if the input does not match the schema
-const fido = parse(Pet, {_type: 'pet', name: 'Fido'})
+const result = parse(Pet, {_type: 'pet', name: 'Fido'})
+if (result.ok) {
+  result.value // Pet
+} else {
+  result.error.issues // every problem found, with its path in the input
+}
 ```
 
 ## Table of contents
@@ -164,7 +168,7 @@ export const User = document({
 
 export type User = Infer<typeof User>
 
-const user = parse(User, {
+const result = parse(User, {
   _type: 'user',
   name: 'Grace Hopper',
   idOrHandle: 'grace',
@@ -172,54 +176,63 @@ const user = parse(User, {
   address: {city: 'Arlington'},
 })
 
-// @ts-expect-error TS2339: Property 'noSuchProperty' does not exist on type
-user.noSuchProperty
+if (result.ok) {
+  const user = result.value
 
-// @ts-expect-error TS2365: Operator '+' cannot be applied to types '{city?: string}' and 'number'
-user.address + 2
+  // @ts-expect-error TS2339: Property 'noSuchProperty' does not exist on type
+  user.noSuchProperty
+
+  // @ts-expect-error TS2365: Operator '+' cannot be applied to types '{city?: string}' and 'number'
+  user.address + 2
+}
 ```
 
 Schema constants are PascalCase (`User`, `Address`), the same as the type inferred from them. TypeScript lets a `const` and a `type` share a name, so `User` is the schema in a value position and the parsed document type in a type position, and one import gives you both. Creator and transform functions (`document()`, `reference()`, `extend()`) stay camelCase, and `_type` literals keep Sanity's camelCase type names (`'user'`).
 
 ### Parsing and errors
 
-`parse(schema, input)` returns the typed value or throws `ParseError`. `safeParse` returns a result object instead, with every problem found, not only the first:
+`parse(schema, input)` returns a result object and never throws for invalid input. A failed result holds a `ParseError` listing every problem found, not only the first. `parseOrThrow` returns the typed value directly and throws that same `ParseError` instead:
 
 ```ts
 import {
   document,
+  formatPath,
   literal,
   number,
-  ParseError,
   parse,
-  safeParse,
+  ParseError,
+  parseOrThrow,
   string,
 } from '@sanity-labs/typed-schema'
 
 const Pet = document({_type: literal('pet'), name: string(), age: number()})
 
-const result = safeParse(Pet, {_type: 'pet', name: 42})
-if (result.status === 'fail') {
+const result = parse(Pet, {_type: 'pet', name: 42})
+if (result.ok) {
+  result.value // {_type: 'pet'; name: string; age: number; ...}
+} else {
   // [
   //   {path: ['name'], code: 'INVALID_TYPE', input: 42, message: 'Expected a string'},
   //   {path: ['age'], code: 'INVALID_TYPE', input: undefined, message: 'Expected a finite number'},
   // ]
-  console.log(result.errors)
+  console.log(result.error.issues)
 }
 
 try {
-  parse(Pet, {_type: 'pet', name: 42})
+  parseOrThrow(Pet, {_type: 'pet', name: 42})
 } catch (err) {
   if (err instanceof ParseError) {
     // Invalid input at "name": Expected a string (+ 1)
-    console.log(err.message, err.errors)
+    console.log(err.message, err.issues)
   }
 }
 ```
 
+An issue's `path` leads to the offending value: object fields by name, items in arrays of primitives by index, and items in arrays of objects by `_key` and index, as `{_key: 'abc', index: 0}`. `formatPath(path)` renders it the way Sanity writes paths, for example `body[_key=="abc"].children[0].text`.
+
 Parsing strips properties the schema does not declare rather than rejecting them.
 
-`parse` returns `Parsed<typeof Pet>`, which is `Infer<typeof Pet>` plus a hidden `$refSchema` key on reference values; see [Loading documents and references](#loading-documents-and-references).
+`parseOrThrow` returns `Parsed<typeof Pet>`, and `parse` has it as `value`. It is `Infer<typeof Pet>` plus a hidden `$refSchema` key on reference values; see [Loading documents and references](#loading-documents-and-references).
 
 ### Standard Schema
 
@@ -240,9 +253,7 @@ if (result.issues) {
 }
 ```
 
-`validate` runs `safeParse` and returns synchronously (the spec allows a promise, so generic code should still `await` it). An issue's `path` is the same as a `ParseErrorDetails` path, so an element of a keyed array appears by its `_key`, not its index.
-
-`StandardSchemaV1.InferInput` is the value as stored (`Infer`) and `StandardSchemaV1.InferOutput` is what `parse` returns (`Parsed`). The package exports the `StandardSchemaV1` type too, for code that does not depend on `@standard-schema/spec`, and `StandardProps<Output>`, the type of `schema['~standard']`.
+`validate` runs `parse` and returns synchronously (the spec allows a promise, so generic code should still `await` it). An issue's `path` follows the spec, so it resolves against the input: an element of a keyed array appears as `{key: index, _key}`, with its index as the `key` and its `_key` alongside. `StandardSchemaV1.InferInput` is the value as stored (`Infer`) and `StandardSchemaV1.InferOutput` is what `parse` returns (`Parsed`). The package exports the `StandardSchemaV1` type too, for code that does not depend on `@standard-schema/spec`.
 
 ### Arrays and `_key`
 
@@ -373,7 +384,9 @@ const committedPet = parse(committed(Pet), {
   _updatedAt: '2024-01-01T00:00:00Z',
   name: 'Fido',
 })
-committedPet._rev.toUpperCase() // _rev is a string, not string | undefined
+if (committedPet.ok) {
+  committedPet.value._rev.toUpperCase() // _rev is a string, not string | undefined
+}
 
 const PartialPet = partial(Pet)
 const committedPartialPet = parse(committed(PartialPet), {
@@ -383,7 +396,9 @@ const committedPartialPet = parse(committed(PartialPet), {
   _createdAt: '2024-01-01T00:00:00Z',
   _updatedAt: '2024-01-01T00:00:00Z',
 })
-committedPartialPet.name // string | undefined
+if (committedPartialPet.ok) {
+  committedPartialPet.value.name // string | undefined
+}
 
 // A new pet needs its declared fields but no system fields
 const newPet: Infer<typeof Pet> = {_type: 'pet', name: 'Rex'}
@@ -553,8 +568,8 @@ for (const key of ['firstName', 'lastName']) {
 }
 
 const Person = object(shape)
-// value is typed as {} even though parsing checks both fields
-const value = parse(Person, {firstName: 'Grace', lastName: 'Hopper'})
+// result.value is typed as {} even though parsing checks both fields
+const result = parse(Person, {firstName: 'Grace', lastName: 'Hopper'})
 ```
 
 Write shapes as literals (`object({firstName: string(), lastName: string()})`) to get narrow types.
@@ -661,14 +676,15 @@ Each returns a new schema. Types follow the runtime change.
 
 ### Parsing
 
-| Export                     | Notes                                                                                                                                       |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `parse(schema, input)`     | Returns `Parsed<typeof schema>` or throws `ParseError`                                                                                      |
-| `safeParse(schema, input)` | Returns `{status: 'ok', value}` or `{status: 'fail', errors}`                                                                               |
-| `ParseError`               | `message` summarises the first error; `errors` holds all of them                                                                            |
-| `ParseErrorDetails`        | `{path, code, input, message}`. `path` is an array of field names and array indexes or `_key`s                                              |
-| `ErrorCode`                | `'INVALID_TYPE'`, `'NUM_TOO_SMALL'`, `'NUM_TOO_BIG'`, `'NUM_NOT_MULTIPLE_OF'`, `'INVALID_OBJECT_UNION'`, `'ARRAY_ELEMENT_NOT_KEYED_OBJECT'` |
-| `schema['~standard']`      | The [Standard Schema](#standard-schema) properties: `validate` runs `safeParse`                                                             |
+| Export                        | Notes                                                                                                                                                                                            |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `parse(schema, input)`        | Returns `{ok: true, value}` or `{ok: false, error: ParseError}`; never throws for invalid input                                                                                                  |
+| `parseOrThrow(schema, input)` | Returns `Parsed<typeof schema>` or throws `ParseError`                                                                                                                                           |
+| `ParseError`                  | The `error` of a failed result and what `parseOrThrow` throws. `message` summarises the first issue; `issues` holds all of them                                                                  |
+| `ParseIssue`                  | `{path, code, input, message}`. `path` is an array of field names, array indexes and `{_key, index}` objects                                                                                     |
+| `formatPath(path)`            | Renders a `path` as `a.b[0].c[_key=="k"]`; `<root>` for the empty path                                                                                                                           |
+| `ErrorCode`                   | `'INVALID_TYPE'`, `'NUM_TOO_SMALL'`, `'NUM_TOO_BIG'`, `'NUM_NOT_MULTIPLE_OF'`, `'INVALID_PRIMITIVE_UNION'`, `'INVALID_ENUM_VALUE'`, `'INVALID_OBJECT_UNION'`, `'ARRAY_ELEMENT_NOT_KEYED_OBJECT'` |
+| `schema['~standard']`         | The [Standard Schema](#standard-schema) properties: `validate` runs `parse`                                                                                                                      |
 
 ### Lifecycle helpers
 
@@ -693,14 +709,13 @@ Each returns a new schema. Types follow the runtime change.
 | Type                        | Notes                                                                                     |
 | --------------------------- | ----------------------------------------------------------------------------------------- |
 | `Infer<typeof schema>`      | The value type of a schema as stored: plain data, without `$refSchema` on references      |
-| `Parsed<typeof schema>`     | What `parse` and the loaders return: `Infer` plus `$refSchema` on every reference value   |
+| `Parsed<typeof schema>`     | What `parseOrThrow` and the loaders return, and the `value` of a `parse` result           |
 | `SanityType<Output>`        | Base type of every schema; `SanityObject`, `SanityDocument`, `SanityArray`, ... extend it |
 | `SanityDocumentType<Value>` | A document schema annotated by its value type; use with `lazy()` for recursive schemas    |
 | `SanityDocumentValue`       | `{_type: string; _id?: string; _rev?: string; _createdAt?: string; _updatedAt?: string}`  |
 | `SanityReferenceValue<T>`   | The value of a `reference()` to a schema of type `T`                                      |
 | `SanityArrayValue<T>`       | `T[]`, with `_key` added to object elements                                               |
 | `StandardSchemaV1`          | The [Standard Schema](#standard-schema) interface, the same as `@standard-schema/spec`    |
-| `StandardProps<Output>`     | The type of `schema['~standard']`: input type `Infer`, output type `Parsed`               |
 
 The type guards (`isObjectSchema`, `isDocumentSchema`, `isOptionalSchema`, ...) are exported for code that walks schemas.
 

@@ -56,20 +56,24 @@ declare const stringOrNumOut: OutputOf<typeof PolyObjectArr>
 
 const t = reference(Country)
 
-const somePerson = parse(Person, {})
-
-console.log(somePerson.address.country)
-
+const result = parse(Person, {})
 const resolve = createReferenceLoader(() => Promise.resolve())
-const somePersonCountry = await resolve(somePerson.address.country)
 
-const keys = somePerson.pets.map(somePersonsPet => somePersonsPet._key)
+if (result.ok) {
+  const somePerson = result.value
 
-assertAssignable<string[], typeof keys>()
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-somePerson.visitedCountries[0]!
-const references = somePerson.visitedCountries.map(visitedCountry => [
-  visitedCountry._ref,
-  visitedCountry._key,
-])
-assertAssignable<[string, string][], typeof references>()
+  console.log(somePerson.address.country)
+
+  const somePersonCountry = await resolve(somePerson.address.country)
+
+  const keys = somePerson.pets.map(somePersonsPet => somePersonsPet._key)
+
+  assertAssignable<string[], typeof keys>()
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  somePerson.visitedCountries[0]!
+  const references = somePerson.visitedCountries.map(visitedCountry => [
+    visitedCountry._ref,
+    visitedCountry._key,
+  ])
+  assertAssignable<[string, string][], typeof references>()
+}

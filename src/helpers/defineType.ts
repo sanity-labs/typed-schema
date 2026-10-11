@@ -1,4 +1,4 @@
-import {safeParse} from '../parse'
+import {parse} from '../parse'
 import {type StandardSchemaV1} from '../standardSchema'
 import {defineNonEnumerableGetter} from './defineNonEnumerableGetter'
 
@@ -21,14 +21,18 @@ export function defineType<T>(
       version: 1,
       vendor: '@sanity-labs/typed-schema',
       validate: value => {
-        const result = safeParse(target as any, value)
-        return result.status === 'ok'
+        const result = parse(target as any, value)
+        return result.ok
           ? {value: result.value}
           : {
-              issues: result.errors.map(error => ({
-                message: error.message,
-                path: error.path.map(segment =>
-                  typeof segment === 'object' ? {key: segment._key} : segment,
+              issues: result.error.issues.map(issue => ({
+                message: issue.message,
+                // A keyed array item is addressed by its index, which resolves
+                // against the input, with the `_key` kept alongside.
+                path: issue.path.map(segment =>
+                  typeof segment === 'object'
+                    ? {key: segment.index, _key: segment._key}
+                    : segment,
                 ),
               })),
             }

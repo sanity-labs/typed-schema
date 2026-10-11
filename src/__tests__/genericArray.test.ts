@@ -13,7 +13,7 @@ import {
   type SanityPrimitive,
   type SanityPrimitiveUnion,
 } from '../defs'
-import {parse, safeParse} from '../parse'
+import {parse} from '../parse'
 
 function table<
   CellType extends
@@ -35,13 +35,13 @@ describe('array() with a generic element type', () => {
       'primitiveArray',
     )
     const value = {_type: 'table', rows: [{_key: 'r1', cells: ['a', 'b']}]}
-    expect(parse(StringTable, value)).toEqual(value)
+    expect(parse(StringTable, value)).toEqual({ok: true, value})
     expect(
-      safeParse(StringTable, {
+      parse(StringTable, {
         _type: 'table',
         rows: [{_key: 'r1', cells: ['a', 1]}],
-      }).status,
-    ).toBe('fail')
+      }).ok,
+    ).toBe(false)
   })
 
   test('object union cell', () => {
@@ -66,13 +66,13 @@ describe('array() with a generic element type', () => {
         },
       ],
     }
-    expect(parse(MixedTable, value)).toEqual(value)
+    expect(parse(MixedTable, value)).toEqual({ok: true, value})
     expect(
-      safeParse(MixedTable, {
+      parse(MixedTable, {
         _type: 'table',
         rows: [{_key: 'r1', cells: [{_type: 'text', text: 'no key'}]}],
-      }).status,
-    ).toBe('fail')
+      }).ok,
+    ).toBe(false)
   })
 
   test('recursive schema declared with a getter', () => {
@@ -93,15 +93,15 @@ describe('array() with a generic element type', () => {
         ],
       },
     }
-    expect(parse(Node, value)).toEqual(value)
+    expect(parse(Node, value)).toEqual({ok: true, value})
     expect(
-      safeParse(Node, {
+      parse(Node, {
         ...value,
         children: {
           _type: 'table',
           rows: [{_key: 'r1', cells: [{_type: 'node', _key: 'c1', name: 1}]}],
         },
-      }).status,
-    ).toBe('fail')
+      }).ok,
+    ).toBe(false)
   })
 })

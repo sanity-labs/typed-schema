@@ -9,7 +9,7 @@ import {number} from '../creators/number'
 import {object} from '../creators/object'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
-import {parse, safeParse} from '../parse'
+import {parse} from '../parse'
 
 describe('typed object union', () => {
   test('successful parsing', () => {
@@ -32,7 +32,9 @@ describe('typed object union', () => {
       }),
     ])
 
-    parse(u, {_type: 'success', status: 'success', data: 'it succeeded'})
+    expect(
+      parse(u, {_type: 'success', status: 'success', data: 'it succeeded'}).ok,
+    ).toBe(true)
   })
   test('successful parsing of unions of unions', () => {
     const u = union([
@@ -63,15 +65,30 @@ describe('typed object union', () => {
       ]),
     ])
 
-    expect(parse(u, {_type: 'a'})).toEqual({_type: 'a'})
-    expect(parse(u, {_type: 'b'})).toEqual({_type: 'b'})
-    expect(parse(u, {_type: 'c'})).toEqual({_type: 'c'})
-    expect(parse(u, {_type: 'd'})).toEqual({_type: 'd'})
-    expect(parse(u, {_type: 'e'})).toEqual({_type: 'e'})
+    expect(parse(u, {_type: 'a'})).toEqual({ok: true, value: {_type: 'a'}})
+    expect(parse(u, {_type: 'b'})).toEqual({ok: true, value: {_type: 'b'}})
+    expect(parse(u, {_type: 'c'})).toEqual({ok: true, value: {_type: 'c'}})
+    expect(parse(u, {_type: 'd'})).toEqual({ok: true, value: {_type: 'd'}})
+    expect(parse(u, {_type: 'e'})).toEqual({ok: true, value: {_type: 'e'}})
 
-    expect(() => parse(u, {_type: 'x'})).toThrowErrorMatchingInlineSnapshot(
-      `[Error: Invalid input at "<root>": Type "x" not found among valid union types]`,
-    )
+    expect(parse(u, {_type: 'x'})).toMatchInlineSnapshot(`
+      {
+        "error": ParseError {
+          "issues": [
+            {
+              "code": "INVALID_OBJECT_UNION",
+              "input": {
+                "_type": "x",
+              },
+              "message": "Type "x" not found among valid union types",
+              "path": [],
+            },
+          ],
+          "message": "Invalid input at "<root>": Type "x" not found among valid union types",
+        },
+        "ok": false,
+      }
+    `)
 
     expect(
       parse(u, {
@@ -83,12 +100,15 @@ describe('typed object union', () => {
         caption: 'Some caption',
       }),
     ).toEqual({
-      _type: 'image',
-      asset: {
-        _type: 'reference',
-        _ref: '123',
+      ok: true,
+      value: {
+        _type: 'image',
+        asset: {
+          _type: 'reference',
+          _ref: '123',
+        },
+        caption: 'Some caption',
       },
-      caption: 'Some caption',
     })
 
     expect(
@@ -101,15 +121,18 @@ describe('typed object union', () => {
         description: 'Some description',
       }),
     ).toEqual({
-      _type: 'file',
-      asset: {
-        _type: 'reference',
-        _ref: '123',
+      ok: true,
+      value: {
+        _type: 'file',
+        asset: {
+          _type: 'reference',
+          _ref: '123',
+        },
+        description: 'Some description',
       },
-      description: 'Some description',
     })
 
-    expect(() =>
+    expect(
       parse(u, {
         _type: 'image',
         asset: {
@@ -118,9 +141,37 @@ describe('typed object union', () => {
         },
         description: 'Some description',
       }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: Invalid input at "<root>": Cannot parse input as union type "image" (+ 1)]`,
-    )
+    ).toMatchInlineSnapshot(`
+      {
+        "error": ParseError {
+          "issues": [
+            {
+              "code": "INVALID_OBJECT_UNION",
+              "input": {
+                "_type": "image",
+                "asset": {
+                  "_ref": "123",
+                  "_type": "reference",
+                },
+                "description": "Some description",
+              },
+              "message": "Cannot parse input as union type "image"",
+              "path": [],
+            },
+            {
+              "code": "INVALID_TYPE",
+              "input": undefined,
+              "message": "Expected a string",
+              "path": [
+                "caption",
+              ],
+            },
+          ],
+          "message": "Invalid input at "<root>": Cannot parse input as union type "image" (+ 1)",
+        },
+        "ok": false,
+      }
+    `)
   })
   test('failed parsing when invalid literal value for discriminator', () => {
     const u = union([
@@ -136,19 +187,22 @@ describe('typed object union', () => {
       }),
     ])
 
-    expect(safeParse(u, {status: 'neither'})).toMatchInlineSnapshot(`
+    expect(parse(u, {status: 'neither'})).toMatchInlineSnapshot(`
       {
-        "errors": [
-          {
-            "code": "INVALID_OBJECT_UNION",
-            "input": {
-              "status": "neither",
+        "error": ParseError {
+          "issues": [
+            {
+              "code": "INVALID_OBJECT_UNION",
+              "input": {
+                "status": "neither",
+              },
+              "message": "Expected an object with a "_type"-property",
+              "path": [],
             },
-            "message": "Expected an object with a "_type"-property",
-            "path": [],
-          },
-        ],
-        "status": "fail",
+          ],
+          "message": "Invalid input at "<root>": Expected an object with a "_type"-property",
+        },
+        "ok": false,
       }
     `)
   })
@@ -166,23 +220,26 @@ describe('typed object union', () => {
       }),
     ])
 
-    expect(safeParse(u, {status: 'success', data: {num: 'not a number'}}))
+    expect(parse(u, {status: 'success', data: {num: 'not a number'}}))
       .toMatchInlineSnapshot(`
         {
-          "errors": [
-            {
-              "code": "INVALID_OBJECT_UNION",
-              "input": {
-                "data": {
-                  "num": "not a number",
+          "error": ParseError {
+            "issues": [
+              {
+                "code": "INVALID_OBJECT_UNION",
+                "input": {
+                  "data": {
+                    "num": "not a number",
+                  },
+                  "status": "success",
                 },
-                "status": "success",
+                "message": "Expected an object with a "_type"-property",
+                "path": [],
               },
-              "message": "Expected an object with a "_type"-property",
-              "path": [],
-            },
-          ],
-          "status": "fail",
+            ],
+            "message": "Invalid input at "<root>": Expected an object with a "_type"-property",
+          },
+          "ok": false,
         }
       `)
   })
@@ -191,7 +248,10 @@ describe('typed object union', () => {
 test('primitive unions may contain date and dateTime', () => {
   const schema = union([date(), dateTime(), string()])
   expect(schema.typeName).toBe('primitiveUnion')
-  expect(parse(schema, '2023-12-06')).toBe('2023-12-06')
-  expect(parse(schema, '2023-12-06T19:01:07Z')).toBe('2023-12-06T19:01:07Z')
-  expect(parse(schema, 'anything')).toBe('anything')
+  expect(parse(schema, '2023-12-06')).toEqual({ok: true, value: '2023-12-06'})
+  expect(parse(schema, '2023-12-06T19:01:07Z')).toEqual({
+    ok: true,
+    value: '2023-12-06T19:01:07Z',
+  })
+  expect(parse(schema, 'anything')).toEqual({ok: true, value: 'anything'})
 })

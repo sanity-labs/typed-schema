@@ -28,15 +28,19 @@ const partialPet: PartialPet = {_type: 'pet'}
 // Persistence: committed() adds what the Content Lake assigns on commit.
 const CommittedPet = committed(Pet)
 const committedPet = parse(CommittedPet, {/* input */})
-// _rev is a string, not string | undefined, because the document is committed
-console.log(committedPet._rev.toUpperCase())
+if (committedPet.ok) {
+  // _rev is a string, not string | undefined, because the document is committed
+  console.log(committedPet.value._rev.toUpperCase())
+}
 
 // The two compose. A committed document that may be incomplete:
 const CommittedPartialPet = committed(PartialPet)
 const committedPartialPet = parse(CommittedPartialPet, {/* input */})
-// _id is a string because the document is committed
-console.log(committedPartialPet._id.toUpperCase())
-// name may be missing because the document is incomplete
-console.log(committedPartialPet.name?.toUpperCase())
+if (committedPartialPet.ok) {
+  // _id is a string because the document is committed
+  console.log(committedPartialPet.value._id.toUpperCase())
+  // name may be missing because the document is incomplete
+  console.log(committedPartialPet.value.name?.toUpperCase())
+}
 
 console.log(pet, partialPet)

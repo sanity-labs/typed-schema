@@ -6,7 +6,7 @@ import {literal} from '../../creators/literal'
 import {object} from '../../creators/object'
 import {optional} from '../../creators/optional'
 import {string} from '../../creators/string'
-import {parse, safeParse} from '../../parse'
+import {parse} from '../../parse'
 import {deepRequired} from '../deepRequired'
 
 const typeNames = (schema: {shape: Record<string, {typeName: string}>}) =>
@@ -27,10 +27,13 @@ test('makes every field required, recursively', () => {
     arr: 'objectArray',
   })
   expect(typeNames(req.shape.sub as any)).toEqual({b: 'string'})
-  expect(safeParse(req, {a: 'x', sub: {}, arr: []}).status).toBe('fail')
+  expect(parse(req, {a: 'x', sub: {}, arr: []}).ok).toBe(false)
   expect(
     parse(req, {a: 'x', sub: {b: 'y'}, arr: [{_key: 'k', c: 'z'}]}),
-  ).toEqual({a: 'x', sub: {b: 'y'}, arr: [{_key: 'k', c: 'z'}]})
+  ).toEqual({
+    ok: true,
+    value: {a: 'x', sub: {b: 'y'}, arr: [{_key: 'k', c: 'z'}]},
+  })
 })
 
 test('unwraps a top-level optional', () => {
@@ -45,5 +48,5 @@ test('works on documents and keeps them documents', () => {
   expect(req.typeName).toBe('document')
   expect(typeNames(req)._id).toBe('string')
   expect(typeNames(req).name).toBe('string')
-  expect(safeParse(req, {_type: 'pet'}).status).toBe('fail')
+  expect(parse(req, {_type: 'pet'}).ok).toBe(false)
 })

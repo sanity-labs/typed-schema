@@ -1,4 +1,4 @@
-import {assertType, expectTypeOf, test} from 'vitest'
+import {assert, assertType, expectTypeOf, test} from 'vitest'
 
 import {lazy} from '../../creators/lazy'
 import {literal} from '../../creators/literal'
@@ -197,7 +197,9 @@ test('deep required on circular object type', () => {
   })
 
   const RequiredLazyPerson = deepRequired(LazyPerson)
-  const res = parse(RequiredLazyPerson, {})
+  const resResult = parse(RequiredLazyPerson, {})
+  assert(resResult.ok)
+  const res = resResult.value
 
   expectTypeOf(res).toEqualTypeOf<{
     _type: 'person'

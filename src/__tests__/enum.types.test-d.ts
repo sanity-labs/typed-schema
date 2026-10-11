@@ -1,4 +1,4 @@
-import {expectTypeOf, test} from 'vitest'
+import {assert, expectTypeOf, test} from 'vitest'
 
 import {enums} from '../creators/enums'
 import {type Infer, type SanityEnum} from '../defs'
@@ -26,13 +26,13 @@ test('define object literal enum', () => {
 })
 
 test('parse string array enum', () => {
-  expectTypeOf(parse(enums(['a', 'b', 'c']), 'a')).toEqualTypeOf<
-    'a' | 'b' | 'c'
-  >()
+  const result = parse(enums(['a', 'b', 'c']), 'a')
+  assert(result.ok)
+  expectTypeOf(result.value).toEqualTypeOf<'a' | 'b' | 'c'>()
 })
 
 test('parse object literal enum', () => {
-  expectTypeOf(parse(enums({foo: 'a', bar: 'b', baz: 'c'}), 'a')).toEqualTypeOf<
-    'a' | 'b' | 'c'
-  >()
+  const result = parse(enums({foo: 'a', bar: 'b', baz: 'c'}), 'a')
+  assert(result.ok)
+  expectTypeOf(result.value).toEqualTypeOf<'a' | 'b' | 'c'>()
 })
