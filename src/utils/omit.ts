@@ -14,11 +14,11 @@ export type OmitObjectLike<
   T extends SanityObject | SanityDocument,
   K extends Array<keyof OutputOf<T>>,
 > =
-  T extends SanityObject<infer Shape>
+  T extends SanityObject<infer Shape extends SanityObjectShape>
     ? SanityObjectShape extends Shape
       ? SanityObjectType<Format<Omit<OutputOf<T>, ElementType<K>>>>
       : SanityObject<Format<Omit<Shape, ElementType<K>>>>
-    : T extends SanityDocument<infer Shape>
+    : T extends SanityDocument<infer Shape extends SanityObjectShape>
       ? SanityObjectShape extends Shape
         ? SanityDocumentType<Format<Omit<OutputOf<T>, ElementType<K>>>>
         : SanityDocument<Format<Omit<Shape, ElementType<K>>>>

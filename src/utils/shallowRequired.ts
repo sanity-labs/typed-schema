@@ -9,6 +9,7 @@ import {
   type SanityObjectShape,
   type SanityObjectType,
 } from '../defs'
+import {type SanityDocumentShape} from '../shapeDefs'
 import {required, type SanityRequired} from './required'
 
 export type ShallowRequiredShape<S> = S extends SanityObjectShape
@@ -18,11 +19,11 @@ export type ShallowRequiredShape<S> = S extends SanityObjectShape
   : never
 
 export type ShallowRequired<S extends SanityObject | SanityDocument> =
-  S extends SanityObject<infer Shape>
+  S extends SanityObject<infer Shape extends SanityObjectShape>
     ? SanityObjectShape extends Shape
       ? SanityObjectType<Required<OutputOf<S>>>
       : SanityObject<ShallowRequiredShape<Shape>>
-    : S extends _SanityDocument<infer Shape>
+    : S extends _SanityDocument<infer Shape extends SanityDocumentShape>
       ? SanityDocument<ShallowRequiredShape<Shape>>
       : never
 

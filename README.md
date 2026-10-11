@@ -368,7 +368,37 @@ In `@sanity/client` terms, `SanityDocumentStub` corresponds to the base schema a
 
 ### Recursive schemas
 
-`lazy(() => schema)` defers a reference to a schema that is not defined yet. TypeScript cannot infer the type of a self-referencing value, so declare the output type by hand and annotate the schema with it:
+Declare a field that refers to its own schema, or to a schema defined further down, with a getter, the same way as in [Zod](https://zod.dev/api#recursive-objects). TypeScript infers the type without annotations:
+
+```ts
+import {
+  array,
+  document,
+  type Infer,
+  literal,
+  reference,
+  string,
+} from '@sanity-labs/typed-schema'
+
+const Person = document({
+  _type: literal('person'),
+  name: string(),
+  get friends() {
+    return array(reference(Person))
+  },
+})
+
+type Person = Infer<typeof Person>
+```
+
+This also works for mutual recursion (a `User` with posts, each `Post` with an author), through `optional()` and `union()`, and in the fields passed to `extend()`.
+
+The schema creators store the getter as a `lazy()` schema without calling it, so `Person.shape.friends` is a `lazy` schema at runtime even though its static type is the array schema.
+
+There are two cases where inference still fails, and the schema becomes `any` with error TS7022 ("implicitly has type 'any' because it does not have a type annotation"):
+
+1. Spreading another shape into the same object literal as the getter (`{...Base.shape, get children() {...}}`). Use `extend(Base, {get children() {...}})` instead.
+2. `lazy(() => schema)` without an annotation. Use a getter, or declare the output type by hand and annotate the schema with it:
 
 ```ts
 import {
@@ -395,8 +425,6 @@ const Person: SanityDocumentType<Person> = document({
   friends: lazy(() => array(reference(Person))),
 })
 ```
-
-The thunk runs once, the first time the schema is parsed, and the result is cached.
 
 ### Loading documents and references
 
@@ -457,7 +485,7 @@ const Post = strictMode(
 
 ### Using a typed schema in Sanity Studio
 
-`toClassicSchema(documentSchema)` converts a document schema to the array of schema type definitions a Studio config expects. It is a proof of concept: it does not emit referenced document types, required-ness, or Portable Text styles and decorators, so treat the result as a starting point. `examples/compat-studio` runs a Studio on it.
+`toClassicSchema(documentSchema)` converts a document schema to the array of schema type definitions a Studio config expects. It is a proof of concept: it does not emit referenced document types, required-ness, or Portable Text styles and decorators, and it leaves out fields declared with `lazy()` or a getter (recursive fields) without a warning. Treat the result as a starting point. `examples/compat-studio` runs a Studio on it.
 
 ```ts
 import {
@@ -631,7 +659,7 @@ Each returns a new schema. Types follow the runtime change.
 | `Infer<typeof schema>`      | The value type of a schema as stored: plain data, without `$refSchema` on references      |
 | `Parsed<typeof schema>`     | What `parse` and the loaders return: `Infer` plus `$refSchema` on every reference value   |
 | `SanityType<Output>`        | Base type of every schema; `SanityObject`, `SanityDocument`, `SanityArray`, ... extend it |
-| `SanityDocumentType<Value>` | A document schema annotated by its value type; use for recursive schemas                  |
+| `SanityDocumentType<Value>` | A document schema annotated by its value type; use with `lazy()` for recursive schemas    |
 | `SanityDocumentValue`       | `{_type: string; _id?: string; _rev?: string; _createdAt?: string; _updatedAt?: string}`  |
 | `SanityReferenceValue<T>`   | The value of a `reference()` to a schema of type `T`                                      |
 | `SanityArrayValue<T>`       | `T[]`, with `_key` added to object elements                                               |
@@ -669,4 +697,4 @@ On merge to `main`, a "chore: version packages" pull request is opened. Merging 
 
 ## Acknowledgements
 
-The design follows [zod](https://zod.dev), which made runtime schemas with static type inference common practice.
+This package is heavily inspired by [zod](https://zod.dev). The getter syntax for recursive schemas, and the type design that lets TypeScript infer them, both come from [Zod 4](https://zod.dev/api#recursive-objects).

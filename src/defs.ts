@@ -1,4 +1,4 @@
-import {type Combine, type OutputFormatFix, type XOR} from './helpers/utilTypes'
+import {type Flatten, type OutputFormatFix, type XOR} from './helpers/utilTypes'
 import {
   type ReferenceBase,
   type SanityDocumentShape,
@@ -10,6 +10,18 @@ import {
 
 /**
  * This file contains the core interfaces for various types. The builders defined in ./builder are implementations of these.
+ *
+ * Recursive schemas are declared with getters (`get children() { return array(Node) }`),
+ * which TypeScript can only infer if nothing reads the getter's type while the
+ * schema itself is being inferred. That rules out two things in this file:
+ *
+ * - Type parameter constraints that compare output types. Constraints match on
+ *   `typeName` (see the `*Kind` types) or compare against `SanityType<any>`,
+ *   which accepts any output without reading it.
+ * - Output types computed eagerly. An `output` that reads another schema's
+ *   output is declared as a member, which TypeScript resolves on first use,
+ *   not as a defaulted type parameter, which it resolves where the type is
+ *   referenced.
  */
 export interface SanityType<Output = any> {
   typeName: string
@@ -19,7 +31,7 @@ export interface SanityType<Output = any> {
   output: Output
 }
 export interface SanityObjectType<
-  Output = UndefinedOptional<OutputFromShape<SanityObjectShape>>,
+  Output = OutputFromShape<SanityObjectShape>,
 > extends SanityType<Output> {
   typeName: 'object'
   shape: SanityObjectShape
@@ -102,31 +114,26 @@ export interface SanityEnum<
 }
 
 export interface SanityObjectUnion<
-  Def extends
-    | SanityTypedObject
-    | SanityReference
-    | SanityBlock
-    | SanityAsset
-    | SanityNever =
+  Def extends SanityObjectUnionMemberKind =
     | SanityTypedObject
     | SanityReference
     | SanityBlock
     | SanityAsset
     | SanityNever,
-  Output = OutputOf<Def>,
-> extends SanityType<Output> {
+> extends SanityType {
   typeName: 'union'
   union: Exclude<Def, SanityNever>[]
+  output: OutputOf<Def>
 }
 export interface SanityPrimitiveUnion<
   Def extends SanityPrimitive | SanityLiteral | SanityNever =
     | SanityPrimitive
     | SanityLiteral
     | SanityNever,
-  Output = OutputOf<Def>,
-> extends SanityType<Output> {
+> extends SanityType {
   typeName: 'primitiveUnion'
   union: Exclude<Def, SanityNever>[]
+  output: OutputOf<Def>
 }
 
 export type SanityObjectShape = {[key in string]: SanityAny}
@@ -137,9 +144,7 @@ export type SanityNamedObjectShape = {
 
 export interface SanityObject<
   Shape extends SanityObjectShape = SanityObjectShape,
-  Output extends UndefinedOptional<OutputFromShape<Shape>> = UndefinedOptional<
-    OutputFromShape<Shape>
-  >,
+  Output = OutputFromShape<Shape>,
 > extends SanityType<Output> {
   typeName: 'object'
   shape: Shape
@@ -151,9 +156,7 @@ export type SanityBlockShape = SanityNamedObjectShape & {
 
 export interface SanityBlock<
   Shape extends SanityBlockShape = SanityBlockShape,
-  Output extends UndefinedOptional<OutputFromShape<Shape>> = UndefinedOptional<
-    OutputFromShape<Shape>
-  >,
+  Output = OutputFromShape<Shape>,
 > extends SanityType<Output> {
   typeName: 'block'
   shape: Shape
@@ -161,32 +164,28 @@ export interface SanityBlock<
 
 export interface SanityImage<
   Shape extends SanityImageShape = SanityImageShape,
-  Output extends UndefinedOptional<OutputFromShape<Shape>> = UndefinedOptional<
-    OutputFromShape<Shape>
-  >,
+  Output = OutputFromShape<Shape>,
 > extends SanityType<Output> {
+  typeName: 'image'
   shape: Shape
 }
 
 export interface SanityFile<
   Shape extends SanityFileShape = SanityFileShape,
-  Output extends UndefinedOptional<OutputFromShape<Shape>> = UndefinedOptional<
-    OutputFromShape<Shape>
-  >,
+  Output = OutputFromShape<Shape>,
 > extends SanityType<Output> {
+  typeName: 'file'
   shape: Shape
 }
 
-export interface SanityLazy<T extends SanityType> extends SanityType<
-  OutputOf<T>
-> {
+export interface SanityLazy<T extends SanityType> extends SanityType {
   typeName: 'lazy'
   get: () => T
+  output: OutputOf<T>
 }
 
 export interface SanityReference<
-  RefType extends SanityType<SanityDocumentValue> =
-    SanityType<SanityDocumentValue>,
+  RefType extends SanityReferenceTarget = SanityReferenceTarget,
 > extends SanityType<WithRefTypeDef<RefType>> {
   typeName: 'reference'
   referenceType: RefType
@@ -194,30 +193,38 @@ export interface SanityReference<
   shape: SanityReferenceShape
 }
 
-export interface SanityOptional<Type extends SanityType> extends SanityType<
-  OutputOf<Type> | undefined
-> {
+export interface SanityOptional<Type extends SanityType> extends SanityType {
   typeName: 'optional'
   type: Type
+  output: OutputOf<Type> | undefined
 }
 
-export type UndefinedToOptional<T> = {
-  [K in keyof T as undefined extends T[K] ? K : never]?: T[K]
-}
-export type NonUndefined<T> = {
-  [K in keyof T as undefined extends T[K] ? never : K]: T[K]
-}
+/**
+ * A schema that makes its field optional. Decided from the schema rather than
+ * from its output (`undefined extends Output`), since reading the output of a
+ * field declared with a getter would loop on recursive schemas.
+ */
+type OptionalFieldKind =
+  | {typeName: 'optional'}
+  | {typeName: 'lazy'; get: () => OptionalFieldKind}
 
-export type UndefinedOptional<T> = Combine<
-  NonUndefined<T>,
-  UndefinedToOptional<T>
+/**
+ * The output of an object shape: fields holding an {@link SanityOptional}
+ * schema become optional properties.
+ */
+export type OutputFromShape<T extends SanityObjectShape> = Flatten<
+  {
+    -readonly [
+      K in keyof T as T[K] extends OptionalFieldKind ? never : K
+    ]: OutputOf<T[K]>
+  } & {
+    -readonly [
+      K in keyof T as T[K] extends OptionalFieldKind ? K : never
+    ]?: OutputOf<T[K]>
+  }
 >
 
-export type OutputFromShape<T extends SanityObjectShape> = {
-  [Property in keyof T]: OutputOf<T[Property]>
-}
-
-export type AddArrayKey<T> = Combine<T, {_key: string}>
+export type AddArrayKey<T> = Flatten<T & {_key: string}>
 
 export const SANITY_ASSET = ['image', 'file'] as const
 
@@ -249,7 +256,41 @@ export type SanityExtendableObject = Extract<
   SanityObject | SanityDocument | SanityAsset
 >
 
-export type SanityTypedObject = SanityObjectType<{_type: string}>
+/**
+ * An object schema with a `_type` literal. Matches on the shape rather than
+ * the output so it also accepts recursive schemas, see the top of this file.
+ */
+export type SanityTypedObject = SanityType & {
+  typeName: 'object'
+  shape: {_type: SanityType<string>}
+}
+
+/** Constraint matching schemas by `typeName` only, see the top of this file */
+export type SanityObjectLikeKind = SanityType & {
+  typeName: (typeof SANITY_OBJECT_LIKE)[number]
+}
+/** Constraint matching schemas by `typeName` only, see the top of this file */
+export type SanityObjectUnionKind = SanityType & {
+  typeName: 'union'
+  union: SanityObjectUnionMemberKind[]
+}
+/** Constraint matching schemas by `typeName` only, see the top of this file */
+export type SanityDocumentKind = SanityType & {typeName: 'document'}
+
+/**
+ * What a reference can point to: a document schema, or a schema annotated
+ * with a document output type (`const Person: SanityType<Person> = ...`, the
+ * way to declare recursive schemas with `lazy`)
+ */
+export type SanityReferenceTarget =
+  | SanityDocumentKind
+  | SanityType<SanityDocumentValue>
+
+/** Constraint for the members of an object union */
+export type SanityObjectUnionMemberKind =
+  | SanityTypedObject
+  | (SanityType & {typeName: 'reference' | 'block' | 'image' | 'file'})
+  | SanityNever
 
 export type SanityArray<
   ElementType extends
@@ -261,13 +302,13 @@ export type SanityArray<
     ? SanityPrimitiveArray<ElementType>
     : never
 export interface SanityObjectArray<
-  ElementType extends SanityObjectLike | SanityObjectUnion =
+  ElementType extends SanityObjectLikeKind | SanityObjectUnionKind =
     | SanityObjectLike
     | SanityObjectUnion,
-  Output = AddArrayKey<OutputOf<ElementType>>[],
-> extends SanityType<Output> {
+> extends SanityType {
   typeName: 'objectArray'
   element: ElementType
+  output: AddArrayKey<OutputOf<ElementType>>[]
 }
 
 export interface SanityPrimitiveArray<
@@ -280,15 +321,15 @@ export interface SanityPrimitiveArray<
     | SanityLiteral
     | SanityPrimitiveUnion
     | SanityNever,
-  Output = OutputOf<ElementType>[],
-> extends SanityType<Output> {
+> extends SanityType {
   typeName: 'primitiveArray'
   element: ElementType
+  output: OutputOf<ElementType>[]
 }
 
 export interface _SanityDocument<
   Shape extends SanityDocumentShape = SanityDocumentShape,
-  Output = UndefinedOptional<OutputFromShape<Shape>>,
+  Output = OutputFromShape<Shape>,
 > extends SanityType<Output> {
   typeName: 'document'
   shape: Shape
@@ -296,8 +337,16 @@ export interface _SanityDocument<
 
 export type SanityDocument<
   Shape extends SanityObjectShape = SanityObjectShape,
-  Output = UndefinedOptional<OutputFromShape<Shape>>,
+  Output = OutputFromShape<WithDocumentShape<Shape>>,
 > = _SanityDocument<SanityDocumentShape & Shape, Output>
+
+/**
+ * A document shape: the system fields, overridden by the fields of `Shape`
+ * (as `document()` does at runtime)
+ */
+export type WithDocumentShape<Shape> = Flatten<
+  Omit<SanityDocumentShape, keyof Shape> & Shape
+>
 
 /**
  * Key under which a reference value returned by `parse` holds the schema of
@@ -313,8 +362,9 @@ export interface Conceal<T> {
   [REF_SCHEMA]: T
 }
 
-export type WithRefTypeDef<RefType extends SanityType<SanityDocumentValue>> =
-  Combine<ReferenceBase, Conceal<RefType>>
+export type WithRefTypeDef<RefType extends SanityReferenceTarget> = Flatten<
+  ReferenceBase & Conceal<RefType>
+>
 
 /**
  * The type of a value returned by `parse`, `safeParse` and the document
@@ -359,9 +409,9 @@ export type InferDeepLiteralValue<T extends SanityObjectShape> =
 export type InferLiteralValue<T extends SanityAny> =
   T extends SanityLiteral<infer Literal>
     ? Literal
-    : T extends SanityObject<infer Shape>
+    : T extends SanityObject<infer Shape extends SanityObjectShape>
       ? InferDeepLiteralValue<Shape>
-      : T extends SanityDocument<infer Shape>
+      : T extends SanityDocument<infer Shape extends SanityObjectShape>
         ? InferDeepLiteralValue<Shape>
         : never
 

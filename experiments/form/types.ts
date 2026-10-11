@@ -42,7 +42,9 @@ export type FieldDef<T extends SanityType> = CommonFormOptions &
           ? CommonFormOptions
           : T extends SanityBoolean
             ? CommonFormOptions
-            : T extends SanityObjectUnion<infer UnionTypes>
+            : T extends SanityObjectUnion<
+                  infer UnionTypes extends ObjectUnionMember
+                >
               ? ObjectUnionFormDef<UnionTypes>
               : T extends SanityPrimitiveUnion<infer UnionTypes>
                 ? PrimitiveUnionFormDef<UnionTypes>
@@ -146,20 +148,21 @@ export type UnionTypeOptions<T extends SanityType> = T extends SanityObject
 export type PrimitiveUnionTypeOptions<T extends SanityLiteral> =
   CommonFormOptions & T extends SanityLiteral ? FieldDef<T> : unknown
 
-export type ObjectUnionFormDef<
-  T extends
-    | SanityTypedObject
-    | SanityReference
-    | SanityBlock
-    | SanityAsset
-    | SanityNever,
-> = CommonFormOptions & {
-  types: {
-    [
-      Name in GetType<Exclude<T, SanityNever>['shape']['_type']>
-    ]: UnionTypeOptions<FindTypeByName<Exclude<T, SanityNever>, Name>>
+type ObjectUnionMember =
+  | SanityTypedObject
+  | SanityReference
+  | SanityBlock
+  | SanityAsset
+  | SanityNever
+
+export type ObjectUnionFormDef<T extends ObjectUnionMember> =
+  CommonFormOptions & {
+    types: {
+      [
+        Name in GetType<Exclude<T, SanityNever>['shape']['_type']>
+      ]: UnionTypeOptions<FindTypeByName<Exclude<T, SanityNever>, Name>>
+    }
   }
-}
 
 export type PrimitiveUnionFormDef<
   T extends SanityPrimitive | SanityLiteral | SanityNever,
@@ -216,6 +219,6 @@ export type SanityFormDef<T extends SanityType> = T extends SanityDocument
         ? PrimitiveArrayFormDef<T>
         : T extends SanityString
           ? StringFormDef<T>
-          : T extends SanityObjectUnion<infer U>
+          : T extends SanityObjectUnion<infer U extends ObjectUnionMember>
             ? ObjectUnionFormDef<U>
             : {title?: string}

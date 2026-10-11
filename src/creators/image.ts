@@ -1,4 +1,5 @@
 import {type SanityImage, type SanityObjectShape} from '../defs'
+import {deferGetters} from '../helpers/deferGetters'
 import {defineType} from '../helpers/defineType'
 import {ImageBase, type SanityImageShape} from '../shapeDefs'
 
@@ -8,6 +9,6 @@ export function image<Shape extends SanityObjectShape = SanityObjectShape>(
 ): SanityImage<Shape & SanityImageShape> {
   return defineType({
     typeName: 'image',
-    shape: {...ImageBase.shape, ...shape},
+    shape: {...ImageBase.shape, ...deferGetters(shape)},
   })
 }

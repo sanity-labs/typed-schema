@@ -20,7 +20,7 @@ export type ShallowPartialShape<S> = S extends SanityObjectShape
   : never
 
 export type ShallowPartial<S extends SanityObject | SanityDocument> =
-  S extends SanityObject<infer Shape>
+  S extends SanityObject<infer Shape extends SanityObjectShape>
     ? SanityObjectShape extends Shape
       ? SanityObjectType<ShallowPartialPlain<OutputOf<S>>>
       : SanityObject<ShallowPartialShape<Shape>>
