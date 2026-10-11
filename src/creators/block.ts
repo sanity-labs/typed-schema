@@ -13,6 +13,7 @@ import {
   type SanityTypedObject,
 } from '../defs'
 import {defineType} from '../helpers/defineType'
+import {type BlockOptionErrors} from '../helpers/schemaErrors'
 import {array} from './array'
 import {literal} from './literal'
 import {never} from './never'
@@ -139,7 +140,7 @@ export type BlockOptions<
 export type VoidNever<T> = void extends T ? SanityNever : Exclude<T, void>
 
 /**
- * A Portable Text block. Use together with {@link portableText} to declare a
+ * A Portable Text block. Use together with `portableText()` to declare a
  * rich text field.
  */
 export function block<
@@ -182,7 +183,17 @@ export function block<
     VoidNever<AnnotationType>,
     TypeName
   >
-> {
+>
+// Matches only what the overload above rejects, and its parameter can never be
+// satisfied. TypeScript 7 reports only the last overload's error, which says
+// what is wrong with the options. TypeScript 6 lists every overload's error,
+// ending with this one.
+export function block<Options extends object>(
+  options: Options & NoInfer<BlockOptionErrors<Options>>,
+): never
+export function block(
+  options: BlockOptions<any, any, any, any, any, any>,
+): SanityBlock {
   const Marks = options.decorator
     ? array(union([options.decorator, string()]))
     : array(string())

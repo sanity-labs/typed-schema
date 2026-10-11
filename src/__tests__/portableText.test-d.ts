@@ -7,7 +7,14 @@ import {object} from '../creators/object'
 import {portableText} from '../creators/portableText'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
-import {type Infer} from '../defs'
+import {
+  type Infer,
+  type SanityBlock,
+  type SanityObject,
+  type SanityString,
+} from '../defs'
+import {type PortableTextOptionErrors} from '../helpers/schemaErrors'
+import {type SchemaError} from '../helpers/utilTypes'
 
 describe('block type', () => {
   test('block type definition', () => {
@@ -86,5 +93,35 @@ describe('block type', () => {
     type ActualType = Infer<typeof Block>
 
     expectTypeOf<ActualType>().toEqualTypeOf<ExpectedBlockValue>()
+  })
+})
+
+describe('invalid portableText options', () => {
+  const Link = object({_type: literal('link'), href: string()})
+
+  test('are rejected', () => {
+    // @ts-expect-error - block must be a block() schema
+    portableText({block: Link, element: Link})
+    // @ts-expect-error - element must be a typed object
+    portableText({block: block({}), element: string()})
+
+    portableText({block: block({}), element: Link})
+  })
+
+  test('report why', () => {
+    expectTypeOf<
+      PortableTextOptionErrors<{
+        block: SanityObject<{href: SanityString}>
+        element: SanityString
+      }>
+    >().toEqualTypeOf<{
+      block: SchemaError<"portableText() option 'block' must be a block() schema">
+      element: SchemaError<"portableText() option 'element' must be a typed object, a union() of typed objects or never()">
+    }>()
+    expectTypeOf<
+      PortableTextOptionErrors<{block: SanityBlock}>
+    >().toEqualTypeOf<
+      SchemaError<"portableText() needs a 'block' and an 'element' option">
+    >()
   })
 })

@@ -11,15 +11,18 @@ import {
 import {
   type SanityAsset,
   type SanityBlock,
+  type SanityKind,
   type SanityLiteral,
   type SanityNever,
   type SanityObjectUnion,
   type SanityPrimitive,
   type SanityPrimitiveUnion,
   type SanityReference,
+  type SanityType,
   type SanityTypedObject,
 } from '../defs'
 import {defineType} from '../helpers/defineType'
+import {type CheckUnionMembers} from '../helpers/schemaErrors'
 
 export type FlattenUnionTypes<
   T extends
@@ -67,24 +70,14 @@ export function union<
 >(
   unionTypes: UnionTypes[],
 ): SanityPrimitiveUnion<FlattenPrimitiveUnionTypes<UnionTypes>>
-export function union<
-  UnionTypes extends
-    | SanityNever
-    | SanityTypedObject
-    | SanityReference
-    | SanityPrimitive
-    | SanityBlock,
->(
-  unionTypes: UnionTypes[],
-): UnionTypes extends SanityPrimitive
-  ? SanityPrimitiveUnion<UnionTypes>
-  : UnionTypes extends
-        | SanityTypedObject
-        | SanityReference
-        | SanityBlock
-        | SanityNever
-    ? SanityObjectUnion<UnionTypes>
-    : never {
+// Matches only what the overloads above reject, and its parameter can never be
+// satisfied. TypeScript 7 reports only the last overload's error, which says
+// what is wrong with the members. TypeScript 6 lists every overload's error,
+// ending with this one.
+export function union<const Members extends readonly SanityKind[]>(
+  unionTypes: Members & NoInfer<CheckUnionMembers<Members>>,
+): never
+export function union(unionTypes: SanityType[]): unknown {
   if (
     unionTypes.every(
       schema =>
@@ -97,7 +90,7 @@ export function union<
     return defineType({
       typeName: 'primitiveUnion',
       union: unionTypes.filter(schema => !isNeverSchema(schema)),
-    }) as any
+    })
   }
 
   if (
@@ -113,7 +106,7 @@ export function union<
     return defineType({
       typeName: 'union',
       union: unionTypes.filter(schema => !isNeverSchema(schema)),
-    }) as any
+    })
   }
 
   throw new Error(

@@ -1,24 +1,30 @@
 import {
   type SanityDocument,
-  type SanityLiteral,
   type SanityObjectShape,
-  type SanityString,
   type WithDocumentShape,
 } from '../defs'
 import {deferGetters} from '../helpers/deferGetters'
 import {defineType} from '../helpers/defineType'
+import {
+  type FieldErrors,
+  type RequireTypeField,
+  type SystemFieldErrors,
+} from '../helpers/schemaErrors'
 import {DocumentBase} from '../shapeDefs'
-import {type FieldSchemas, type InvalidFieldNames} from './object'
+
+/**
+ * The `shape` parameter of `document()`. A named alias so a type error shows
+ * `DocumentShapeInput<...>` rather than the checks it is made of, and the
+ * missing `_type` check is a member of its own so the error goes straight to
+ * its message.
+ */
+type DocumentShapeInput<Shape> = Shape &
+  NoInfer<RequireTypeField<Shape>> &
+  NoInfer<FieldErrors<Shape, '_id' | '_type'> & SystemFieldErrors<Shape>>
 
 export function document<
   Shape extends {[key: string]: any} = SanityObjectShape,
->(
-  shape: Shape &
-    NoInfer<InvalidFieldNames<Shape, '_id' | '_type'> & FieldSchemas<Shape>> & {
-      _id?: SanityLiteral<string> | SanityString
-      _type: SanityLiteral<string>
-    },
-): SanityDocument<WithDocumentShape<Shape>> {
+>(shape: DocumentShapeInput<Shape>): SanityDocument<WithDocumentShape<Shape>> {
   return defineType({
     typeName: 'document',
     shape: {...DocumentBase.shape, ...deferGetters(shape)},
