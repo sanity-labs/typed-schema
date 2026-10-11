@@ -28,6 +28,7 @@ jobs:
       - run: pnpm format:check
       - run: pnpm lint --deny-warnings --format github
       - run: pnpm typecheck
+      - run: pnpm typecheck:ts6
       - run: pnpm typecheck:examples
       - run: pnpm knip --reporter github-actions
       # pkg build + pkg check + publint + arethetypeswrong

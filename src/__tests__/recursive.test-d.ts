@@ -237,3 +237,32 @@ test('self-reference inside image and file fields', () => {
     >['cover']['related'][number]['title']
   >().toEqualTypeOf<string>()
 })
+
+const Page = object({
+  _type: literal('page'),
+  title: string(),
+  meta: object({
+    get parent() {
+      return optional(Page)
+    },
+  }),
+})
+type Page = Infer<typeof Page>
+
+test('self-reference inside a nested object field', () => {
+  expectTypeOf<
+    NonNullable<NonNullable<Page['meta']['parent']>['meta']['parent']>['title']
+  >().toEqualTypeOf<string>()
+  assertType<Page>({
+    _type: 'page',
+    title: 'a',
+    meta: {
+      parent: {
+        _type: 'page',
+        // @ts-expect-error - title is a string
+        title: 1,
+        meta: {},
+      },
+    },
+  })
+})

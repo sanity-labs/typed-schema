@@ -15,6 +15,7 @@ pnpm test                 # vitest run --typecheck (runtime tests + *.test-d.ts 
 pnpm vitest run src/__tests__/union.parse.test.ts   # single test file
 pnpm vitest run -t "name"                           # single test by name
 pnpm typecheck            # tsc on src (TypeScript 7)
+pnpm typecheck:ts6        # tsc on src with TypeScript 6, the oldest supported version
 pnpm typecheck:examples   # tsc on examples/{ts,content-migration} and experiments/
 pnpm lint / lint:fix      # oxlint (config: oxlint.config.ts)
 pnpm format / format:check # oxfmt (config: oxfmt.config.ts)

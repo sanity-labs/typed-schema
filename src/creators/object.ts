@@ -1,5 +1,6 @@
 import {
   type SanityAny,
+  type SanityKind,
   type SanityObject,
   type SanityObjectShape,
 } from '../defs'
@@ -43,6 +44,12 @@ type ReadonlyModifiers<Shape> = {[Property in keyof Shape]-?: 0}
  * schemas, so those are told apart by their modifier instead: a getter without
  * a setter is a `readonly` property, and checking that reads no values. Wrap it
  * in `NoInfer`, like {@link InvalidFieldNames}.
+ *
+ * Only fields that are not schemas are mapped. A schema is matched on having
+ * `typeName` and `output` keys, so the type of `output` is never compared.
+ * Mapping every field to `SanityAny` would intersect each schema
+ * with it, and TypeScript 6 resolves the `output` of such an intersection,
+ * which reads getters nested in the field (`cover: object({get related() {...}})`).
  */
 export type FieldSchemas<Shape> = {
   [
@@ -50,7 +57,9 @@ export type FieldSchemas<Shape> = {
       Pick<ReadonlyModifiers<Shape>, Property>,
       {-readonly [P in Property]: 0}
     > extends true
-      ? Property
+      ? Shape[Property] extends SanityKind & {output: unknown}
+        ? never
+        : Property
       : never
   ]: SanityAny
 }

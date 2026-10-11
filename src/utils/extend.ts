@@ -23,13 +23,15 @@ export type Extends<
   Obj extends SanityObject | SanityDocument,
   Augmentation extends {[key: string]: any},
 > =
-  Obj extends SanityObject<infer Shape, infer Output>
+  Obj extends SanityObject<infer Shape>
     ? SanityObjectShape extends Shape
-      ? SanityObjectType<Combine<Output, OutputFromShape<Augmentation>>>
+      ? SanityObjectType<Combine<Obj['output'], OutputFromShape<Augmentation>>>
       : SanityObject<ExtendShape<Shape, Augmentation>>
-    : Obj extends SanityDocument<infer Shape, infer Output>
+    : Obj extends SanityDocument<infer Shape>
       ? SanityObjectShape extends Shape
-        ? SanityDocumentType<Combine<Output, OutputFromShape<Augmentation>>>
+        ? SanityDocumentType<
+            Combine<Obj['output'], OutputFromShape<Augmentation>>
+          >
         : SanityDocument<ExtendShape<Shape, Augmentation>>
       : never
 
