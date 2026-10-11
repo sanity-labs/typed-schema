@@ -21,6 +21,7 @@ export class DuplicateTypeNameError extends Error {
     public duplicates: TypeNameInfo[],
   ) {
     super(message)
+    this.name = 'DuplicateTypeNameError'
   }
 }
 
@@ -38,14 +39,15 @@ export function verifyUniqueTypeNames<S extends SanityType>(schema: S): S {
     return schema
   }
   throw new DuplicateTypeNameError(
-    `Duplicate type names in schema: ${duplicates
-      .map(
+    [
+      'Duplicate type names in schema:',
+      ...duplicates.map(
         dupe =>
-          `_type "${dupe.name}" at ${dupe.paths
+          `  _type "${dupe.name}" at ${dupe.paths
             .map(p => (p.length === 0 ? '(root)' : p.join(' -> ')))
             .join(', ')}`,
-      )
-      .join('\n')}`,
+      ),
+    ].join('\n'),
     duplicates,
   )
 }
