@@ -2,11 +2,7 @@ import {describe, expectTypeOf, test} from 'vitest'
 
 import {image} from '../creators/image'
 import {string} from '../creators/string'
-import {
-  type Infer,
-  type INTERNAL_REF_TYPE_SCHEMA,
-  type SanityDocument,
-} from '../defs'
+import {type Infer, type REF_SCHEMA, type SanityDocument} from '../defs'
 import {type ImageAssetShape} from '../shapeDefs'
 
 describe('image type', () => {
@@ -19,7 +15,7 @@ describe('image type', () => {
         _type: 'reference'
         _ref: string
         _weak?: boolean
-        [INTERNAL_REF_TYPE_SCHEMA]: SanityDocument<ImageAssetShape>
+        [REF_SCHEMA]?: SanityDocument<ImageAssetShape>
       }
     }
 
@@ -36,7 +32,7 @@ describe('image type', () => {
         _type: 'reference'
         _ref: string
         _weak?: boolean
-        [INTERNAL_REF_TYPE_SCHEMA]: SanityDocument<ImageAssetShape>
+        [REF_SCHEMA]?: SanityDocument<ImageAssetShape>
       }
       caption: string
     }

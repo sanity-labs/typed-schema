@@ -1,9 +1,4 @@
-import {
-  type Conceal,
-  type Infer,
-  INTERNAL_REF_TYPE_SCHEMA,
-  type SanityType,
-} from '../defs'
+import {type Conceal, type Infer, REF_SCHEMA, type SanityType} from '../defs'
 import {type StoredDocument} from '../lifecycle'
 import {ParseError, type ParseOk, type ParseResult, safeParse} from '../parse'
 import {
@@ -16,7 +11,7 @@ export type DocumentLike = Infer<typeof DocumentBase>
 export type ReferenceLike = Infer<typeof ReferenceBase>
 
 export type ReferenceWithOptionalRefType<RefTypeDef> = ReferenceLike &
-  Partial<Conceal<RefTypeDef>>
+  Conceal<RefTypeDef>
 
 const NO_REF: Promise<ParseOk<any>> = Promise.resolve({
   status: 'ok',
@@ -50,7 +45,7 @@ export function createSafeLoadReference(
     }
 
     return fetch(reference._ref, fieldSelection || []).then(input =>
-      safeParse(reference[INTERNAL_REF_TYPE_SCHEMA] || DocumentBase, input),
+      safeParse(reference[REF_SCHEMA] || DocumentBase, input),
     ) as any
   }
 }

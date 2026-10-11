@@ -299,11 +299,17 @@ export type SanityDocument<
   Output = UndefinedOptional<OutputFromShape<Shape>>,
 > = _SanityDocument<SanityDocumentShape & Shape, Output>
 
-export const INTERNAL_REF_TYPE_SCHEMA = '__schema__' as const
+/**
+ * Key under which a reference value returned by `parse` carries the schema of
+ * the document it points to. `parse` adds it as a getter that `JSON.stringify`
+ * and `Object.keys` ignore. Values that did not come from `parse`, including
+ * copies made with spread, do not have it.
+ */
+export const REF_SCHEMA = '$refSchema' as const
 
 export interface Conceal<T> {
-  /** @deprecated - Do not use. Only exists in the type system and will throw an error if accessed at runtime. */
-  [INTERNAL_REF_TYPE_SCHEMA]: T
+  /** The schema of the referenced document. Only values returned by `parse` have it; see {@link REF_SCHEMA}. */
+  [REF_SCHEMA]?: T
 }
 
 export type WithRefTypeDef<RefType extends SanityType<SanityDocumentValue>> =
