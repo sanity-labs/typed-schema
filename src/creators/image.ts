@@ -4,10 +4,12 @@ import {defineType} from '../helpers/defineType'
 import {ImageBase, type SanityImageShape} from '../shapeDefs'
 import {type FieldSchemas} from './object'
 
-// TODO: Make `shape` optional, add hotspot + crop
+// TODO: add hotspot + crop
+export function image(): SanityImage<SanityImageShape>
 export function image<Shape extends {[key: string]: any} = SanityObjectShape>(
   shape: Shape & NoInfer<FieldSchemas<Shape>>,
-): SanityImage<Shape & SanityImageShape> {
+): SanityImage<Shape & SanityImageShape>
+export function image(shape: SanityObjectShape = {}): SanityImage {
   return defineType({
     typeName: 'image',
     shape: {...ImageBase.shape, ...deferGetters(shape)},

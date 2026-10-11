@@ -12,7 +12,7 @@ import {type ImageAssetShape} from '../shapeDefs'
 
 describe('image type', () => {
   test('plain image type definition', () => {
-    const ImageSchema = image({})
+    const ImageSchema = image()
 
     type ImageValue = {
       _type: 'image'
@@ -25,8 +25,22 @@ describe('image type', () => {
 
     expectTypeOf<Infer<typeof ImageSchema>>().toEqualTypeOf<ImageValue>()
   })
+  test('without a shape, the output has no extra keys', () => {
+    const ImageSchema = image()
+
+    expectTypeOf<keyof Infer<typeof ImageSchema>>().toEqualTypeOf<
+      '_type' | 'asset'
+    >()
+    expectTypeOf<Infer<typeof ImageSchema>>().toEqualTypeOf<
+      Infer<ReturnType<typeof image<{}>>>
+    >()
+  })
+  test('fields must still be schemas', () => {
+    // @ts-expect-error not a schema
+    image({caption: 'foo'})
+  })
   test('parsed image values include the asset schema on the reference', () => {
-    const ImageSchema = image({})
+    const ImageSchema = image()
 
     expectTypeOf<Parsed<typeof ImageSchema>['asset']>().toEqualTypeOf<{
       _type: 'reference'

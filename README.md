@@ -555,8 +555,8 @@ All functions are named exports of `@sanity-labs/typed-schema`.
 | ----------------- | --------------------------------------------------------------------------------------------------------------- |
 | `object(shape)`   | Field names may not start with `_`, except `_type`, which must be a `literal()`                                 |
 | `document(shape)` | Requires a `_type` literal; adds optional `_id`, `_rev`, `_createdAt`, `_updatedAt`                             |
-| `image(shape)`    | `{_type: 'image'; asset: reference to imageAsset}` plus your fields. Pass `{}` for no extra fields              |
-| `file(shape)`     | `{_type: 'file'; asset: reference to fileAsset}` plus your fields                                               |
+| `image(shape?)`   | `{_type: 'image'; asset: reference to imageAsset}` plus your fields                                             |
+| `file(shape?)`    | `{_type: 'file'; asset: reference to fileAsset}` plus your fields                                               |
 | `imageAsset()`    | The `sanity.imageAsset` document, including `metadata` (dimensions, optional palette, lqip, blurHash, location) |
 | `fileAsset()`     | The `sanity.fileAsset` document                                                                                 |
 
