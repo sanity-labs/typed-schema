@@ -3,6 +3,7 @@ import {
   type OutputOf,
   type Parsed,
   REF_SCHEMA,
+  type SanityObject,
   type SanityType,
 } from '../defs'
 import {getLazySchema} from '../helpers/getLazySchema'
@@ -72,7 +73,8 @@ export function createLoadReferenceResult(
     }
 
     const target = getLazySchema(reference[REF_SCHEMA] || DocumentBase)
-    return fetch(reference._ref, fieldSelection || []).then(input =>
+    const fields = fieldSelection || Object.keys((target as SanityObject).shape)
+    return fetch(reference._ref, fields).then(input =>
       parse(committed(target as any), input),
     ) as any
   }
