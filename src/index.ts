@@ -58,15 +58,19 @@ export type {
 // Parsing
 export {
   type ErrorCode,
+  formatIssues,
   formatPath,
+  type IssueLike,
   parse,
   ParseError,
   type ParseFail,
   type ParseIssue,
   type ParseOk,
+  type ParseOptions,
   parseOrThrow,
   type ParseResult,
   type Path,
+  type PathSegmentLike,
 } from './parse'
 
 // Standard Schema (https://standardschema.dev)

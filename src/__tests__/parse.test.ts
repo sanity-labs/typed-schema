@@ -6,13 +6,21 @@ import {file} from '../creators/file'
 import {image} from '../creators/image'
 import {lazy} from '../creators/lazy'
 import {literal} from '../creators/literal'
+import {number} from '../creators/number'
 import {object} from '../creators/object'
 import {optional} from '../creators/optional'
 import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {REF_SCHEMA, type SanityObjectType, type SanityType} from '../defs'
-import {formatPath, parse, ParseError, parseOrThrow} from '../parse'
+import {
+  formatIssues,
+  formatPath,
+  parse,
+  ParseError,
+  type ParseIssue,
+  parseOrThrow,
+} from '../parse'
 import {type SanityDocumentValue} from '../shapeDefs'
 
 describe('string parsing', () => {
@@ -210,13 +218,6 @@ describe('object array parsing', () => {
           "issues": [
             {
               "code": "INVALID_OBJECT_UNION",
-              "input": {
-                "_key": "key213s",
-                "_type": "foo",
-                "nested": {
-                  "foo": 1,
-                },
-              },
               "message": "Cannot parse input as union type "foo"",
               "path": [
                 {
@@ -227,7 +228,6 @@ describe('object array parsing', () => {
             },
             {
               "code": "INVALID_TYPE",
-              "input": 1,
               "message": "Expected a string",
               "path": [
                 {
@@ -239,7 +239,9 @@ describe('object array parsing', () => {
               ],
             },
           ],
-          "message": "Invalid input at "[_key=="key213s"]": Cannot parse input as union type "foo" (+ 1)",
+          "message": "Invalid input (2 issues):
+        [_key=="key213s"]: Cannot parse input as union type "foo"
+        [_key=="key213s"].nested.foo: Expected a string",
         },
         "ok": false,
       }
@@ -353,7 +355,7 @@ describe('ParseError', () => {
     expect((thrown as ParseError).issues).toEqual(result.error.issues)
   })
 
-  test('message summarises the first issue with its path', () => {
+  test('message is the formatted list of issues', () => {
     const schema = object({
       items: array(object({_type: literal('item'), text: string()})),
     })
@@ -362,14 +364,72 @@ describe('ParseError', () => {
     })
     expect(result.ok).toBe(false)
     if (result.ok) return
+    expect(result.error.name).toBe('ParseError')
+    expect(result.error.message).toBe(formatIssues(result.error.issues))
     expect(result.error.message).toBe(
-      'Invalid input at "items[_key=="k1"].text": Expected a string',
+      'Invalid input at items[_key=="k1"].text: Expected a string',
     )
+  })
+
+  test('issues leave out the rejected value unless reportInput is set', () => {
+    const schema = object({name: string(), age: number()})
+    const input = {name: 1, age: 'old'}
+
+    const result = parse(schema, input)
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.error.issues).toEqual([
+      {path: ['name'], code: 'INVALID_TYPE', message: 'Expected a string'},
+      {
+        path: ['age'],
+        code: 'INVALID_TYPE',
+        message: 'Expected a finite number',
+      },
+    ])
+    for (const issue of result.error.issues) {
+      expect(issue).not.toHaveProperty('input')
+    }
+    expect(result.error.message).toMatchInlineSnapshot(`
+      "Invalid input (2 issues):
+        name: Expected a string
+        age: Expected a finite number"
+    `)
+
+    const reported = parse(schema, input, {reportInput: true})
+    expect(reported.ok).toBe(false)
+    if (reported.ok) return
+    expect(reported.error.issues).toEqual([
+      {
+        path: ['name'],
+        code: 'INVALID_TYPE',
+        input: 1,
+        message: 'Expected a string',
+      },
+      {
+        path: ['age'],
+        code: 'INVALID_TYPE',
+        input: 'old',
+        message: 'Expected a finite number',
+      },
+    ])
+    expect(reported.error.message).toMatchInlineSnapshot(`
+      "Invalid input (2 issues):
+        name: Expected a string, got 1
+        age: Expected a finite number, got "old""
+    `)
+
+    let thrown: unknown
+    try {
+      parseOrThrow(schema, input, {reportInput: true})
+    } catch (err) {
+      thrown = err
+    }
+    expect((thrown as ParseError).issues).toEqual(reported.error.issues)
   })
 
   test('array items without a _key report the item as input', () => {
     const schema = array(object({_type: literal('item')}))
-    const result = parse(schema, [{_type: 'item'}])
+    const result = parse(schema, [{_type: 'item'}], {reportInput: true})
     expect(result.ok).toBe(false)
     if (result.ok) return
     expect(result.error.issues).toEqual([
@@ -392,6 +452,166 @@ describe('formatPath', () => {
       formatPath(['body', {_key: 'abc', index: 2}, 'children', 0, 'text']),
     ).toBe('body[_key=="abc"].children[0].text')
     expect(formatPath([0, 'a'])).toBe('[0].a')
+  })
+
+  test('quotes, escapes and caps _key, which comes from the input', () => {
     expect(formatPath([{_key: 'a"b', index: 0}])).toBe('[_key=="a\\"b"]')
+    expect(formatPath([{_key: 'a\\b', index: 0}])).toBe('[_key=="a\\\\b"]')
+    expect(formatPath([{_key: 'a\nb', index: 0}])).toBe('[_key=="a\\nb"]')
+    expect(formatPath([{_key: 'k'.repeat(100), index: 0}])).toBe(
+      `[_key=="${'k'.repeat(79)}…"]`,
+    )
+  })
+
+  test('tolerates segments outside the declared types', () => {
+    expect(formatPath([null as any, {key: {_key: 1}} as any])).toBe(
+      '[null][[object Object]]',
+    )
+  })
+})
+
+describe('formatIssues', () => {
+  test('one issue fits on a single line', () => {
+    const issue: ParseIssue = {
+      path: ['name'],
+      code: 'INVALID_TYPE',
+      input: 42,
+      message: 'Expected a string',
+    }
+    expect(formatIssues([issue])).toBe(
+      'Invalid input at name: Expected a string, got 42',
+    )
+  })
+
+  test('several issues are listed one per line', () => {
+    const Pet = document({
+      _type: literal('pet'),
+      name: string(),
+      age: number(),
+      tags: array(string()),
+    })
+    const result = parse(
+      Pet,
+      {
+        _type: 'pet',
+        name: 42,
+        tags: ['a', 1],
+      },
+      {reportInput: true},
+    )
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(formatIssues(result.error.issues)).toMatchInlineSnapshot(`
+      "Invalid input (3 issues):
+        name: Expected a string, got 42
+        age: Expected a finite number, got undefined
+        tags[1]: Expected a string, got 1"
+    `)
+  })
+
+  test('shows the rejected value, truncated when it is large', () => {
+    const issue: ParseIssue = {
+      path: [],
+      code: 'INVALID_TYPE',
+      input: {a: 1, b: 2, c: 3, d: {e: {f: {g: 1}}}},
+      message: 'Expected an object with keys {name}',
+    }
+    expect(formatIssues([issue])).toMatchInlineSnapshot(
+      `"Invalid input at <root>: Expected an object with keys {name}, got {a: 1, b: 2, …(+2)}"`,
+    )
+  })
+
+  test('an empty list is a plain "Invalid input"', () => {
+    expect(formatIssues([])).toBe('Invalid input')
+  })
+
+  test('a message stays bounded and single-line for hostile input', () => {
+    const schema = object({
+      items: array(
+        union([
+          object({_type: literal('a'), n: number()}),
+          object({_type: literal('b')}),
+        ]),
+      ),
+    })
+    const hostile = {
+      items: [
+        {_type: 'a', _key: 'x"]\n  name: Expected a string\n  y', n: 'no'},
+        {_type: 'z'.repeat(500) + '\nsecret', _key: 'k2'},
+        {_type: 'a', _key: 'k3', n: 'q'.repeat(500)},
+      ],
+    }
+    for (const options of [undefined, {reportInput: true}]) {
+      const result = parse(schema, hostile, options)
+      expect(result.ok).toBe(false)
+      if (result.ok) return
+      const lines = result.error.message.split('\n')
+      expect(lines).toHaveLength(1 + result.error.issues.length)
+      for (const line of lines) expect(line.length).toBeLessThan(300)
+    }
+    const result = parse(schema, hostile)
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.error.message).toMatchInlineSnapshot(`
+      "Invalid input (5 issues):
+        items[_key=="x\\"]\\n  name: Expected a string\\n  y"]: Cannot parse input as union type "a"
+        items[_key=="x\\"]\\n  name: Expected a string\\n  y"].n: Expected a finite number
+        items[_key=="k2"]: Type "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz…" not found among valid union types
+        items[_key=="k3"]: Cannot parse input as union type "a"
+        items[_key=="k3"].n: Expected a finite number"
+    `)
+  })
+
+  test('reportInput survives input without a usable constructor', () => {
+    const result = parse(string(), JSON.parse('{"constructor": null}'), {
+      reportInput: true,
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.error.message).toBe(
+      'Invalid input at <root>: Expected a string, got {constructor: null}',
+    )
+    const bare = parse(string(), Object.create(null), {reportInput: true})
+    expect(bare.ok).toBe(false)
+    if (bare.ok) return
+    expect(bare.error.message).toBe(
+      'Invalid input at <root>: Expected a string, got {}',
+    )
+  })
+
+  test('accepts the issues of a Standard Schema validate result', () => {
+    const Pet = document({
+      _type: literal('pet'),
+      name: string(),
+      tags: array(object({_type: literal('tag'), label: string()})),
+    })
+    const result = Pet['~standard'].validate({
+      _type: 'pet',
+      name: 42,
+      tags: [{_type: 'tag', _key: 'k1', label: 1}],
+    })
+    assert('issues' in result && result.issues)
+    expect(formatIssues(result.issues)).toMatchInlineSnapshot(`
+      "Invalid input (2 issues):
+        name: Expected a string
+        tags[_key=="k1"].label: Expected a string"
+    `)
+  })
+
+  test('accepts issues from any Standard Schema library', () => {
+    // Issues as another library might produce them: plain keys, `{key}`
+    // segments, no path, and no `input`, so no "got" suffix
+    expect(
+      formatIssues([
+        {message: 'Required', path: ['user', {key: 'emails'}, 0]},
+        {message: 'Too short', path: [Symbol('id')], input: 'ab'},
+        {message: 'Expected object'},
+      ]),
+    ).toMatchInlineSnapshot(`
+      "Invalid input (3 issues):
+        user.emails[0]: Required
+        [Symbol(id)]: Too short, got "ab"
+        <root>: Expected object"
+    `)
   })
 })

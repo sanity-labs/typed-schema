@@ -46,6 +46,7 @@ import {
   isStrictlyDateTime,
   isStrictlyFormatted,
 } from './helpers/strictDateParse'
+import {type StandardSchemaV1} from './standardSchema'
 
 /**
  * Where in the input a {@link ParseIssue} was found: object field names,
@@ -55,20 +56,37 @@ import {
 export type Path = Array<string | number | {_key: string; index: number}>
 
 /**
- * Formats a {@link Path} the way Sanity paths are written: `author.name`,
- * `tags[0]`, `body[_key=="abc"].text`. The empty path is `<root>`.
+ * A path segment {@link formatPath} understands: a {@link Path} segment, or a
+ * Standard Schema one (a property key, or `{key}` as the spec allows).
  */
-export function formatPath(path: Path): string {
+export type PathSegmentLike =
+  | Path[number]
+  | PropertyKey
+  | StandardSchemaV1.PathSegment
+
+/**
+ * Formats a path the way Sanity paths are written: `author.name`, `tags[0]`,
+ * `body[_key=="abc"].text`. The empty path is `<root>`. Takes a
+ * {@link ParseIssue} path or a Standard Schema issue path.
+ *
+ * @param path - the path to format
+ */
+export function formatPath(path: ReadonlyArray<PathSegmentLike>): string {
   if (path.length === 0) return '<root>'
-  return path
-    .map((segment, i) => {
-      if (typeof segment === 'number') return `[${segment}]`
-      if (typeof segment === 'object') {
-        return `[_key=="${segment._key.replace(/["\\]/g, '\\$&')}"]`
-      }
-      return i === 0 ? segment : `.${segment}`
-    })
-    .join('')
+  return path.map((segment, i) => formatSegment(segment, i === 0)).join('')
+}
+
+function formatSegment(segment: PathSegmentLike, first: boolean): string {
+  if (typeof segment === 'object' && segment !== null) {
+    if ('_key' in segment && typeof segment._key === 'string') {
+      // `_key` comes from the input, so quote it the way `inspect` quotes
+      // strings: escaped and capped, so it cannot add lines to a report
+      return `[_key==${inspect(segment._key)}]`
+    }
+    if ('key' in segment) return formatSegment(segment.key, first)
+  }
+  if (typeof segment === 'string') return first ? segment : `.${segment}`
+  return `[${String(segment)}]`
 }
 
 export type ErrorCode =
@@ -80,12 +98,28 @@ export type ErrorCode =
   | 'NUM_NOT_MULTIPLE_OF'
   | 'INVALID_OBJECT_UNION'
   | 'ARRAY_ELEMENT_NOT_KEYED_OBJECT'
-/** One problem found while parsing: where it is, what was there and why it was rejected. */
+/**
+ * One problem found while parsing: where it is and why it was rejected.
+ * `input`, the rejected value, is only present when parsing with
+ * `reportInput: true`, so that issues can be logged without leaking the data
+ * they were found in.
+ */
 export interface ParseIssue {
   path: Path
-  input: unknown
+  input?: unknown
   code: ErrorCode
   message: string
+}
+
+/** Options for {@link parse} and {@link parseOrThrow}. */
+export interface ParseOptions {
+  /**
+   * Include the rejected value as `input` on every issue, so that
+   * {@link formatIssues} and `ParseError.message` show it. Off by default:
+   * input often comes from untrusted or sensitive sources, and error messages
+   * tend to end up in logs.
+   */
+  reportInput?: boolean
 }
 export type ParseOk<T> = {ok: true; value: T}
 export type ParseFail = {ok: false; error: ParseError}
@@ -97,20 +131,28 @@ export type ParseResult<T> = ParseOk<T> | ParseFail
  * Validates `input` against `schema` and returns a {@link ParseResult}. It never
  * throws for invalid input; use {@link parseOrThrow} for that.
  *
- * @param _schema - the schema to validate against
+ * @param schema - the schema to validate against
  * @param input - the value to validate
+ * @param options - see {@link ParseOptions}
  */
 export function parse<T extends SanityType>(
   schema: T,
   input: unknown,
+  options: ParseOptions = {},
 ): ParseResult<Parsed<T>> {
   const result = parseInternal(schema, input)
-  return result.ok ? result : {ok: false, error: new ParseError(result.issues)}
+  if (result.ok) return result
+  const issues = options.reportInput
+    ? result.issues
+    : result.issues.map(({input: _, ...issue}) => issue)
+  return {ok: false, error: new ParseError(issues)}
 }
 
 /**
  * The result the per-type parsers pass around: plain issue arrays, so that a
  * nested failure is not wrapped in an Error until the public `parse` returns.
+ * Every internal issue has its `input`; `parse` drops it unless asked to keep
+ * it.
  */
 type InternalResult<T> = ParseOk<T> | {ok: false; issues: ParseIssue[]}
 
@@ -173,29 +215,54 @@ function parseInternal<T extends SanityType>(
         path: [],
         code: 'INVALID_TYPE',
         input,
-        message: `Invalid input: ${inspect(input)}. Parsing of schema type "${
-          schema.typeName
-        }" is not supported.`,
+        message: `Parsing of schema type "${schema.typeName}" is not supported`,
       },
     ],
   }
 }
 /**
+ * What {@link formatIssues} accepts: a {@link ParseIssue}, or a Standard
+ * Schema issue from any library. `input`, when present, is shown as the
+ * rejected value.
+ */
+export interface IssueLike {
+  readonly message: string
+  readonly path?: ReadonlyArray<PathSegmentLike> | undefined
+  readonly input?: unknown
+}
+
+/**
+ * Renders a list of issues as a readable report: one issue on a single line,
+ * several as a header line followed by one indented line per issue. Each line
+ * gives the issue's path (see {@link formatPath}), its message and, when the
+ * issue has an `input` (see {@link ParseOptions}), the value that was rejected.
+ *
+ * Accepts `ParseError.issues` as well as the `issues` of a failed Standard
+ * Schema `validate` result, from this or any other library.
+ *
+ * @param issues - the issues to render
+ */
+export function formatIssues(issues: ReadonlyArray<IssueLike>): string {
+  if (issues.length === 0) return 'Invalid input'
+  const lines = issues.map(
+    issue =>
+      `${formatPath(issue.path ?? [])}: ${issue.message}${
+        'input' in issue ? `, got ${inspect(issue.input)}` : ''
+      }`,
+  )
+  if (lines.length === 1) return `Invalid input at ${lines[0]}`
+  return [`Invalid input (${lines.length} issues):`, ...lines].join('\n  ')
+}
+
+/**
  * The `error` of a failed {@link parse} result, and what {@link parseOrThrow}
- * throws. `message` summarises the first issue; `issues` holds all of them.
+ * throws. `issues` holds every issue found and `message` is
+ * {@link formatIssues} applied to them.
  */
 export class ParseError extends Error {
   constructor(public issues: ParseIssue[]) {
-    const first = issues[0]
-    super(
-      [
-        'Invalid input',
-        first
-          ? ` at "${formatPath(first.path)}": ${first.message}`
-          : ': <unknown>',
-        issues.length > 1 ? ` (+ ${issues.length - 1})` : '',
-      ].join(''),
-    )
+    super(formatIssues(issues))
+    this.name = 'ParseError'
   }
 }
 
@@ -205,12 +272,14 @@ export class ParseError extends Error {
  *
  * @param schema - the schema to validate against
  * @param input - the value to validate
+ * @param options - see {@link ParseOptions}
  */
 export function parseOrThrow<T extends SanityType>(
   schema: T,
   input: unknown,
+  options?: ParseOptions,
 ): Parsed<T> {
-  const result = parse(schema, input)
+  const result = parse(schema, input, options)
   if (!result.ok) {
     throw result.error
   }
@@ -593,7 +662,7 @@ function parseObjectUnion<S extends SanityObjectUnion>(
           code: 'INVALID_OBJECT_UNION',
           input,
           path: [],
-          message: `Type "${input._type}" not found among valid union types`,
+          message: `Type ${inspect(input._type)} not found among valid union types`,
         },
       ],
     }
@@ -609,7 +678,7 @@ function parseObjectUnion<S extends SanityObjectUnion>(
         code: 'INVALID_OBJECT_UNION',
         input,
         path: [],
-        message: `Cannot parse input as union type "${input._type}"`,
+        message: `Cannot parse input as union type ${inspect(input._type)}`,
       },
       ...result.issues,
     ],

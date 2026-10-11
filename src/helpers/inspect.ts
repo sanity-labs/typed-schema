@@ -2,6 +2,7 @@ type InspectOpts = {
   maxDepth?: number
   maxLength?: number
   maxFuncLength?: number
+  maxStringLength?: number
 }
 
 function cap<T>(
@@ -18,14 +19,14 @@ function inspectArray(
   iterable: Iterable<unknown>,
   opts: InspectOpts = {},
 ): string {
-  const {maxDepth = 3, maxLength = 2} = opts
+  const {maxDepth = 3, maxLength = 2, maxStringLength} = opts
 
   const array = Array.from(iterable)
   const [included, capped] = cap(array, maxLength, 1)
 
-  const prefix = Array.isArray(iterable) ? '' : iterable.constructor.name
+  const prefix = Array.isArray(iterable) ? '' : constructorName(iterable)
   return `${prefix}[${included
-    .map(s => inspect(s, {maxDepth: maxDepth - 1, maxLength}))
+    .map(s => inspect(s, {maxDepth: maxDepth - 1, maxLength, maxStringLength}))
     .join(', ')}${capped > 0 ? `, …(+${capped})` : ''}]`
 }
 
@@ -35,7 +36,7 @@ function getEntries(val: any): [string, unknown][] {
 }
 
 function inspectEnumerable(value: unknown, opts: InspectOpts = {}): string {
-  const {maxDepth = 3, maxLength = 2} = opts
+  const {maxDepth = 3, maxLength = 2, maxStringLength = 80} = opts
 
   const entries = getEntries(value).sort(([n1], [n2]) => n1.localeCompare(n2))
 
@@ -45,14 +46,23 @@ function inspectEnumerable(value: unknown, opts: InspectOpts = {}): string {
   )
   const remaining = entries.length - slice.length
 
-  const name = (value as any).constructor.name
+  const name = constructorName(value)
 
   return `${name === 'Object' ? '' : name}{${slice
     .map(
       ([prop, propValue]) =>
-        `${prop}: ${inspect(propValue, {maxDepth: maxDepth - 1, maxLength})}`,
+        `${truncate(prop, maxStringLength)}: ${inspect(propValue, {maxDepth: maxDepth - 1, maxLength, maxStringLength})}`,
     )
     .join(', ')}${remaining > 0 ? `, …(+${remaining})` : ''}}`
+}
+
+/**
+ * The value's constructor name, or an empty string when it has none: an
+ * object from `Object.create(null)`, or JSON with its own `constructor` key.
+ */
+function constructorName(value: unknown): string {
+  const ctor = Object.getPrototypeOf(value)?.constructor
+  return typeof ctor === 'function' ? ctor.name : ''
 }
 
 const truncate = (str: string, length: number) => {
@@ -63,7 +73,12 @@ const truncate = (str: string, length: number) => {
 }
 
 export function inspect(value: unknown, opts: InspectOpts = {}) {
-  const {maxDepth = 3, maxLength = 2, maxFuncLength = 20} = opts
+  const {
+    maxDepth = 3,
+    maxLength = 2,
+    maxFuncLength = 20,
+    maxStringLength = 80,
+  } = opts
   const type = typeof value
 
   if (type === 'bigint') {
@@ -72,8 +87,10 @@ export function inspect(value: unknown, opts: InspectOpts = {}) {
   if (type === 'symbol') {
     return (value as any).toString()
   }
+  if (type === 'string') {
+    return JSON.stringify(truncate(value as string, maxStringLength))
+  }
   if (
-    type === 'string' ||
     type === 'number' ||
     type === 'boolean' ||
     value === null ||
@@ -89,7 +106,7 @@ export function inspect(value: unknown, opts: InspectOpts = {}) {
     return '…'
   }
   if (Array.isArray(value) || value instanceof Set) {
-    return inspectArray(value, {maxDepth, maxLength})
+    return inspectArray(value, {maxDepth, maxLength, maxStringLength})
   }
-  return inspectEnumerable(value, {maxDepth, maxLength})
+  return inspectEnumerable(value, {maxDepth, maxLength, maxStringLength})
 }

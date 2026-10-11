@@ -196,7 +196,6 @@ Schema constants are PascalCase (`User`, `Address`), the same as the type inferr
 ```ts
 import {
   document,
-  formatPath,
   literal,
   number,
   parse,
@@ -212,23 +211,29 @@ if (result.ok) {
   result.value // {_type: 'pet'; name: string; age: number; ...}
 } else {
   // [
-  //   {path: ['name'], code: 'INVALID_TYPE', input: 42, message: 'Expected a string'},
-  //   {path: ['age'], code: 'INVALID_TYPE', input: undefined, message: 'Expected a finite number'},
+  //   {path: ['name'], code: 'INVALID_TYPE', message: 'Expected a string'},
+  //   {path: ['age'], code: 'INVALID_TYPE', message: 'Expected a finite number'},
   // ]
   console.log(result.error.issues)
 }
 
 try {
-  parseOrThrow(Pet, {_type: 'pet', name: 42})
+  parseOrThrow(Pet, {_type: 'pet', name: 42}, {reportInput: true})
 } catch (err) {
   if (err instanceof ParseError) {
-    // Invalid input at "name": Expected a string (+ 1)
-    console.log(err.message, err.issues)
+    // Invalid input (2 issues):
+    //   name: Expected a string, got 42
+    //   age: Expected a finite number, got undefined
+    console.log(err.message)
   }
 }
 ```
 
+Issues leave out the rejected value by default, since input often comes from untrusted or sensitive sources and error messages tend to end up in logs. Pass `{reportInput: true}` to `parse` or `parseOrThrow` to include it as `input` on every issue; `ParseError.message` then shows it too. Values that come from the input, including `_key` and `_type` strings, are always quoted, escaped and cut at 80 characters, so a message stays one line per issue whatever the input contains.
+
 An issue's `path` leads to the offending value: object fields by name, items in arrays of primitives by index, and items in arrays of objects by `_key` and index, as `{_key: 'abc', index: 0}`. `formatPath(path)` renders it the way Sanity writes paths, for example `body[_key=="abc"].children[0].text`.
+
+`formatIssues(issues)` renders a list of issues as the report above: one line per issue with its path and message, plus the rejected value for issues that have an `input`. One issue fits on a single line. `ParseError.message` is `formatIssues` applied to its `issues`, so call it yourself when you have a `parse` result and want the same text without throwing. It also takes the `issues` of a failed [Standard Schema](#standard-schema) `validate` result, from this or any other library; the accepted shape is `IssueLike`, and `PathSegmentLike` is what a path may contain.
 
 Parsing strips properties the schema does not declare rather than rejecting them.
 
@@ -253,7 +258,7 @@ if (result.issues) {
 }
 ```
 
-`validate` runs `parse` and returns synchronously (the spec allows a promise, so generic code should still `await` it). An issue's `path` follows the spec, so it resolves against the input: an element of a keyed array appears as `{key: index, _key}`, with its index as the `key` and its `_key` alongside. `StandardSchemaV1.InferInput` is the value as stored (`Infer`) and `StandardSchemaV1.InferOutput` is what `parse` returns (`Parsed`). The package exports the `StandardSchemaV1` type too, for code that does not depend on `@standard-schema/spec`.
+`validate` runs `parse` and returns synchronously (the spec allows a promise, so generic code should still `await` it). An issue's `path` follows the spec, so it resolves against the input: an element of a keyed array appears as `{key: index, _key}`, with its index as the `key` and its `_key` alongside. `StandardSchemaV1.InferInput` is the value as stored (`Infer`) and `StandardSchemaV1.InferOutput` is what `parse` returns (`Parsed`). The package exports the `StandardSchemaV1` type too, for code that does not depend on `@standard-schema/spec`. `formatIssues(result.issues)` renders them the same way `ParseError.message` does.
 
 ### Arrays and `_key`
 
@@ -676,15 +681,19 @@ Each returns a new schema. Types follow the runtime change.
 
 ### Parsing
 
-| Export                        | Notes                                                                                                                                                                                            |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `parse(schema, input)`        | Returns `{ok: true, value}` or `{ok: false, error: ParseError}`; never throws for invalid input                                                                                                  |
-| `parseOrThrow(schema, input)` | Returns `Parsed<typeof schema>` or throws `ParseError`                                                                                                                                           |
-| `ParseError`                  | The `error` of a failed result and what `parseOrThrow` throws. `message` summarises the first issue; `issues` holds all of them                                                                  |
-| `ParseIssue`                  | `{path, code, input, message}`. `path` is an array of field names, array indexes and `{_key, index}` objects                                                                                     |
-| `formatPath(path)`            | Renders a `path` as `a.b[0].c[_key=="k"]`; `<root>` for the empty path                                                                                                                           |
-| `ErrorCode`                   | `'INVALID_TYPE'`, `'NUM_TOO_SMALL'`, `'NUM_TOO_BIG'`, `'NUM_NOT_MULTIPLE_OF'`, `'INVALID_PRIMITIVE_UNION'`, `'INVALID_ENUM_VALUE'`, `'INVALID_OBJECT_UNION'`, `'ARRAY_ELEMENT_NOT_KEYED_OBJECT'` |
-| `schema['~standard']`         | The [Standard Schema](#standard-schema) properties: `validate` runs `parse`                                                                                                                      |
+| Export                                  | Notes                                                                                                                                                                                            |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `parse(schema, input, options?)`        | Returns `{ok: true, value}` or `{ok: false, error: ParseError}`; never throws for invalid input                                                                                                  |
+| `parseOrThrow(schema, input, options?)` | Returns `Parsed<typeof schema>` or throws `ParseError`                                                                                                                                           |
+| `ParseOptions`                          | `{reportInput?: boolean}`: include the rejected value as `input` on each issue. Off by default so messages do not leak input                                                                     |
+| `ParseError`                            | The `error` of a failed result and what `parseOrThrow` throws. `issues` holds every issue; `message` is `formatIssues(issues)`                                                                   |
+| `ParseIssue`                            | `{path, code, message, input?}`. `path` is an array of field names, array indexes and `{_key, index}` objects; `input` is present with `reportInput`                                             |
+| `formatPath(path)`                      | Renders a `ParseIssue` or Standard Schema issue path as `a.b[0].c[_key=="k"]`; `<root>` for the empty path                                                                                       |
+| `formatIssues(issues)`                  | Renders `ParseError.issues`, or the `issues` of any Standard Schema `validate` result, as a readable report: one line per issue with its path, message and rejected value                        |
+| `IssueLike`                             | What `formatIssues` accepts: `{message, path?, input?}`, which both `ParseIssue` and a Standard Schema issue satisfy                                                                             |
+| `PathSegmentLike`                       | What `formatPath` accepts in a path: a field name, index, symbol, `{_key, index}` or Standard Schema `{key}` segment                                                                             |
+| `ErrorCode`                             | `'INVALID_TYPE'`, `'NUM_TOO_SMALL'`, `'NUM_TOO_BIG'`, `'NUM_NOT_MULTIPLE_OF'`, `'INVALID_PRIMITIVE_UNION'`, `'INVALID_ENUM_VALUE'`, `'INVALID_OBJECT_UNION'`, `'ARRAY_ELEMENT_NOT_KEYED_OBJECT'` |
+| `schema['~standard']`                   | The [Standard Schema](#standard-schema) properties: `validate` runs `parse`                                                                                                                      |
 
 ### Lifecycle helpers
 

@@ -19,12 +19,11 @@ test('min/max constraints', () => {
         "issues": [
           {
             "code": "NUM_TOO_SMALL",
-            "input": 0.9,
             "message": "Expected a number greater than, or equal to 1",
             "path": [],
           },
         ],
-        "message": "Invalid input at "<root>": Expected a number greater than, or equal to 1",
+        "message": "Invalid input at <root>: Expected a number greater than, or equal to 1",
       },
       "ok": false,
     }
@@ -35,12 +34,11 @@ test('min/max constraints', () => {
         "issues": [
           {
             "code": "NUM_TOO_BIG",
-            "input": 20.1,
             "message": "Expected a number less than, or equal to 20",
             "path": [],
           },
         ],
-        "message": "Invalid input at "<root>": Expected a number less than, or equal to 20",
+        "message": "Invalid input at <root>: Expected a number less than, or equal to 20",
       },
       "ok": false,
     }
@@ -57,12 +55,11 @@ test('lt/gt constraints', () => {
         "issues": [
           {
             "code": "NUM_TOO_SMALL",
-            "input": 1,
             "message": "Expected a number greater than 1",
             "path": [],
           },
         ],
-        "message": "Invalid input at "<root>": Expected a number greater than 1",
+        "message": "Invalid input at <root>: Expected a number greater than 1",
       },
       "ok": false,
     }
@@ -73,12 +70,11 @@ test('lt/gt constraints', () => {
         "issues": [
           {
             "code": "NUM_TOO_BIG",
-            "input": 20,
             "message": "Expected a number less than 20",
             "path": [],
           },
         ],
-        "message": "Invalid input at "<root>": Expected a number less than 20",
+        "message": "Invalid input at <root>: Expected a number less than 20",
       },
       "ok": false,
     }
@@ -95,12 +91,11 @@ test('step constraints', () => {
         "issues": [
           {
             "code": "NUM_NOT_MULTIPLE_OF",
-            "input": 1,
             "message": "Expected a number that is a multiple of 2",
             "path": [],
           },
         ],
-        "message": "Invalid input at "<root>": Expected a number that is a multiple of 2",
+        "message": "Invalid input at <root>: Expected a number that is a multiple of 2",
       },
       "ok": false,
     }
@@ -111,12 +106,11 @@ test('step constraints', () => {
         "issues": [
           {
             "code": "NUM_NOT_MULTIPLE_OF",
-            "input": 9,
             "message": "Expected a number that is a multiple of 2",
             "path": [],
           },
         ],
-        "message": "Invalid input at "<root>": Expected a number that is a multiple of 2",
+        "message": "Invalid input at <root>: Expected a number that is a multiple of 2",
       },
       "ok": false,
     }
@@ -139,12 +133,11 @@ test('rejects NaN and infinities', () => {
         "issues": [
           {
             "code": "INVALID_TYPE",
-            "input": NaN,
             "message": "Expected a finite number",
             "path": [],
           },
         ],
-        "message": "Invalid input at "<root>": Expected a finite number",
+        "message": "Invalid input at <root>: Expected a finite number",
       },
       "ok": false,
     }

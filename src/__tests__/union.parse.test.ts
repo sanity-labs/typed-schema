@@ -77,14 +77,11 @@ describe('typed object union', () => {
           "issues": [
             {
               "code": "INVALID_OBJECT_UNION",
-              "input": {
-                "_type": "x",
-              },
               "message": "Type "x" not found among valid union types",
               "path": [],
             },
           ],
-          "message": "Invalid input at "<root>": Type "x" not found among valid union types",
+          "message": "Invalid input at <root>: Type "x" not found among valid union types",
         },
         "ok": false,
       }
@@ -147,27 +144,20 @@ describe('typed object union', () => {
           "issues": [
             {
               "code": "INVALID_OBJECT_UNION",
-              "input": {
-                "_type": "image",
-                "asset": {
-                  "_ref": "123",
-                  "_type": "reference",
-                },
-                "description": "Some description",
-              },
               "message": "Cannot parse input as union type "image"",
               "path": [],
             },
             {
               "code": "INVALID_TYPE",
-              "input": undefined,
               "message": "Expected a string",
               "path": [
                 "caption",
               ],
             },
           ],
-          "message": "Invalid input at "<root>": Cannot parse input as union type "image" (+ 1)",
+          "message": "Invalid input (2 issues):
+        <root>: Cannot parse input as union type "image"
+        caption: Expected a string",
         },
         "ok": false,
       }
@@ -193,14 +183,11 @@ describe('typed object union', () => {
           "issues": [
             {
               "code": "INVALID_OBJECT_UNION",
-              "input": {
-                "status": "neither",
-              },
               "message": "Expected an object with a "_type"-property",
               "path": [],
             },
           ],
-          "message": "Invalid input at "<root>": Expected an object with a "_type"-property",
+          "message": "Invalid input at <root>: Expected an object with a "_type"-property",
         },
         "ok": false,
       }
@@ -227,17 +214,11 @@ describe('typed object union', () => {
             "issues": [
               {
                 "code": "INVALID_OBJECT_UNION",
-                "input": {
-                  "data": {
-                    "num": "not a number",
-                  },
-                  "status": "success",
-                },
                 "message": "Expected an object with a "_type"-property",
                 "path": [],
               },
             ],
-            "message": "Invalid input at "<root>": Expected an object with a "_type"-property",
+            "message": "Invalid input at <root>: Expected an object with a "_type"-property",
           },
           "ok": false,
         }

@@ -34,12 +34,11 @@ test('parse string array enum', () => {
         "issues": [
           {
             "code": "INVALID_ENUM_VALUE",
-            "input": "x",
             "message": "Input doesn't match any of the valid enum values",
             "path": [],
           },
         ],
-        "message": "Invalid input at "<root>": Input doesn't match any of the valid enum values",
+        "message": "Invalid input at <root>: Input doesn't match any of the valid enum values",
       },
       "ok": false,
     }
@@ -57,12 +56,11 @@ test('parse object literal enum', () => {
         "issues": [
           {
             "code": "INVALID_ENUM_VALUE",
-            "input": "x",
             "message": "Input doesn't match any of the valid enum values",
             "path": [],
           },
         ],
-        "message": "Invalid input at "<root>": Input doesn't match any of the valid enum values",
+        "message": "Invalid input at <root>: Input doesn't match any of the valid enum values",
       },
       "ok": false,
     }

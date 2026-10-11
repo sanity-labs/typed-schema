@@ -90,3 +90,23 @@ test('does not blow up on circular structures', () => {
     `"{name: "loop", self: {name: "loop", self: {name: "loop", self: …}}}"`,
   )
 })
+
+test('long strings are truncated', () => {
+  expect(inspect('x'.repeat(100))).toBe(`"${'x'.repeat(79)}…"`)
+  expect(inspect('x'.repeat(80))).toBe(`"${'x'.repeat(80)}"`)
+  expect(inspect({a: 'y'.repeat(100)}, {maxStringLength: 5})).toBe(
+    '{a: "yyyy…"}',
+  )
+})
+
+test('objects without a usable constructor', () => {
+  expect(inspect(JSON.parse('{"constructor": null}'))).toBe(
+    '{constructor: null}',
+  )
+  expect(inspect(Object.create(null))).toBe('{}')
+  expect(inspect(Object.assign(Object.create(null), {a: 1}))).toBe('{a: 1}')
+})
+
+test('long keys are truncated', () => {
+  expect(inspect({['k'.repeat(100)]: 1})).toBe(`{${'k'.repeat(79)}…: 1}`)
+})
