@@ -1,49 +1,42 @@
 import {
+  committed,
   document,
-  draft,
   type Infer,
   literal,
   parse,
-  stored,
+  partial,
   string,
 } from '@sanity-labs/typed-schema'
 
-// The schema for the MyDocument type in its "ideal" form (i.e. published/validated state)
-
-const MyDocument = document({
+// The base schema is a complete pet as you construct it locally. The system
+// fields are optional because nothing has assigned them yet.
+const Pet = document({
   _type: literal('pet'),
   name: string(),
 })
+type Pet = Infer<typeof Pet>
 
-// Schema for MyDocument as draft
-const MyDocumentDraft = draft(MyDocument)
+const pet: Pet = {_type: 'pet', name: 'Fido'}
 
-// Schema for MyDocument as stored
-const MyDocumentStored = stored(MyDocument)
-const storedMyDocument = parse(MyDocumentStored, {/* input */})
-// _rev is defined because it's stored!
-console.log(storedMyDocument._rev.toUpperCase())
+// Completeness: partial() relaxes every field but _type, recursively. This is what you
+// hold while editing, or what the `drafts` and `raw` perspectives may return.
+const PartialPet = partial(Pet)
+type PartialPet = Infer<typeof PartialPet>
 
-// Schema for MyDocument as a stored draft
-const MyDocumentStoredDraft = stored(MyDocumentDraft)
-const storedDraft = parse(MyDocumentStoredDraft, {/* input */})
+const partialPet: PartialPet = {_type: 'pet'}
 
-// _id is defined because it's stored!
-console.log(storedDraft._id.toUpperCase())
+// Persistence: committed() adds what the Content Lake assigns on commit.
+const CommittedPet = committed(Pet)
+const committedPet = parse(CommittedPet, {/* input */})
+// _rev is a string, not string | undefined, because the document is committed
+console.log(committedPet._rev.toUpperCase())
 
-// Inferred TypeScript type of MyDocument (default is published)
-type MyDocument = Infer<typeof MyDocument>
-// Can create a new instances of published without having to provide _id, _rev, etc.
-// but still need to provide required fields
-const somePublished: MyDocument = {
-  _type: 'pet',
-  name: 'someName',
-}
+// The two compose. A committed document that may be incomplete:
+const CommittedPartialPet = committed(PartialPet)
+const committedPartialPet = parse(CommittedPartialPet, {/* input */})
+// _id is a string because the document is committed
+console.log(committedPartialPet._id.toUpperCase())
+// name may be missing because the document is incomplete
+console.log(committedPartialPet.name?.toUpperCase())
 
-// Inferred TypeScript type of MyDocument as draft
-type MyDocumentDraft = Infer<typeof MyDocumentDraft>
-
-// Can create a new instances of drafts without having to provide required attributes
-const someDraft: MyDocumentDraft = {
-  _type: 'pet',
-}
+console.log(pet, partialPet)

@@ -37,19 +37,24 @@ export type PartialShape<
       : MaybeOptionalType<DeepPartial<S[K]>>
 }
 
-export type DeepPartialPlain<T> = T extends {_type: string}
+/**
+ * Value-level counterpart of {@link DeepPartial}, used where a schema carries
+ * no shape to transform (`SanityObjectType<Value>`). Not exported: express a
+ * partial value as `Infer<DeepPartial<typeof Obj>>`.
+ */
+type DeepPartialValue<T> = T extends {_type: string}
   ? Combine<
       {[P in '_type']: T['_type']},
       {
-        [P in keyof T as P extends '_type' ? never : P]?: DeepPartialPlain<T[P]>
+        [P in keyof T as P extends '_type' ? never : P]?: DeepPartialValue<T[P]>
       }
     >
-  : {[P in keyof T]?: DeepPartialPlain<T[P]>}
+  : {[P in keyof T]?: DeepPartialValue<T[P]>}
 
 export type DeepPartialObject<S extends SanityObject | SanityDocument> =
   S extends SanityObject<infer Shape>
     ? SanityObjectShape extends Shape
-      ? SanityObjectType<DeepPartialPlain<OutputOf<S>>>
+      ? SanityObjectType<DeepPartialValue<OutputOf<S>>>
       : SanityObject<PartialShape<Shape, '_type'>>
     : S extends SanityDocument<infer Shape>
       ? SanityDocument<PartialShape<Shape, '_type'>>

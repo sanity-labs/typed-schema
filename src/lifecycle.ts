@@ -1,16 +1,29 @@
 import {document} from './creators/document'
-import {type SanityDocument} from './defs'
+import {
+  type _SanityDocument,
+  type OutputOf,
+  type SanityDocument,
+  type SanityDocumentType,
+  type SanityLazy,
+  type SanityObjectShape,
+  type SanityType,
+} from './defs'
 import {
   type ElementType,
   type Format,
   type RequireSome,
 } from './helpers/utilTypes'
-import {type DocumentLike} from './loader/createReferenceLoader'
+import {type SanityDocumentValue} from './shapeDefs'
 import {type DeepPartial, deepPartial} from './utils/deepPartial'
 import {required} from './utils/required'
 import {type ShallowRequiredShape} from './utils/shallowRequired'
 
-export const STORED_KEYS = [
+/**
+ * The fields the Content Lake assigns when it commits a document. `_type` is
+ * listed because it is always present on a committed document, even though
+ * `document()` already requires it.
+ */
+export const COMMITTED_KEYS = [
   '_type',
   '_id',
   '_createdAt',
@@ -18,34 +31,75 @@ export const STORED_KEYS = [
   '_rev',
 ] as const
 
-export type StoredKeys = ElementType<typeof STORED_KEYS>
+export type CommittedKeys = ElementType<typeof COMMITTED_KEYS>
 
-export type StoredDocument<T extends DocumentLike> = Format<
-  RequireSome<T, StoredKeys>
->
+/**
+ * Value-level counterpart of {@link Committed}, used where a schema carries no
+ * shape to transform (`SanityDocumentType<Value>`). Not exported: express a
+ * committed value as `Infer<Committed<typeof Doc>>`.
+ */
+type CommittedValue<T> = T extends SanityDocumentValue
+  ? Format<RequireSome<T, CommittedKeys>>
+  : never
 
-export type Stored<T extends SanityDocument> =
-  T extends SanityDocument<infer DocShape>
-    ? SanityDocument<
-        ShallowRequiredShape<Pick<DocShape, StoredKeys>> &
-          Omit<DocShape, StoredKeys>
-      >
-    : never
+/**
+ * The schema `committed(doc)` returns: `doc` with `_id`, `_rev`, `_createdAt`
+ * and `_updatedAt` required. `Infer<Committed<typeof Pet>>` is the type of a
+ * pet as the Content Lake returns it, whichever perspective it is read from.
+ *
+ * Document schemas annotated by value (`SanityDocumentType<Value>`) and other
+ * document-like schemas keep their kind and get the same change applied to
+ * their value type; lazy schemas are transformed when resolved.
+ */
+export type Committed<
+  T extends SanityDocument | SanityType<SanityDocumentValue>,
+> =
+  T extends SanityLazy<infer Inner>
+    ? Inner extends SanityType<SanityDocumentValue>
+      ? SanityLazy<Committed<Inner>>
+      : never
+    : T extends _SanityDocument<infer DocShape>
+      ? SanityObjectShape extends DocShape
+        ? SanityDocumentType<CommittedValue<OutputOf<T>>>
+        : SanityDocument<
+            ShallowRequiredShape<Pick<DocShape, CommittedKeys>> &
+              Omit<DocShape, CommittedKeys>
+          >
+      : T extends SanityDocumentType<infer Value>
+        ? SanityDocumentType<CommittedValue<Value>>
+        : SanityType<CommittedValue<OutputOf<T>>>
 
-export type Draft<T extends SanityDocument> = DeepPartial<T>
-
-export function draft<T extends SanityDocument>(schema: T): Draft<T> {
-  return deepPartial(schema)
+/**
+ * Makes the fields the Content Lake assigns on commit (`_id`, `_rev`,
+ * `_createdAt`, `_updatedAt`) required. Compose with `partial` for a
+ * committed document that may be incomplete: `committed(partial(Doc))`.
+ */
+export function committed<T extends SanityDocument>(schema: T): Committed<T> {
+  const committedShape = Object.entries(schema.shape).map(
+    ([key, propSchema]) => {
+      return [
+        key,
+        COMMITTED_KEYS.includes(key as CommittedKeys)
+          ? required(propSchema)
+          : propSchema,
+      ]
+    },
+  )
+  return document(Object.fromEntries(committedShape)) as any
 }
 
-export function stored<T extends SanityDocument>(schema: T): Stored<T> {
-  const storedShape = Object.entries(schema.shape).map(([key, propSchema]) => {
-    return [
-      key,
-      STORED_KEYS.includes(key as StoredKeys)
-        ? required(propSchema)
-        : propSchema,
-    ]
-  })
-  return document(Object.fromEntries(storedShape)) as any
+/**
+ * Relaxes completeness: every field except `_type` becomes optional,
+ * recursively. This is the shape of a document while it is being edited, and
+ * of what the `drafts` or `raw` perspective may return.
+ *
+ * It is `deepPartial` restricted to documents. A document is a tree, and a
+ * document that is still being filled in is partial at every level, so the
+ * document-level transform is deep. Use `shallowPartial` to relax only the
+ * top level. Compose with `committed` for a partial document as the Content
+ * Lake returns it: `committed(partial(Doc))`. Its schema type is
+ * `DeepPartial<typeof Doc>`.
+ */
+export function partial<T extends SanityDocument>(schema: T): DeepPartial<T> {
+  return deepPartial(schema)
 }

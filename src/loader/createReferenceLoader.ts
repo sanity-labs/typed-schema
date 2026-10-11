@@ -1,5 +1,12 @@
-import {type Conceal, type OutputOf, REF_SCHEMA, type SanityType} from '../defs'
-import {type StoredDocument} from '../lifecycle'
+import {
+  type Conceal,
+  type OutputOf,
+  type Parsed,
+  REF_SCHEMA,
+  type SanityType,
+} from '../defs'
+import {getLazySchema} from '../helpers/getLazySchema'
+import {type Committed, committed} from '../lifecycle'
 import {ParseError, type ParseOk, type ParseResult, safeParse} from '../parse'
 import {
   DocumentBase,
@@ -23,15 +30,31 @@ const NO_REF: Promise<ParseOk<any>> = Promise.resolve({
   value: undefined,
 })
 
-export type InferReferenceType<
-  T extends ReferenceWithOptionalRefType<SanityType<SanityDocumentValue>>,
-> = T extends {[REF_SCHEMA]?: infer Ref}
-  ? Ref extends SanityType<infer Output>
-    ? Output
-    : T extends {_weak: true}
-      ? undefined | DocumentLike
-      : DocumentLike
-  : DocumentLike
+/**
+ * The schema of the document a reference value points to. A `Parsed`
+ * reference carries the schema of its `reference()` target; an `Infer`
+ * reference (hand-written or from a raw client result) resolves to the base
+ * document schema, so only the system fields are parsed.
+ */
+export type ReferencedSchema<
+  RefValue extends ReferenceWithOptionalRefType<
+    SanityType<SanityDocumentValue>
+  >,
+> = RefValue extends {[REF_SCHEMA]?: infer Ref}
+  ? Ref extends SanityType<SanityDocumentValue>
+    ? Ref
+    : typeof DocumentBase
+  : typeof DocumentBase
+
+/**
+ * What `loadReference(ref)` resolves to: the referenced document as the
+ * Content Lake returns it, i.e. `Parsed<Committed<ReferencedSchema<typeof ref>>>`.
+ */
+export type LoadedReference<
+  RefValue extends ReferenceWithOptionalRefType<
+    SanityType<SanityDocumentValue>
+  >,
+> = Parsed<Committed<ReferencedSchema<RefValue>>>
 
 export function createSafeLoadReference(
   fetch: (id: string, fieldSelection: string[]) => Promise<unknown>,
@@ -42,14 +65,15 @@ export function createSafeLoadReference(
     >,
   >(
     reference: RefValue,
-    fieldSelection?: (keyof ParseResult<InferReferenceType<RefValue>>)[],
-  ): Promise<ParseResult<StoredDocument<InferReferenceType<RefValue>>>> {
+    fieldSelection?: Extract<keyof LoadedReference<RefValue>, string>[],
+  ): Promise<ParseResult<LoadedReference<RefValue>>> {
     if (!reference._ref) {
       return NO_REF
     }
 
+    const target = getLazySchema(reference[REF_SCHEMA] || DocumentBase)
     return fetch(reference._ref, fieldSelection || []).then(input =>
-      safeParse(reference[REF_SCHEMA] || DocumentBase, input),
+      safeParse(committed(target as any), input),
     ) as any
   }
 }
@@ -60,9 +84,10 @@ export function createReferenceLoader(
   const safeResolve = createSafeLoadReference(fetch)
 
   return function loadReference<
-    T extends ReferenceWithOptionalRefType<RefTypeDef>,
-    RefTypeDef extends SanityType<SanityDocumentValue>,
-  >(reference: T) {
+    RefValue extends ReferenceWithOptionalRefType<
+      SanityType<SanityDocumentValue>
+    >,
+  >(reference: RefValue): Promise<LoadedReference<RefValue>> {
     return safeResolve(reference).then(result =>
       result.status === 'ok'
         ? result.value
