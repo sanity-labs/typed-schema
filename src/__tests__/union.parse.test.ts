@@ -143,11 +143,6 @@ describe('typed object union', () => {
         "error": ParseError {
           "issues": [
             {
-              "code": "INVALID_OBJECT_UNION",
-              "message": "Cannot parse input as union type "image"",
-              "path": [],
-            },
-            {
               "code": "INVALID_TYPE",
               "message": "Expected a string",
               "path": [
@@ -155,9 +150,7 @@ describe('typed object union', () => {
               ],
             },
           ],
-          "message": "Invalid input (2 issues):
-        <root>: Cannot parse input as union type "image"
-        caption: Expected a string",
+          "message": "Invalid input at caption: Expected a string",
         },
         "ok": false,
       }
