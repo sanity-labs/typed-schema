@@ -1,8 +1,13 @@
-import {array, literal, object, string, union} from '@sanity-labs/typed-schema'
+import {
+  array,
+  literal,
+  object,
+  string,
+  union,
+  verifyUniqueTypeNames,
+} from '@sanity-labs/typed-schema'
 
-import {strictMode} from '../../src/helpers/strictMode'
-
-const Person = strictMode(
+const Person = verifyUniqueTypeNames(
   object({
     _type: literal('person'),
     name: object({

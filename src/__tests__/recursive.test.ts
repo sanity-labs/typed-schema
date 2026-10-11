@@ -11,7 +11,7 @@ import {optional} from '../creators/optional'
 import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
-import {strictMode} from '../helpers/strictMode'
+import {verifyUniqueTypeNames} from '../helpers/verifyUniqueTypeNames'
 import {parse, safeParse} from '../parse'
 import {deepPartial} from '../utils/deepPartial'
 import {deepRequired} from '../utils/deepRequired'
@@ -150,7 +150,7 @@ describe('recursive schemas declared with getters', () => {
   })
 
   test('schema walkers terminate', () => {
-    expect(() => strictMode(Folder)).not.toThrow()
+    expect(() => verifyUniqueTypeNames(Folder)).not.toThrow()
   })
 
   test('deepPartial and deepRequired apply at every depth', () => {

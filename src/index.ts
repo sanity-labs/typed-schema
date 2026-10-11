@@ -80,8 +80,11 @@ export * from './utils/shallowPartial'
 export * from './utils/shallowRequired'
 export * from './lifecycle'
 
-// Strict mode (unique type names, required for GraphQL deployment)
-export {safeStrictMode, strictMode, StrictModeError} from './helpers/strictMode'
+// Unique type names (required for GraphQL deployment)
+export {
+  DuplicateTypeNameError,
+  verifyUniqueTypeNames,
+} from './helpers/verifyUniqueTypeNames'
 
 // Loading documents and references
 export * from './loader/createDocumentLoader'
