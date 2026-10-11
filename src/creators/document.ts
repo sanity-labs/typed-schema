@@ -8,13 +8,13 @@ import {
 import {deferGetters} from '../helpers/deferGetters'
 import {defineType} from '../helpers/defineType'
 import {DocumentBase} from '../shapeDefs'
-import {type InvalidFieldNames} from './object'
+import {type FieldSchemas, type InvalidFieldNames} from './object'
 
 export function document<
   Shape extends {[key: string]: any} = SanityObjectShape,
 >(
   shape: Shape &
-    NoInfer<InvalidFieldNames<Shape, '_id' | '_type'>> & {
+    NoInfer<InvalidFieldNames<Shape, '_id' | '_type'> & FieldSchemas<Shape>> & {
       _id?: SanityLiteral<string> | SanityString
       _type: SanityLiteral<string>
     },

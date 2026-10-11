@@ -2,6 +2,8 @@ import {assertType, expectTypeOf, test} from 'vitest'
 
 import {array} from '../creators/array'
 import {document} from '../creators/document'
+import {file} from '../creators/file'
+import {image} from '../creators/image'
 import {lazy} from '../creators/lazy'
 import {literal} from '../creators/literal'
 import {object} from '../creators/object'
@@ -207,4 +209,31 @@ test('field names are still validated', () => {
       return string()
     },
   })
+})
+
+const Gallery = object({
+  _type: literal('gallery'),
+  title: string(),
+  cover: image({
+    get related() {
+      return array(Gallery)
+    },
+  }),
+  attachment: file({
+    get gallery() {
+      return optional(Gallery)
+    },
+  }),
+})
+type Gallery = Infer<typeof Gallery>
+
+test('self-reference inside image and file fields', () => {
+  expectTypeOf<
+    Gallery['cover']['related'][number]['title']
+  >().toEqualTypeOf<string>()
+  expectTypeOf<
+    NonNullable<
+      Gallery['attachment']['gallery']
+    >['cover']['related'][number]['title']
+  >().toEqualTypeOf<string>()
 })

@@ -1,3 +1,4 @@
+import {type FieldSchemas} from '../creators/object'
 import {
   type OutputFromShape,
   type SanityDocument,
@@ -37,6 +38,9 @@ export function extend<
   // Not `SanityObjectShape`: checking the field types would read fields
   // declared with getters and break recursive extensions
   Shape extends {[key: string]: any},
->(source: Obj, shape: Shape): Extends<Obj, Shape> {
+>(
+  source: Obj,
+  shape: Shape & NoInfer<FieldSchemas<Shape>>,
+): Extends<Obj, Shape> {
   return {...source, shape: {...source.shape, ...deferGetters(shape)}} as any
 }
