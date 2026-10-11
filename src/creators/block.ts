@@ -9,9 +9,9 @@ import {
   type SanityObjectUnion,
   type SanityOptional,
   type SanityPrimitiveArray,
+  type SanityPortableTextMember,
   type SanityPrimitiveUnion,
   type SanityString,
-  type SanityTypedObject,
   type SchemaAnnotations,
 } from '../defs'
 import {defineType} from '../helpers/defineType'
@@ -71,16 +71,16 @@ export type BlockObjectShape<
     | SanityPrimitiveUnion<SanityLiteral<string>>,
   InlineType extends
     | SanityNever
-    | SanityTypedObject
-    | SanityObjectUnion<SanityTypedObject>,
+    | SanityPortableTextMember
+    | SanityObjectUnion<SanityPortableTextMember>,
   DecoratorType extends
     | SanityNever
     | SanityLiteral<string>
     | SanityPrimitiveUnion<SanityLiteral<string>>,
   AnnotationType extends
     | SanityNever
-    | SanityTypedObject
-    | SanityObjectUnion<SanityTypedObject>,
+    | SanityPortableTextMember
+    | SanityObjectUnion<SanityPortableTextMember>,
   TypeName extends SanityLiteral<string> = SanityLiteral<'block'>,
 > = {
   _type: TypeName
@@ -111,16 +111,16 @@ export type BlockOptions<
     | SanityPrimitiveUnion<SanityLiteral<string>> = never,
   InlineType extends
     | void
-    | SanityTypedObject
-    | SanityObjectUnion<SanityTypedObject> = never,
+    | SanityPortableTextMember
+    | SanityObjectUnion<SanityPortableTextMember> = never,
   DecoratorType extends
     | void
     | SanityLiteral<string>
     | SanityPrimitiveUnion<SanityLiteral<string>> = never,
   AnnotationType extends
     | void
-    | SanityTypedObject
-    | SanityObjectUnion<SanityTypedObject> = never,
+    | SanityPortableTextMember
+    | SanityObjectUnion<SanityPortableTextMember> = never,
   TypeName extends SanityLiteral<string> = SanityLiteral<'block'>,
 > = {
   _type?: TypeName
@@ -136,9 +136,9 @@ export type BlockOptions<
    * accepts any string. The option is kept for Studio schema generation.
    */
   decorator?: DecoratorType
-  /** Typed objects allowed inline among the spans */
+  /** Typed objects, references, images or files allowed inline among the spans */
   inline?: InlineType
-  /** Typed objects allowed in `markDefs` (annotations referenced from span marks by `_key`) */
+  /** Typed objects, references, images or files allowed in `markDefs` (annotations referenced from span marks by `_key`) */
   annotation?: AnnotationType
 }
 
@@ -156,16 +156,16 @@ type BlockType<
     | SanityPrimitiveUnion<SanityLiteral<string>>,
   InlineType extends
     | void
-    | SanityTypedObject
-    | SanityObjectUnion<SanityTypedObject>,
+    | SanityPortableTextMember
+    | SanityObjectUnion<SanityPortableTextMember>,
   DecoratorType extends
     | void
     | SanityLiteral<string>
     | SanityPrimitiveUnion<SanityLiteral<string>>,
   AnnotationType extends
     | void
-    | SanityTypedObject
-    | SanityObjectUnion<SanityTypedObject>,
+    | SanityPortableTextMember
+    | SanityObjectUnion<SanityPortableTextMember>,
   TypeName extends SanityLiteral<string>,
 > = SanityBlock<
   BlockObjectShape<
@@ -193,16 +193,16 @@ export function block<
     | SanityPrimitiveUnion<SanityLiteral<string>>,
   InlineType extends
     | void
-    | SanityTypedObject
-    | SanityObjectUnion<SanityTypedObject>,
+    | SanityPortableTextMember
+    | SanityObjectUnion<SanityPortableTextMember>,
   DecoratorType extends
     | void
     | SanityLiteral<string>
     | SanityPrimitiveUnion<SanityLiteral<string>>,
   AnnotationType extends
     | void
-    | SanityTypedObject
-    | SanityObjectUnion<SanityTypedObject>,
+    | SanityPortableTextMember
+    | SanityObjectUnion<SanityPortableTextMember>,
   TypeName extends SanityLiteral<string> = SanityLiteral<'block'>,
 >(
   options: BlockOptions<

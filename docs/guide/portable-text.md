@@ -26,14 +26,14 @@ The inferred type matches what Sanity stores: `style`, `listItem`, `level` and `
 
 Each option narrows one part of the block:
 
-| Option       | What it allows                                                                          |
-| ------------ | --------------------------------------------------------------------------------------- |
-| `style`      | Block styles, such as `normal` and `h2`, as a literal or a union of literals            |
-| `list`       | List item types, such as `bullet` and `number`                                          |
-| `decorator`  | Decorators, such as `strong` and `em`. Spans don't check them: `marks` stays `string[]` |
-| `inline`     | Typed objects that can sit among the spans in `children`                                |
-| `annotation` | Typed objects in `markDefs`, which spans refer to by `_key` in `marks`, such as links   |
-| `_type`      | The block's type name, `block` by default                                               |
+| Option       | What it allows                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `style`      | Block styles, such as `normal` and `h2`, as a literal or a union of literals                                       |
+| `list`       | List item types, such as `bullet` and `number`                                                                     |
+| `decorator`  | Decorators, such as `strong` and `em`. Spans don't check them: `marks` stays `string[]`                            |
+| `inline`     | Typed objects, references, images or files that can sit among the spans in `children`                              |
+| `annotation` | Typed objects, references, images or files in `markDefs`, which spans refer to by `_key` in `marks`, such as links |
+| `_type`      | The block's type name, `block` by default                                                                          |
 
 ```ts twoslash
 import * as s from '@sanity-labs/typed-schema'
@@ -69,7 +69,7 @@ A style outside the union is a type error in a block you write yourself, and `pa
 
 ## Objects between blocks
 
-`portableText({block, element})` is the array of blocks plus the block-level objects allowed between them, such as figures or code samples. `element` takes an object schema with a `_type` literal, or a union of them:
+`portableText({block, element})` is the array of blocks plus the block-level objects allowed between them, such as figures or code samples. `element` takes an object schema with a `_type` literal, a reference, an image or a file, or a union of these:
 
 ```ts twoslash
 import * as s from '@sanity-labs/typed-schema'
@@ -80,7 +80,7 @@ const Body = s.portableText({
     annotation: s.object({_type: s.literal('link'), href: s.string()}),
   }),
   element: s.union([
-    s.object({_type: s.literal('figure'), image: s.image(), alt: s.string()}),
+    s.image({alt: s.string()}),
     s.object({
       _type: s.literal('codeBlock'),
       language: s.string(),
@@ -99,8 +99,8 @@ function describe(body: Body) {
     switch (item._type) {
       case 'block':
         return item.style ?? 'normal'
-      case 'figure':
-        return `figure: ${item.alt}`
+      case 'image':
+        return `image: ${item.alt}`
       case 'codeBlock':
         return `${item.language} code`
     }

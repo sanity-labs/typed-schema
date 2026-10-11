@@ -1,6 +1,7 @@
 import {assertType, expectTypeOf, test} from 'vitest'
 
 import {array} from '../creators/array'
+import {block} from '../creators/block'
 import {document} from '../creators/document'
 import {file} from '../creators/file'
 import {image} from '../creators/image'
@@ -8,6 +9,7 @@ import {lazy} from '../creators/lazy'
 import {literal} from '../creators/literal'
 import {object} from '../creators/object'
 import {optional} from '../creators/optional'
+import {portableText} from '../creators/portableText'
 import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
@@ -268,5 +270,154 @@ test('self-reference inside a nested object field', () => {
         meta: {},
       },
     },
+  })
+})
+
+// Images, files and references are matched by `typeName` in the constraints of
+// union(), portableText() and block(), so they can refer to the schema that
+// contains them.
+
+const Collage = image({
+  title: string(),
+  get parts() {
+    return array(
+      union([Collage, object({_type: literal('caption'), text: string()})]),
+    )
+  },
+})
+type Collage = Infer<typeof Collage>
+
+const Bundle = file({
+  title: string(),
+  get parts() {
+    return array(union([Bundle]))
+  },
+})
+type Bundle = Infer<typeof Bundle>
+
+const Topic = document({
+  _type: literal('topic'),
+  name: string(),
+  get related() {
+    return array(
+      union([
+        reference(Topic),
+        object({_type: literal('link'), href: string()}),
+      ]),
+    )
+  },
+})
+type Topic = Infer<typeof Topic>
+
+test('self-reference through an image, file or reference in a union', () => {
+  type SubCollage = Extract<Collage['parts'][number], {_type: 'image'}>
+  expectTypeOf<
+    Extract<SubCollage['parts'][number], {_type: 'image'}>['title']
+  >().toEqualTypeOf<string>()
+  expectTypeOf<
+    Bundle['parts'][number]['parts'][number]['title']
+  >().toEqualTypeOf<string>()
+  expectTypeOf<
+    Extract<Topic['related'][number], {_type: 'reference'}>['_ref']
+  >().toEqualTypeOf<string>()
+  assertType<Collage>({
+    _type: 'image',
+    asset: {_type: 'reference', _ref: 'a'},
+    title: 'a',
+    parts: [
+      {
+        _type: 'image',
+        _key: 'k',
+        asset: {_type: 'reference', _ref: 'b'},
+        // @ts-expect-error - title must be a string at depth 2
+        title: 1,
+        parts: [],
+      },
+    ],
+  })
+})
+
+const Figure = image({
+  alt: string(),
+  get caption() {
+    return portableText({block: block({inline: Figure}), element: Figure})
+  },
+})
+type Figure = Infer<typeof Figure>
+
+const Attachment = file({
+  title: string(),
+  get notes() {
+    return portableText({
+      block: block({annotation: Attachment}),
+      element: union([
+        Attachment,
+        object({_type: literal('note'), text: string()}),
+      ]),
+    })
+  },
+})
+type Attachment = Infer<typeof Attachment>
+
+const Article = document({
+  _type: literal('article'),
+  title: string(),
+  get body() {
+    return portableText({
+      block: block({
+        inline: reference(Article),
+        annotation: reference(Article),
+      }),
+      element: reference(Article),
+    })
+  },
+})
+type Article = Infer<typeof Article>
+
+test('self-reference through portableText() element and block() inline and annotation', () => {
+  type FigureElement = Extract<Figure['caption'][number], {_type: 'image'}>
+  type FigureInline = Extract<
+    Extract<Figure['caption'][number], {_type: 'block'}>['children'][number],
+    {_type: 'image'}
+  >
+  expectTypeOf<
+    Extract<FigureElement['caption'][number], {_type: 'image'}>['alt']
+  >().toEqualTypeOf<string>()
+  expectTypeOf<FigureInline['alt']>().toEqualTypeOf<string>()
+  expectTypeOf<FigureInline['_key']>().toEqualTypeOf<string>()
+
+  type AttachmentBlock = Extract<Attachment['notes'][number], {_type: 'block'}>
+  expectTypeOf<
+    NonNullable<AttachmentBlock['markDefs']>[number]['title']
+  >().toEqualTypeOf<string>()
+  expectTypeOf<
+    Extract<Attachment['notes'][number], {_type: 'file'}>['title']
+  >().toEqualTypeOf<string>()
+
+  type ArticleBlock = Extract<Article['body'][number], {_type: 'block'}>
+  expectTypeOf<
+    Extract<Article['body'][number], {_type: 'reference'}>['_ref']
+  >().toEqualTypeOf<string>()
+  expectTypeOf<
+    Extract<ArticleBlock['children'][number], {_type: 'reference'}>['_ref']
+  >().toEqualTypeOf<string>()
+  expectTypeOf<
+    NonNullable<ArticleBlock['markDefs']>[number]['_ref']
+  >().toEqualTypeOf<string>()
+
+  assertType<Figure>({
+    _type: 'image',
+    asset: {_type: 'reference', _ref: 'a'},
+    alt: 'a',
+    caption: [
+      {
+        _type: 'image',
+        _key: 'k',
+        asset: {_type: 'reference', _ref: 'b'},
+        // @ts-expect-error - alt must be a string at depth 2
+        alt: 1,
+        caption: [],
+      },
+    ],
   })
 })

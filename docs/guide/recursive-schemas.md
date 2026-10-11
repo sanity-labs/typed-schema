@@ -17,7 +17,7 @@ type Person = s.Infer<typeof Person>
 //   ^?
 ```
 
-This also works for mutual recursion (a `User` with posts, each `Post` with an author), through `optional()` and `union()`, and in the fields passed to `extend()`.
+This also works for mutual recursion (a `User` with posts, each `Post` with an author), through `optional()` and `union()`, through images, files and references in Portable Text, and in the fields passed to `extend()`.
 
 The schema creators store the getter as a `lazy()` schema without calling it, so `Person.shape.friends` is a `lazy` schema at runtime even though its static type is the array schema. For the same reason, TypeScript does not check that a getter returns a schema. If it returns something else, parsing throws `Field "friends" is not a schema` the first time it reaches that field.
 
