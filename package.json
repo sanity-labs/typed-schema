@@ -48,7 +48,7 @@
   "scripts": {
     "build": "run-s pkg:build pkg:check check:publint check:attw",
     "changeset": "changeset",
-    "check": "npm-run-all --serial clean pkg:build --parallel typecheck lint format:check knip test pkg:check check:publint check:attw",
+    "check": "npm-run-all --serial clean pkg:build --parallel typecheck typecheck:ts6 lint format:check knip test pkg:check check:publint check:attw",
     "check:attw": "pnpm pack --out .tmp/package.tgz && attw .tmp/package.tgz --profile esm-only",
     "check:publint": "publint --strict --pack pnpm",
     "clean": "rimraf dist",
@@ -70,6 +70,7 @@
     "test:ui": "vitest --ui",
     "test:watch": "vitest --typecheck",
     "typecheck": "tsc",
+    "typecheck:ts6": "node node_modules/typescript-6/bin/tsc",
     "typecheck:examples": "tsc -p ./examples/tsconfig.json && tsc -p ./experiments/tsconfig.json",
     "typecheck:watch": "tsc --watch"
   },
@@ -97,6 +98,7 @@
     "taze": "^21.3.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
+    "typescript-6": "npm:typescript@~6.0.3",
     "vite": "^8.3.4",
     "vitest": "^5.0.3"
   },

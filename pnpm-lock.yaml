@@ -230,6 +230,9 @@ importers:
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
+      typescript-6:
+        specifier: npm:typescript@~6.0.3
+        version: typescript@6.0.3
       vite:
         specifier: ^8.3.4
         version: 8.3.4(@types/node@24.7.2)(esbuild@0.28.2)(jiti@2.6.1)(terser@5.44.0)(tsx@4.23.15)(yaml@2.8.1)

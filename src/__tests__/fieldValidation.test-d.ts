@@ -26,6 +26,8 @@ test('field values must be schemas', () => {
   image({foo: 'bar'})
   // @ts-expect-error - 'bar' is not a schema
   file({foo: 'bar'})
+  // @ts-expect-error - a schema needs an output type
+  object({_type: literal('x'), foo: {typeName: 'string'}})
 
   object({_type: literal('x'), foo: string(), bar: optional(number())})
   document({_type: literal('x'), foo: string()})

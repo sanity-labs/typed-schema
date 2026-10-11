@@ -18,10 +18,17 @@ import {
  * - Type parameter constraints that compare output types. Constraints match on
  *   `typeName` (see the `*Kind` types) or compare against `SanityType<any>`,
  *   which accepts any output without reading it.
- * - Output types computed eagerly. An `output` that reads another schema's
- *   output is declared as a member, which TypeScript resolves on first use,
- *   not as a defaulted type parameter, which it resolves where the type is
- *   referenced.
+ * - Output types computed eagerly. Declare a computed output as a member
+ *   (`output: OutputFromShape<Shape>`), not as a type parameter with a default
+ *   (`Output = OutputFromShape<Shape>`). TypeScript computes a member's type
+ *   the first time something reads it, after the schema exists. It computes a
+ *   default as soon as the type is used, and `object()` uses
+ *   `SanityObject<Shape>` as its return type while the schema is still being
+ *   inferred.
+ *
+ * TypeScript 7 still infers some schemas that break these rules, but
+ * TypeScript 6 does not, so `pnpm typecheck:ts6` runs the type tests with
+ * TypeScript 6.
  */
 export interface SanityType<Output = any> {
   typeName: string
@@ -144,10 +151,10 @@ export type SanityNamedObjectShape = {
 
 export interface SanityObject<
   Shape extends SanityObjectShape = SanityObjectShape,
-  Output = OutputFromShape<Shape>,
-> extends SanityType<Output> {
+> extends SanityType {
   typeName: 'object'
   shape: Shape
+  output: OutputFromShape<Shape>
 }
 
 export type SanityBlockShape = SanityNamedObjectShape & {
@@ -156,26 +163,26 @@ export type SanityBlockShape = SanityNamedObjectShape & {
 
 export interface SanityBlock<
   Shape extends SanityBlockShape = SanityBlockShape,
-  Output = OutputFromShape<Shape>,
-> extends SanityType<Output> {
+> extends SanityType {
   typeName: 'block'
   shape: Shape
+  output: OutputFromShape<Shape>
 }
 
 export interface SanityImage<
   Shape extends SanityImageShape = SanityImageShape,
-  Output = OutputFromShape<Shape>,
-> extends SanityType<Output> {
+> extends SanityType {
   typeName: 'image'
   shape: Shape
+  output: OutputFromShape<Shape>
 }
 
 export interface SanityFile<
   Shape extends SanityFileShape = SanityFileShape,
-  Output = OutputFromShape<Shape>,
-> extends SanityType<Output> {
+> extends SanityType {
   typeName: 'file'
   shape: Shape
+  output: OutputFromShape<Shape>
 }
 
 export interface SanityLazy<T extends SanityType> extends SanityType {
@@ -274,6 +281,8 @@ export type SanityObjectUnionKind = SanityType & {
   typeName: 'union'
   union: SanityObjectUnionMemberKind[]
 }
+/** Constraint matching any schema by `typeName` only, see the top of this file */
+export type SanityKind = {typeName: string}
 /** Constraint matching schemas by `typeName` only, see the top of this file */
 export type SanityDocumentKind = SanityType & {typeName: 'document'}
 
@@ -329,16 +338,16 @@ export interface SanityPrimitiveArray<
 
 export interface _SanityDocument<
   Shape extends SanityDocumentShape = SanityDocumentShape,
-  Output = OutputFromShape<Shape>,
-> extends SanityType<Output> {
+  OutputShape extends SanityObjectShape = Shape,
+> extends SanityType {
   typeName: 'document'
   shape: Shape
+  output: OutputFromShape<OutputShape>
 }
 
 export type SanityDocument<
   Shape extends SanityObjectShape = SanityObjectShape,
-  Output = OutputFromShape<WithDocumentShape<Shape>>,
-> = _SanityDocument<SanityDocumentShape & Shape, Output>
+> = _SanityDocument<SanityDocumentShape & Shape, WithDocumentShape<Shape>>
 
 /**
  * A document shape: the system fields, overridden by the fields of `Shape`
