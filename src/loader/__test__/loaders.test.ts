@@ -14,7 +14,10 @@ import {
 } from '../../shapeDefs'
 import {createDocumentLoader} from '../createDocumentLoader'
 import {createLoader} from '../createLoader'
-import {createReferenceLoader} from '../createReferenceLoader'
+import {
+  createLoadReferenceResult,
+  createReferenceLoader,
+} from '../createReferenceLoader'
 
 const committedFields = {
   _rev: 'r1',
@@ -50,7 +53,9 @@ test('resolve reference with schema', async () => {
   const loadReference = createReferenceLoader(fetch)
 
   const personCountry = await loadReference(person.country)
-  expect(fetch.mock.calls).toEqual([['usa', []]])
+  expect(fetch.mock.calls).toEqual([
+    ['usa', ['_type', '_id', '_createdAt', '_updatedAt', '_rev', 'name']],
+  ])
   expect(personCountry).toEqual(usa)
 })
 
@@ -135,6 +140,9 @@ test('resolving a reference without schema falls back to the document base', asy
   const loadReference = createReferenceLoader(fetch)
 
   const personCountry = await loadReference(person.country)
+  expect(fetch.mock.calls).toEqual([
+    ['usa', ['_type', '_id', '_createdAt', '_updatedAt', '_rev']],
+  ])
   // parsed against the document base, so only the system fields survive
   expect(personCountry).toEqual({
     _type: 'country',
@@ -200,4 +208,49 @@ test('loadReference stays typed for a recursive schema annotated with SanityRefe
 
   const parent = await loadReference(child.parent!)
   expect(parent).toEqual(root)
+})
+
+test('loadReference selects the fields of a lazy reference target', async () => {
+  const Book = document({
+    _type: literal('book'),
+    title: string(),
+    author: reference(lazy(() => Country)),
+  })
+  const bookResult = parse(Book, {
+    _type: 'book',
+    title: 'Cosmos',
+    author: {_type: 'reference', _ref: 'usa'},
+  })
+  assert(bookResult.ok)
+  const fetch = vi.fn().mockResolvedValueOnce({
+    _type: 'country',
+    _id: 'usa',
+    ...committedFields,
+    name: 'USA',
+  })
+  const loadReference = createReferenceLoader(fetch)
+  await loadReference(bookResult.value.author)
+  expect(fetch.mock.calls).toEqual([
+    ['usa', ['_type', '_id', '_createdAt', '_updatedAt', '_rev', 'name']],
+  ])
+})
+
+test('loadReferenceResult passes an explicit field selection through', async () => {
+  const personResult = parse(Person, {
+    _type: 'person',
+    firstName: 'Carl',
+    lastName: 'Sagan',
+    country: {_type: 'reference', _ref: 'usa'},
+  })
+  assert(personResult.ok)
+  const usa = {_type: 'country', _id: 'usa', ...committedFields, name: 'USA'}
+  const fetch = vi.fn().mockResolvedValueOnce(usa)
+  const loadReferenceResult = createLoadReferenceResult(fetch)
+
+  const result = await loadReferenceResult(personResult.value.country, [
+    '_id',
+    'name',
+  ])
+  expect(fetch.mock.calls).toEqual([['usa', ['_id', 'name']]])
+  expect(result).toEqual({ok: true, value: usa})
 })
