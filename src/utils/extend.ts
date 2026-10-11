@@ -8,6 +8,7 @@ import {
 } from '../defs'
 import {withoutExamples} from '../helpers/annotations'
 import {deferGetters} from '../helpers/deferGetters'
+import {defineType} from '../helpers/defineType'
 import {type FieldErrors} from '../helpers/schemaErrors'
 import {type Combine, type Flatten} from '../helpers/utilTypes'
 
@@ -49,10 +50,10 @@ export function extend<
     >,
 ): Extends<Obj, Shape> {
   const {annotations: _annotations, ...rest} = source
-  const annotations = withoutExamples(source.annotations)
-  return {
-    ...rest,
-    shape: {...source.shape, ...deferGetters(shape)},
-    ...(annotations && {annotations}),
-  } as any
+  // Through `defineType`, since a spread drops the non-enumerable `output` and
+  // `~standard` properties of `source`
+  return defineType(
+    {...rest, shape: {...source.shape, ...deferGetters(shape)}},
+    withoutExamples(source.annotations),
+  ) as any
 }

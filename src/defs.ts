@@ -435,10 +435,41 @@ export interface SanityObjectArray<
     | SanityObjectUnion,
 > extends SanityType {
   typeName: 'objectArray'
-  element: ElementType
+  element: KeyedElement<ElementType>
   output: AddArrayKey<OutputOf<ElementType>>[]
   readonly '~standard': StandardProps<AddArrayKey<OutputOf<ElementType>>[]>
 }
+
+/**
+ * The `element` of an object array: the given element schema with a `_key`
+ * string field added (to each member, for a union), as `array()` copies it.
+ * {@link SanityObjectArray}'s type parameter stays the schema it was given.
+ */
+export type KeyedElement<T extends SanityType> = T extends {typeName: 'never'}
+  ? T
+  : T extends {typeName: 'union'; union: (infer Member extends SanityType)[]}
+    ? Flatten<
+        Omit<T, 'union' | 'output' | '~standard'> & {
+          union: KeyedElement<Member>[]
+          output: AddArrayKey<OutputOf<T>>
+          readonly '~standard': StandardProps<AddArrayKey<OutputOf<T>>>
+        }
+      >
+    : T extends {shape: infer Shape}
+      ? Flatten<
+          Omit<T, 'shape' | 'output' | '~standard'> & {
+            // Not `Omit`, which drops the known keys of a shape that also has
+            // an index signature, like the default `SanityDocument` shape
+            shape: Flatten<
+              {
+                [K in keyof Shape as K extends '_key' ? never : K]: Shape[K]
+              } & {_key: SanityString}
+            >
+            output: AddArrayKey<OutputOf<T>>
+            readonly '~standard': StandardProps<AddArrayKey<OutputOf<T>>>
+          }
+        >
+      : T
 
 export interface SanityPrimitiveArray<
   ElementType extends

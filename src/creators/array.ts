@@ -51,20 +51,20 @@ function addKeyProperty<T extends SanityObjectLikeKind | SanityObjectUnionKind>(
   const schema = target as SanityType as SanityObjectUnion | SanityObjectLike
   // The copy keeps the annotations, except `examples`: those are values of
   // the schema without `_key`, which `validateExamples` checks through
-  // `getUnkeyedSchema`
+  // `getUnkeyedSchema`. Built through `defineType`, since a spread drops the
+  // non-enumerable `output` and `~standard` properties of `schema`
   const {annotations: _annotations, ...rest} = schema
-  const annotations = withoutExamples(schema.annotations)
-  const withKey = {
-    ...rest,
-    ...(annotations && {annotations}),
-    ...(isObjectUnionSchema(schema)
+  const withKey = defineType(
+    isObjectUnionSchema(schema)
       ? {
+          ...rest,
           union: schema.union.map(unionType =>
             isNeverSchema(unionType) ? unionType : addKeyProperty(unionType),
           ),
         }
-      : {shape: {...schema.shape, _key: string()}}),
-  }
+      : {...rest, shape: {...schema.shape, _key: string()}},
+    withoutExamples(schema.annotations),
+  )
   keyedFrom.set(withKey, getUnkeyedSchema(schema))
   return withKey as SanityType as T
 }

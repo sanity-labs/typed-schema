@@ -13,6 +13,7 @@ import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {
   type Infer,
+  type SanityNumber,
   type SanityOptional,
   type SanityPrimitiveArray,
   type SanityString,
@@ -75,6 +76,47 @@ describe('arrays of object-like types', () => {
     const Images = array(image())
     expectTypeOf(Images.typeName).toEqualTypeOf<'objectArray'>()
     expectTypeOf<Infer<typeof Images>[number]['_key']>().toEqualTypeOf<string>()
+  })
+})
+
+describe('object array element', () => {
+  test('is the element schema with a _key field', () => {
+    const element = array(object({n: number()})).element
+    expectTypeOf(element.typeName).toEqualTypeOf<'object'>()
+    expectTypeOf(element.shape._key).toEqualTypeOf<SanityString>()
+    expectTypeOf(element.shape.n).toEqualTypeOf<SanityNumber>()
+    expectTypeOf<Infer<typeof element>>().toEqualTypeOf<{
+      n: number
+      _key: string
+    }>()
+  })
+
+  test('of a union adds the _key field to every member', () => {
+    const element = array(
+      union([
+        object({_type: literal('foo'), foo: string()}),
+        object({_type: literal('bar'), bar: number()}),
+      ]),
+    ).element
+    expectTypeOf(element.typeName).toEqualTypeOf<'union'>()
+    expectTypeOf<
+      (typeof element)['union'][number]['shape']['_key']
+    >().toEqualTypeOf<SanityString>()
+    expectTypeOf<Infer<typeof element>>().toEqualTypeOf<
+      | {_type: 'foo'; foo: string; _key: string}
+      | {_type: 'bar'; bar: number; _key: string}
+    >()
+  })
+
+  test('of references and images', () => {
+    const Pet = document({_type: literal('pet'), name: string()})
+    const refElement = array(reference(Pet)).element
+    expectTypeOf(refElement.typeName).toEqualTypeOf<'reference'>()
+    expectTypeOf<Infer<typeof refElement>['_key']>().toEqualTypeOf<string>()
+
+    const imageElement = array(image()).element
+    expectTypeOf(imageElement.typeName).toEqualTypeOf<'image'>()
+    expectTypeOf<Infer<typeof imageElement>['_key']>().toEqualTypeOf<string>()
   })
 })
 
