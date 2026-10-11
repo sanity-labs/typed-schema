@@ -1,4 +1,9 @@
-import {type Flatten, type OutputFormatFix, type XOR} from './helpers/utilTypes'
+import {
+  type Flatten,
+  type IsAny,
+  type OutputFormatFix,
+  type XOR,
+} from './helpers/utilTypes'
 import {
   type ReferenceBase,
   type SanityDocumentShape,
@@ -7,6 +12,7 @@ import {
   type SanityImageShape,
   type SanityReferenceShape,
 } from './shapeDefs'
+import {type StandardSchemaV1} from './standardSchema'
 
 /**
  * This file contains the core interfaces for various types. The builders defined in ./builder are implementations of these.
@@ -36,7 +42,36 @@ export interface SanityType<Output = any> {
    * @deprecated ** DO NOT USE ** This will throw an error if you try to access it at runtime
    */
   output: Output
+  /**
+   * The {@link https://standardschema.dev | Standard Schema} properties:
+   * `validate` runs `safeParse`, and the input type is the value as stored
+   * ({@link Infer}) while the output type is what `parse` returns
+   * ({@link Parsed}). Not enumerable, so `JSON.stringify` ignores it.
+   *
+   * `any` when `Output` is `any`, so that `SanityType` (the constraint every
+   * creator matches on) accepts a schema without comparing this member.
+   * Compared against `StandardProps<any>` instead, TypeScript 6 evaluates the
+   * schema's output type, which reads the getters of a recursive schema while
+   * it is still being inferred.
+   */
+  readonly '~standard': IsAny<Output> extends true ? any : StandardProps<Output>
 }
+
+/**
+ * The type of a schema's `~standard` property: the Standard Schema
+ * properties, with the schema's stored value ({@link Infer}) as input type and
+ * what `parse` returns ({@link Parsed}) as output type. Interfaces that
+ * declare their own `output` member (see the note at the top of this file)
+ * declare this next to it with the same type.
+ */
+export interface StandardProps<Output> extends StandardSchemaV1.Props<
+  StripRefSchema<Output>,
+  Output
+> {
+  /** Validates `value` against the schema with `safeParse`, synchronously */
+  readonly validate: (value: unknown) => StandardSchemaV1.Result<Output>
+}
+
 export interface SanityObjectType<
   Output = OutputFromShape<SanityObjectShape>,
 > extends SanityType<Output> {
@@ -131,6 +166,7 @@ export interface SanityObjectUnion<
   typeName: 'union'
   union: Exclude<Def, SanityNever>[]
   output: OutputOf<Def>
+  readonly '~standard': StandardProps<OutputOf<Def>>
 }
 export interface SanityPrimitiveUnion<
   Def extends SanityPrimitive | SanityLiteral | SanityNever =
@@ -141,6 +177,7 @@ export interface SanityPrimitiveUnion<
   typeName: 'primitiveUnion'
   union: Exclude<Def, SanityNever>[]
   output: OutputOf<Def>
+  readonly '~standard': StandardProps<OutputOf<Def>>
 }
 
 export type SanityObjectShape = {[key in string]: SanityAny}
@@ -155,6 +192,7 @@ export interface SanityObject<
   typeName: 'object'
   shape: Shape
   output: OutputFromShape<Shape>
+  readonly '~standard': StandardProps<OutputFromShape<Shape>>
 }
 
 export type SanityBlockShape = SanityNamedObjectShape & {
@@ -167,6 +205,7 @@ export interface SanityBlock<
   typeName: 'block'
   shape: Shape
   output: OutputFromShape<Shape>
+  readonly '~standard': StandardProps<OutputFromShape<Shape>>
 }
 
 export interface SanityImage<
@@ -175,6 +214,7 @@ export interface SanityImage<
   typeName: 'image'
   shape: Shape
   output: OutputFromShape<Shape>
+  readonly '~standard': StandardProps<OutputFromShape<Shape>>
 }
 
 export interface SanityFile<
@@ -183,12 +223,14 @@ export interface SanityFile<
   typeName: 'file'
   shape: Shape
   output: OutputFromShape<Shape>
+  readonly '~standard': StandardProps<OutputFromShape<Shape>>
 }
 
 export interface SanityLazy<T extends SanityType> extends SanityType {
   typeName: 'lazy'
   get: () => T
   output: OutputOf<T>
+  readonly '~standard': StandardProps<OutputOf<T>>
 }
 
 export interface SanityReference<
@@ -204,6 +246,7 @@ export interface SanityOptional<Type extends SanityType> extends SanityType {
   typeName: 'optional'
   type: Type
   output: OutputOf<Type> | undefined
+  readonly '~standard': StandardProps<OutputOf<Type> | undefined>
 }
 
 /**
@@ -318,6 +361,7 @@ export interface SanityObjectArray<
   typeName: 'objectArray'
   element: ElementType
   output: AddArrayKey<OutputOf<ElementType>>[]
+  readonly '~standard': StandardProps<AddArrayKey<OutputOf<ElementType>>[]>
 }
 
 export interface SanityPrimitiveArray<
@@ -334,6 +378,7 @@ export interface SanityPrimitiveArray<
   typeName: 'primitiveArray'
   element: ElementType
   output: OutputOf<ElementType>[]
+  readonly '~standard': StandardProps<OutputOf<ElementType>[]>
 }
 
 export interface _SanityDocument<
@@ -343,6 +388,7 @@ export interface _SanityDocument<
   typeName: 'document'
   shape: Shape
   output: OutputFromShape<OutputShape>
+  readonly '~standard': StandardProps<OutputFromShape<OutputShape>>
 }
 
 export type SanityDocument<

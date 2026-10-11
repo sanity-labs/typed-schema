@@ -45,6 +45,7 @@ const fido = parse(Pet, {_type: 'pet', name: 'Fido'})
 - [Guide](#guide)
   - [Declaring a document](#declaring-a-document)
   - [Parsing and errors](#parsing-and-errors)
+  - [Standard Schema](#standard-schema)
   - [Arrays and `_key`](#arrays-and-_key)
   - [Composing schemas](#composing-schemas)
   - [Partial and required variants](#partial-and-required-variants)
@@ -219,6 +220,29 @@ try {
 Parsing strips properties the schema does not declare rather than rejecting them.
 
 `parse` returns `Parsed<typeof Pet>`, which is `Infer<typeof Pet>` plus a hidden `$refSchema` key on reference values; see [Loading documents and references](#loading-documents-and-references).
+
+### Standard Schema
+
+Every schema implements [Standard Schema](https://standardschema.dev), so it works as is with libraries that accept one: form libraries, routers, RPC and AI SDKs. The `~standard` property is hidden from `JSON.stringify` and `Object.keys`, the same as `output`, so schemas stay plain data.
+
+```ts
+import {document, literal, string} from '@sanity-labs/typed-schema'
+
+const Pet = document({_type: literal('pet'), name: string()})
+
+const result = Pet['~standard'].validate({_type: 'pet', name: 42})
+if (result.issues) {
+  // [{path: ['name'], message: 'Expected a string'}]
+  console.log(result.issues)
+} else {
+  const pet = result.value
+  //    ^? Parsed<typeof Pet>
+}
+```
+
+`validate` runs `safeParse` and returns synchronously (the spec allows a promise, so generic code should still `await` it). An issue's `path` is the same as a `ParseErrorDetails` path, so an element of a keyed array appears by its `_key`, not its index.
+
+`StandardSchemaV1.InferInput` is the value as stored (`Infer`) and `StandardSchemaV1.InferOutput` is what `parse` returns (`Parsed`). The package exports the `StandardSchemaV1` type too, for code that does not depend on `@standard-schema/spec`, and `StandardProps<Output>`, the type of `schema['~standard']`.
 
 ### Arrays and `_key`
 
@@ -644,6 +668,7 @@ Each returns a new schema. Types follow the runtime change.
 | `ParseError`               | `message` summarises the first error; `errors` holds all of them                                                                            |
 | `ParseErrorDetails`        | `{path, code, input, message}`. `path` is an array of field names and array indexes or `_key`s                                              |
 | `ErrorCode`                | `'INVALID_TYPE'`, `'NUM_TOO_SMALL'`, `'NUM_TOO_BIG'`, `'NUM_NOT_MULTIPLE_OF'`, `'INVALID_OBJECT_UNION'`, `'ARRAY_ELEMENT_NOT_KEYED_OBJECT'` |
+| `schema['~standard']`      | The [Standard Schema](#standard-schema) properties: `validate` runs `safeParse`                                                             |
 
 ### Lifecycle helpers
 
@@ -674,6 +699,8 @@ Each returns a new schema. Types follow the runtime change.
 | `SanityDocumentValue`       | `{_type: string; _id?: string; _rev?: string; _createdAt?: string; _updatedAt?: string}`  |
 | `SanityReferenceValue<T>`   | The value of a `reference()` to a schema of type `T`                                      |
 | `SanityArrayValue<T>`       | `T[]`, with `_key` added to object elements                                               |
+| `StandardSchemaV1`          | The [Standard Schema](#standard-schema) interface, the same as `@standard-schema/spec`    |
+| `StandardProps<Output>`     | The type of `schema['~standard']`: input type `Infer`, output type `Parsed`               |
 
 The type guards (`isObjectSchema`, `isDocumentSchema`, `isOptionalSchema`, ...) are exported for code that walks schemas.
 
