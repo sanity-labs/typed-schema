@@ -7,8 +7,11 @@ import {literal} from '../creators/literal'
 import {number} from '../creators/number'
 import {object} from '../creators/object'
 import {string} from '../creators/string'
+import {union} from '../creators/union'
 import {type StandardSchemaV1} from '../standardSchema'
 import {deepPartial} from '../utils/deepPartial'
+import {extend} from '../utils/extend'
+import {rename} from '../utils/rename'
 
 const Pet = document({
   _type: literal('pet'),
@@ -65,6 +68,45 @@ describe('~standard', () => {
     expect(validate(deepPartial(Pet), {_type: 'pet', name: 'Fido'})).toEqual({
       value: {_type: 'pet', name: 'Fido'},
     })
+  })
+
+  test('works on extended and renamed schemas', () => {
+    const Named = extend(object({a: string()}), {b: number()})
+    expect(validate(Named, {a: 'x', b: 1})).toEqual({value: {a: 'x', b: 1}})
+    expect(validate(Named, {a: 'x'}).issues).toEqual([
+      {path: ['b'], message: 'Expected a finite number'},
+    ])
+
+    const Cat = rename(Pet, 'cat')
+    expect(
+      validate(Cat, {_type: 'cat', name: 'Tom', age: 2, toys: []}),
+    ).toEqual({value: {_type: 'cat', name: 'Tom', age: 2, toys: []}})
+    expect(
+      validate(Cat, {_type: 'pet', name: 'Tom', age: 2, toys: []}).issues,
+    ).toHaveLength(1)
+  })
+
+  test('works on object array elements', () => {
+    const element = array(object({n: number()})).element
+    expect(validate(element, {_key: 'a', n: 1})).toEqual({
+      value: {_key: 'a', n: 1},
+    })
+    expect(validate(element, {n: 1}).issues).toEqual([
+      {path: ['_key'], message: 'Expected a string'},
+    ])
+
+    const unionElement = array(
+      union([
+        object({_type: literal('a'), n: number()}),
+        object({_type: literal('b'), s: string()}),
+      ]),
+    ).element
+    expect(validate(unionElement, {_type: 'b', _key: 'k', s: 'x'})).toEqual({
+      value: {_type: 'b', _key: 'k', s: 'x'},
+    })
+    for (const member of unionElement.union) {
+      expect(member['~standard'].vendor).toBe('@sanity-labs/typed-schema')
+    }
   })
 
   test('is not enumerable, so schemas stay serializable', () => {

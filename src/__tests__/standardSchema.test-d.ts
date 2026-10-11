@@ -1,8 +1,11 @@
 import {describe, expectTypeOf, test} from 'vitest'
 
+import {array} from '../creators/array'
 import {document} from '../creators/document'
 import {lazy} from '../creators/lazy'
 import {literal} from '../creators/literal'
+import {number} from '../creators/number'
+import {object} from '../creators/object'
 import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {
@@ -13,6 +16,8 @@ import {
   type StandardProps,
 } from '../defs'
 import {type StandardSchemaV1} from '../standardSchema'
+import {extend} from '../utils/extend'
+import {rename} from '../utils/rename'
 
 const Person = document({_type: literal('person'), name: string()})
 const Pet = document({
@@ -62,6 +67,23 @@ describe('Standard Schema', () => {
     expectTypeOf<
       keyof StandardSchemaV1.InferOutput<typeof Pet>['owner']
     >().toEqualTypeOf<'_type' | '_ref' | '_weak' | '$refSchema'>()
+  })
+
+  test('extended, renamed and object array element schemas', () => {
+    const Named = extend(object({a: string()}), {b: number()})
+    expectTypeOf<StandardSchemaV1.InferOutput<typeof Named>>().toEqualTypeOf<{
+      a: string
+      b: number
+    }>()
+    const Cat = rename(Pet, 'cat')
+    expectTypeOf<
+      StandardSchemaV1.InferOutput<typeof Cat>['_type']
+    >().toEqualTypeOf<'cat'>()
+    const element = array(object({n: number()})).element
+    expectTypeOf<StandardSchemaV1.InferOutput<typeof element>>().toEqualTypeOf<{
+      n: number
+      _key: string
+    }>()
   })
 
   test('validate returns the parsed value, synchronously', () => {

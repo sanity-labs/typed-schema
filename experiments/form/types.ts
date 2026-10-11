@@ -68,6 +68,7 @@ export type SystemFields =
   | '_createdAt'
   | '_updatedAt'
   | '_rev'
+  | '_key'
 
 export type FindTypeByName<
   Type extends SanityObjectLike | SanityObjectUnion,

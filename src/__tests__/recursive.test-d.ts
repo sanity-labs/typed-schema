@@ -36,6 +36,10 @@ test('self-reference through an array', () => {
     Category['subcategories'][number]['subcategories'][number]['name']
   >().toEqualTypeOf<string>()
 
+  expectTypeOf<
+    Infer<(typeof Category)['shape']['subcategories']['element']>['_key']
+  >().toEqualTypeOf<string>()
+
   assertType<Category>({
     _type: 'category',
     name: 'a',
