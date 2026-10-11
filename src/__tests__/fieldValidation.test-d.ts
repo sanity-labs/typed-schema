@@ -5,10 +5,21 @@ import {file} from '../creators/file'
 import {image} from '../creators/image'
 import {literal} from '../creators/literal'
 import {number} from '../creators/number'
-import {type InvalidFieldNames, object} from '../creators/object'
+import {object} from '../creators/object'
 import {optional} from '../creators/optional'
 import {string} from '../creators/string'
-import {type SanityLiteral, type SanityString} from '../defs'
+import {
+  type SanityAny,
+  type SanityLiteral,
+  type SanityNumber,
+  type SanityString,
+} from '../defs'
+import {
+  type FieldErrors,
+  type InvalidFieldNames,
+  type RequireTypeField,
+  type SystemFieldErrors,
+} from '../helpers/schemaErrors'
 import {
   type FieldNameError,
   type SchemaError,
@@ -131,6 +142,11 @@ test('invalid field names report why', () => {
   expectTypeOf<ValidFieldName<'e-mail'>>().toBeNever()
 })
 
+test('a SchemaError intersected with a primitive keeps the message', () => {
+  expectTypeOf<number & SchemaError<'message'>>().not.toBeNever()
+  expectTypeOf<string & SchemaError<'message'>>().not.toBeNever()
+})
+
 test('invalid field names map to a SchemaError with the message', () => {
   expectTypeOf<
     InvalidFieldNames<
@@ -144,4 +160,60 @@ test('invalid field names map to a SchemaError with the message', () => {
   >().toEqualTypeOf<{
     'e-mail': SchemaError<"Field name 'e-mail' can only contain letters A-Z, digits and underscores">
   }>()
+})
+
+test('fields that are not schemas map to a SchemaError with the message', () => {
+  type Errors = FieldErrors<
+    {_type: SanityLiteral<'x'>; name: SanityString; foo: string},
+    '_type'
+  >
+  expectTypeOf<Errors['foo']>().toEqualTypeOf<
+    SanityAny | SchemaError<"Field 'foo' is not a schema">
+  >()
+  expectTypeOf<keyof Errors>().toEqualTypeOf<'foo'>()
+
+  // An invalid name is reported instead, so the two messages do not conflict
+  expectTypeOf<FieldErrors<{'e-mail': string}>['e-mail']>().toEqualTypeOf<
+    SchemaError<"Field name 'e-mail' can only contain letters A-Z, digits and underscores">
+  >()
+  // @ts-expect-error - invalid name and not a schema
+  object({_type: literal('x'), 'e-mail': 'bar'})
+  // @ts-expect-error - invalid name and not a schema
+  object({_type: literal('x'), 'e-mail': 1})
+})
+
+test('a document needs a _type literal and a string _id', () => {
+  // @ts-expect-error - _type must be a literal
+  document({_type: string(), title: string()})
+  // @ts-expect-error - _type must be a string literal
+  document({_type: literal(1)})
+  // @ts-expect-error - _type is required
+  document({title: string()})
+  // @ts-expect-error - _id must be a string schema
+  document({_type: literal('x'), _id: number()})
+  // @ts-expect-error - _id is not a schema
+  document({_type: literal('x'), _id: 'id'})
+
+  document({_type: literal('x'), _id: string()})
+  document({_type: literal('x'), _id: literal('x.id')})
+})
+
+test('invalid document system fields map to a SchemaError with the message', () => {
+  expectTypeOf<
+    SystemFieldErrors<{_type: SanityString; _id: SanityNumber}>
+  >().toEqualTypeOf<{
+    _type: SchemaError<"document() field '_type' must be a string literal(), e.g. literal('post')">
+    _id: SchemaError<"document() field '_id' must be string() or a string literal()">
+  }>()
+  expectTypeOf<
+    RequireTypeField<{title: SanityString}>['_type']
+  >().toEqualTypeOf<
+    SchemaError<"document() needs a _type field, e.g. _type: literal('post')">
+  >()
+  expectTypeOf<
+    keyof SystemFieldErrors<{_type: SanityLiteral<'x'>; _id: SanityString}>
+  >().toBeNever()
+  expectTypeOf<
+    RequireTypeField<{_type: SanityLiteral<'x'>}>
+  >().toEqualTypeOf<unknown>()
 })

@@ -81,6 +81,14 @@ Sanity accepts almost any shape of content, but it does have rules. A classic Sa
 3. Unions of untyped objects. Object unions must consist of objects with a `_type` literal, because a partially edited object (an empty one, say) is otherwise impossible to match to a schema type during real-time collaboration.
 4. Field names that start with an underscore. These are reserved for system fields.
 5. Field names that do not start with a letter A-Z, or that contain anything other than letters A-Z, digits and underscores (a hyphen, for example).
+6. Field values that are not schemas, such as `title: 'Title'` instead of `title: string()`.
+7. Documents without a `_type` literal, and document `_id` fields that are not strings.
+
+The type error names a `SchemaError` that says what is wrong. For `object({_type: literal('user'), 'e-mail': string()})`:
+
+```
+Type 'SanityString' is not assignable to type 'SanityString & SchemaError<"Field name 'e-mail' can only contain letters A-Z, digits and underscores">'.
+```
 
 ### A content model you can share
 

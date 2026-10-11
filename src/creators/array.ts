@@ -5,6 +5,7 @@ import {
 } from '../asserters'
 import {
   type SanityArray,
+  type SanityKind,
   type SanityLiteral,
   type SanityNever,
   type SanityObjectArray,
@@ -18,6 +19,8 @@ import {
   type SanityType,
 } from '../defs'
 import {defineType} from '../helpers/defineType'
+import {type ArrayElementError} from '../helpers/schemaErrors'
+import {type SchemaError} from '../helpers/utilTypes'
 import {string} from './string'
 
 // Object array elements are copies of the given schema with `_key` added. This
@@ -52,7 +55,15 @@ function addKeyProperty<T extends SanityObjectLikeKind | SanityObjectUnionKind>(
 
 export function objectArray<
   ElementType extends SanityObjectLikeKind | SanityObjectUnionKind,
->(elementSchema: ElementType): SanityObjectArray<ElementType> {
+>(elementSchema: ElementType): SanityObjectArray<ElementType>
+// Matches only what the overload above rejects, see `array()`
+export function objectArray<ElementType extends SanityKind>(
+  elementSchema: ElementType &
+    SchemaError<'objectArray() elements must be objects, references, blocks, images, files or unions of these'>,
+): never
+export function objectArray(
+  elementSchema: SanityObjectLikeKind | SanityObjectUnionKind,
+): SanityType {
   return defineType({
     typeName: 'objectArray',
     element: addKeyProperty(elementSchema),
@@ -65,7 +76,19 @@ export function primitiveArray<
     | SanityLiteral
     | SanityPrimitiveUnion
     | SanityNever,
->(elementSchema: ElementType): SanityPrimitiveArray<ElementType> {
+>(elementSchema: ElementType): SanityPrimitiveArray<ElementType>
+// Matches only what the overload above rejects, see `array()`
+export function primitiveArray<ElementType extends SanityKind>(
+  elementSchema: ElementType &
+    SchemaError<'primitiveArray() elements must be primitives, literals or unions of these'>,
+): never
+export function primitiveArray(
+  elementSchema:
+    | SanityPrimitive
+    | SanityLiteral
+    | SanityPrimitiveUnion
+    | SanityNever,
+): SanityType {
   return defineType({typeName: 'primitiveArray', element: elementSchema})
 }
 
@@ -87,6 +110,13 @@ export function array<
     | SanityPrimitive
     | SanityPrimitiveUnion,
 >(elementSchema: Def): SanityArray<Def>
+// Matches only what the overloads above reject, and its parameter can never be
+// satisfied. TypeScript 7 reports only the last overload's error, which says
+// what is wrong with the element schema. TypeScript 6 lists every overload's
+// error, ending with this one.
+export function array<Def extends SanityKind>(
+  elementSchema: Def & SchemaError<ArrayElementError<Def>>,
+): never
 export function array(
   elementSchema:
     | SanityObjectLike

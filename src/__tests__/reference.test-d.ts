@@ -4,6 +4,7 @@ import {array} from '../creators/array'
 import {document} from '../creators/document'
 import {lazy} from '../creators/lazy'
 import {literal} from '../creators/literal'
+import {number} from '../creators/number'
 import {object} from '../creators/object'
 import {reference} from '../creators/reference'
 import {string} from '../creators/string'
@@ -118,5 +119,7 @@ describe('reference targets', () => {
     reference({} as SanityObjectType<{_type: 'x'}>)
     // @ts-expect-error - a primitive is not a document
     reference(string())
+    // @ts-expect-error - a primitive is not a document
+    reference(number())
   })
 })

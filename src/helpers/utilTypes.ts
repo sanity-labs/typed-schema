@@ -79,18 +79,21 @@ type ValidFieldChars<T extends string> = T extends ''
       : false
     : never
 
-declare const schemaError: unique symbol
-
 /**
  * The expected type at a spot where a schema breaks a rule, in place of
- * `never`. No value has the `unique symbol` key, so the check always fails,
- * and the type error names `SchemaError` and shows `Message`. Unlike a bare
- * string literal, it does not collapse to `never` when intersected with a
- * primitive.
+ * `never`. A schema is not a function, so the check fails, and the type error
+ * names `SchemaError` and shows `Message` as the parameter type
+ * (`provides no match for the signature '(schemaError: "..."): never'`).
+ * Unlike a bare string literal, it does not collapse to `never` when
+ * intersected with a primitive.
+ *
+ * Tools that read type errors, such as an editor plugin, should match
+ * `SchemaError<"...">` in the error text rather than the signature line. The
+ * alias name is printed whatever shape this type has, and the shape may change.
  */
-export type SchemaError<Message extends string> = {
-  readonly [schemaError]: Message
-}
+export type SchemaError<Message extends string> = (
+  schemaError: Message,
+) => never
 
 /**
  * Resolves to a message saying why `Name` is not a valid field name, `never`

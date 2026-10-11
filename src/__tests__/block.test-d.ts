@@ -6,7 +6,14 @@ import {number} from '../creators/number'
 import {object} from '../creators/object'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
-import {type Infer} from '../defs'
+import {
+  type Infer,
+  type SanityLiteral,
+  type SanityObject,
+  type SanityString,
+} from '../defs'
+import {type BlockOptionErrors} from '../helpers/schemaErrors'
+import {type SchemaError} from '../helpers/utilTypes'
 
 describe('block type', () => {
   test('block type definition', () => {
@@ -71,5 +78,44 @@ describe('block type', () => {
     type ActualType = Infer<typeof Block>
 
     expectTypeOf<ActualType>().toEqualTypeOf<ExpectedBlockValue>()
+  })
+})
+
+describe('invalid block options', () => {
+  test('are rejected', () => {
+    // @ts-expect-error - style must be a string literal or a union of them
+    block({style: string()})
+    // @ts-expect-error - list must be a string literal or a union of them
+    block({list: union([literal(1), literal(2)])})
+    // @ts-expect-error - decorator must be a schema
+    block({decorator: 'strong'})
+    // @ts-expect-error - inline objects need a _type literal
+    block({inline: object({foo: string()})})
+    // @ts-expect-error - _type must be a string literal
+    block({_type: string()})
+    // @ts-expect-error - styles is not a block option
+    block({style: literal('normal'), styles: literal('h1')})
+  })
+
+  test('report why', () => {
+    expectTypeOf<
+      BlockOptionErrors<{style: SanityString; list: SanityLiteral<'bullet'>}>
+    >().toEqualTypeOf<{
+      style: SchemaError<"block() option 'style' must be a string literal() or a union() of string literals">
+    }>()
+    expectTypeOf<
+      BlockOptionErrors<{inline: SanityObject<{foo: SanityString}>}>
+    >().toEqualTypeOf<{
+      inline: SchemaError<"block() option 'inline' must be a typed object or a union() of typed objects">
+    }>()
+    expectTypeOf<
+      BlockOptionErrors<{styles: SanityLiteral<'h1'>}>
+    >().toEqualTypeOf<{
+      styles: SchemaError<"'styles' is not a block() option">
+    }>()
+    // No option is wrong, so the whole options object is the error
+    expectTypeOf<
+      BlockOptionErrors<{style: SanityLiteral<'normal'>}>
+    >().toEqualTypeOf<SchemaError<'Invalid block() options'>>()
   })
 })
