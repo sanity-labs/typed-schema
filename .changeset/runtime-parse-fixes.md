@@ -9,6 +9,5 @@ Fix several runtime behaviours that disagreed with the static types:
 - `dateTime()` accepts any ISO 8601 date-time with a zone designator, including values without milliseconds and with `±HH:mm` offsets
 - `number()` constraints treat `0` as a real boundary, reject `NaN`/`Infinity`, and `safeint()`/`int32()`/`uint32()` reject non-integers
 - `deepPartial()`, `deepRequired()`, `shallowPartial()` and `shallowRequired()` now work on documents; `shallowPartial()` made fields required instead of optional; `deepRequired()` now recurses into every field
-- `draft()` therefore works on documents as the README describes
 - the document loader sends the document's field names as the field selection
 - `inspect()` honours `maxDepth` and no longer overflows on circular input
