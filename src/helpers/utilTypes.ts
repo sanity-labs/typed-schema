@@ -15,8 +15,13 @@ export type Combine<A, B> = {
  * Flattens an intersection object type into a single object type. Unlike
  * {@link Combine} it is a plain mapped type, which TypeScript resolves lazily,
  * so it is safe to use on the output of recursive schemas.
+ *
+ * The `& {}` is there for display: a bare mapped type keeps a reference to this
+ * alias, so editor hovers and declaration files would show
+ * `Flatten<{...} & {...}>`. TypeScript drops the intersection with `{}` and the
+ * resulting type has no alias, so it prints as a plain object type.
  */
-export type Flatten<T> = {[K in keyof T]: T[K]}
+export type Flatten<T> = {[K in keyof T]: T[K]} & {}
 
 /**
  * Formats an intersection object type, so it outputs as `{"foo": 1, "bar": 1}` instead of `{"foo": 1} & {"bar": 2}`
