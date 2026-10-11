@@ -39,3 +39,27 @@ test('works on documents and keeps them documents', () => {
   expect(partial.typeName).toBe('document')
   expect(parse(partial, {_type: 'pet'})).toEqual({_type: 'pet'})
 })
+
+test('makes document fields optional, but keeps _type and nested fields required', () => {
+  const Pet = document({
+    _type: literal('pet'),
+    name: string(),
+    owner: object({name: string()}),
+  })
+  const partial = shallowPartial(Pet)
+  expect(typeNames(partial)).toMatchObject({
+    _type: 'literal',
+    _id: 'optional',
+    name: 'optional',
+    owner: 'optional',
+  })
+  expect(parse(partial, {_type: 'pet', name: 'Fido'})).toEqual({
+    _type: 'pet',
+    name: 'Fido',
+  })
+  expect(safeParse(partial, {}).status).toBe('fail')
+  expect(safeParse(partial, {_type: 'pet', owner: {}}).status).toBe('fail')
+  expect(safeParse(partial, {_type: 'pet', owner: {name: 'Ann'}}).status).toBe(
+    'ok',
+  )
+})
