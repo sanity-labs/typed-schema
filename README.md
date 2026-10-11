@@ -463,7 +463,7 @@ const writer = await loadReference(welcome.author) // Parsed<Committed<typeof Au
 
 ### Unique type names for GraphQL
 
-Sanity's GraphQL API needs every `_type` in a schema to map to exactly one shape. `verifyUniqueTypeNames(schema)` walks the schema and returns it unchanged, or throws a `DuplicateTypeNameError` if the same `_type` literal appears in more than one place. The error's `duplicates` lists each duplicated name and the paths where it appears.
+Sanity's GraphQL API needs every `_type` in a schema to map to exactly one shape. `verifyUniqueTypeNames(schema)` returns the schema unchanged, or throws a `DuplicateTypeNameError` if two different schemas declare the same `_type`. Reusing the same schema in several places is fine. Two declarations of one `_type` are rejected even if they are identical, so each type has one definition. The check covers fields declared with getters, the custom fields of images and files, and the inline and annotation types of Portable Text blocks. The error's `duplicates` lists each duplicated name and every path where it appears.
 
 ```ts
 import {
@@ -474,11 +474,14 @@ import {
   verifyUniqueTypeNames,
 } from '@sanity-labs/typed-schema'
 
+const Person = object({_type: literal('person'), name: string()})
+
 const Post = verifyUniqueTypeNames(
   document({
     _type: literal('post'),
-    author: object({_type: literal('person'), name: string()}),
-    // a second 'person' object here would throw
+    author: Person,
+    reviewer: Person, // fine: the same schema
+    // editor: object({_type: literal('person'), name: string()}) would throw
   }),
 )
 ```

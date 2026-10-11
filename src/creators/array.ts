@@ -19,6 +19,20 @@ import {
 import {defineType} from '../helpers/defineType'
 import {string} from './string'
 
+// Object array elements are copies of the given schema with `_key` added. This
+// maps each copy back to the schema it was made from, kept off-object like the
+// `getLazySchema` cache, so schema walkers can tell one schema reused in
+// several places from two declarations of the same type
+const keyedFrom = new WeakMap<SanityType, SanityType>()
+
+/**
+ * Returns the schema an object array element was copied from, or the schema
+ * itself if it is not an array element
+ */
+export function getUnkeyedSchema(schema: SanityType): SanityType {
+  return keyedFrom.get(schema) ?? schema
+}
+
 function addKeyProperty<T extends SanityObjectLikeKind | SanityObjectUnionKind>(
   target: T,
 ): T {
@@ -31,6 +45,7 @@ function addKeyProperty<T extends SanityObjectLikeKind | SanityObjectUnionKind>(
         ),
       }
     : {...schema, shape: {...schema.shape, _key: string()}}
+  keyedFrom.set(withKey, getUnkeyedSchema(schema))
   return withKey as SanityType as T
 }
 

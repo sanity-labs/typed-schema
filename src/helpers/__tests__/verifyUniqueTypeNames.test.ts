@@ -1,13 +1,19 @@
 import {expect, test} from 'vitest'
 
 import {array} from '../../creators/array'
+import {block} from '../../creators/block'
 import {document} from '../../creators/document'
+import {file} from '../../creators/file'
+import {image} from '../../creators/image'
+import {lazy} from '../../creators/lazy'
 import {literal} from '../../creators/literal'
 import {number} from '../../creators/number'
 import {object} from '../../creators/object'
 import {optional} from '../../creators/optional'
 import {string} from '../../creators/string'
 import {union} from '../../creators/union'
+import {deepPartial} from '../../utils/deepPartial'
+import {deepRequired} from '../../utils/deepRequired'
 import {
   DuplicateTypeNameError,
   verifyUniqueTypeNames,
@@ -121,4 +127,183 @@ test('returns the schema and lists duplicates on the error', () => {
   expect((error as DuplicateTypeNameError).duplicates).toEqual([
     {name: 'bar', paths: [[], ['inner']]},
   ])
+})
+
+const Person = object({_type: literal('person'), name: string()})
+
+test('accepts the same schema reused in several places', () => {
+  expect(() =>
+    verifyUniqueTypeNames(
+      document({
+        _type: literal('post'),
+        author: Person,
+        reviewer: Person,
+        contributors: array(Person),
+        mentions: array(
+          union([Person, object({_type: literal('team'), name: string()})]),
+        ),
+        credits: optional(object({_type: literal('credits'), lead: Person})),
+      }),
+    ),
+  ).not.toThrow()
+})
+
+test('rejects two declarations of one _type even if their shapes are identical', () => {
+  expect(() =>
+    verifyUniqueTypeNames(
+      document({
+        _type: literal('post'),
+        author: Person,
+        reviewer: Person,
+        editor: object({_type: literal('person'), name: string()}),
+      }),
+    ),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `[Error: Duplicate type names in schema: _type "person" at author, reviewer, editor]`,
+  )
+})
+
+test('walks fields declared with getters and lazy()', () => {
+  expect(() =>
+    verifyUniqueTypeNames(
+      document({
+        _type: literal('post'),
+        author: Person,
+        get reviewer() {
+          return object({_type: literal('person'), name: string()})
+        },
+      }),
+    ),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `[Error: Duplicate type names in schema: _type "person" at author, reviewer]`,
+  )
+  expect(() =>
+    verifyUniqueTypeNames(
+      document({
+        _type: literal('post'),
+        author: Person,
+        reviewer: lazy(() =>
+          object({_type: literal('person'), name: string()}),
+        ),
+      }),
+    ),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `[Error: Duplicate type names in schema: _type "person" at author, reviewer]`,
+  )
+})
+
+test('walks the custom fields of images and files', () => {
+  expect(() =>
+    verifyUniqueTypeNames(
+      document({
+        _type: literal('post'),
+        author: Person,
+        cover: image({
+          photographer: object({_type: literal('person'), name: string()}),
+        }),
+      }),
+    ),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `[Error: Duplicate type names in schema: _type "person" at author, cover -> photographer]`,
+  )
+  expect(() =>
+    verifyUniqueTypeNames(
+      document({
+        _type: literal('post'),
+        author: Person,
+        attachment: file({
+          uploader: object({_type: literal('person'), name: string()}),
+        }),
+      }),
+    ),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `[Error: Duplicate type names in schema: _type "person" at author, attachment -> uploader]`,
+  )
+})
+
+test('walks the inline and annotation types of blocks', () => {
+  expect(() =>
+    verifyUniqueTypeNames(
+      document({
+        _type: literal('post'),
+        author: Person,
+        body: array(
+          block({
+            inline: object({_type: literal('person'), name: string()}),
+          }),
+        ),
+      }),
+    ),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `[Error: Duplicate type names in schema: _type "person" at author, body -> children -> person]`,
+  )
+  expect(() =>
+    verifyUniqueTypeNames(
+      document({
+        _type: literal('post'),
+        author: Person,
+        body: array(
+          block({
+            annotation: object({_type: literal('person'), name: string()}),
+          }),
+        ),
+      }),
+    ),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `[Error: Duplicate type names in schema: _type "person" at author, body -> markDefs]`,
+  )
+})
+
+test('does not count the built-in image, file, block and span types', () => {
+  expect(() =>
+    verifyUniqueTypeNames(
+      document({
+        _type: literal('post'),
+        cover: image({caption: string()}),
+        thumbnail: image({alt: string()}),
+        attachment: file({}),
+        download: file({}),
+        body: array(block({inline: Person})),
+        summary: array(
+          union([block({annotation: Person}), image({caption: string()})]),
+        ),
+      }),
+    ),
+  ).not.toThrow()
+})
+
+test('terminates on recursive schemas', () => {
+  const Category = document({
+    _type: literal('category'),
+    name: string(),
+    get subcategories() {
+      return array(Category)
+    },
+  })
+  const Node = object({
+    _type: literal('node'),
+    value: string(),
+    get next() {
+      return optional(Node)
+    },
+  })
+  expect(() => verifyUniqueTypeNames(Category)).not.toThrow()
+  expect(() => verifyUniqueTypeNames(Node)).not.toThrow()
+  expect(() => verifyUniqueTypeNames(deepPartial(Category))).not.toThrow()
+  expect(() => verifyUniqueTypeNames(deepRequired(Node))).not.toThrow()
+})
+
+test('finds duplicates inside recursive schemas', () => {
+  const Node = object({
+    _type: literal('node'),
+    get next() {
+      return optional(Node)
+    },
+    get other() {
+      return optional(object({_type: literal('node')}))
+    },
+  })
+  expect(() => verifyUniqueTypeNames(Node)).toThrowErrorMatchingInlineSnapshot(
+    `[Error: Duplicate type names in schema: _type "node" at (root), next, other]`,
+  )
 })
