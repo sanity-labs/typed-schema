@@ -84,9 +84,10 @@ test('rejects schemas with duplicate type names', () => {
         ]),
       ),
     ),
-  ).toThrowErrorMatchingInlineSnapshot(
-    `[Error: Duplicate type names in schema: _type "bar" at bar, bar -> inner]`,
-  )
+  ).toThrowErrorMatchingInlineSnapshot(`
+    [DuplicateTypeNameError: Duplicate type names in schema:
+      _type "bar" at bar, bar -> inner]
+  `)
   expect(() =>
     verifyUniqueTypeNames(
       document({
@@ -106,9 +107,37 @@ test('rejects schemas with duplicate type names', () => {
         ),
       }),
     ),
-  ).toThrowErrorMatchingInlineSnapshot(
-    `[Error: Duplicate type names in schema: _type "bar" at nested -> foo -> optional, nested -> bar]`,
+  ).toThrowErrorMatchingInlineSnapshot(`
+    [DuplicateTypeNameError: Duplicate type names in schema:
+      _type "bar" at nested -> foo -> optional, nested -> bar]
+  `)
+})
+
+test('lists each duplicate on its own indented line', () => {
+  let error: unknown
+  try {
+    verifyUniqueTypeNames(
+      object({
+        _type: literal('root'),
+        author: object({_type: literal('person')}),
+        reviewer: object({_type: literal('person')}),
+        a: object({_type: literal('a'), b: object({_type: literal('tag')})}),
+        c: object({_type: literal('tag')}),
+      }),
+    )
+  } catch (err) {
+    error = err
+  }
+  expect(error).toBeInstanceOf(DuplicateTypeNameError)
+  expect((error as Error).name).toBe('DuplicateTypeNameError')
+  expect((error as Error).message).toBe(
+    [
+      'Duplicate type names in schema:',
+      '  _type "person" at author, reviewer',
+      '  _type "tag" at a -> b, c',
+    ].join('\n'),
   )
+  expect(String(error)).toMatch(/^DuplicateTypeNameError: /)
 })
 
 test('returns the schema and lists duplicates on the error', () => {
@@ -159,7 +188,10 @@ test('rejects two declarations of one _type even if their shapes are identical',
       }),
     ),
   ).toThrowErrorMatchingInlineSnapshot(
-    `[Error: Duplicate type names in schema: _type "person" at author, reviewer, editor]`,
+    `
+    [DuplicateTypeNameError: Duplicate type names in schema:
+      _type "person" at author, reviewer, editor]
+  `,
   )
 })
 
@@ -175,7 +207,10 @@ test('walks fields declared with getters and lazy()', () => {
       }),
     ),
   ).toThrowErrorMatchingInlineSnapshot(
-    `[Error: Duplicate type names in schema: _type "person" at author, reviewer]`,
+    `
+    [DuplicateTypeNameError: Duplicate type names in schema:
+      _type "person" at author, reviewer]
+  `,
   )
   expect(() =>
     verifyUniqueTypeNames(
@@ -188,7 +223,10 @@ test('walks fields declared with getters and lazy()', () => {
       }),
     ),
   ).toThrowErrorMatchingInlineSnapshot(
-    `[Error: Duplicate type names in schema: _type "person" at author, reviewer]`,
+    `
+    [DuplicateTypeNameError: Duplicate type names in schema:
+      _type "person" at author, reviewer]
+  `,
   )
 })
 
@@ -204,7 +242,10 @@ test('walks the custom fields of images and files', () => {
       }),
     ),
   ).toThrowErrorMatchingInlineSnapshot(
-    `[Error: Duplicate type names in schema: _type "person" at author, cover -> photographer]`,
+    `
+    [DuplicateTypeNameError: Duplicate type names in schema:
+      _type "person" at author, cover -> photographer]
+  `,
   )
   expect(() =>
     verifyUniqueTypeNames(
@@ -217,7 +258,10 @@ test('walks the custom fields of images and files', () => {
       }),
     ),
   ).toThrowErrorMatchingInlineSnapshot(
-    `[Error: Duplicate type names in schema: _type "person" at author, attachment -> uploader]`,
+    `
+    [DuplicateTypeNameError: Duplicate type names in schema:
+      _type "person" at author, attachment -> uploader]
+  `,
   )
 })
 
@@ -235,7 +279,10 @@ test('walks the inline and annotation types of blocks', () => {
       }),
     ),
   ).toThrowErrorMatchingInlineSnapshot(
-    `[Error: Duplicate type names in schema: _type "person" at author, body -> children -> person]`,
+    `
+    [DuplicateTypeNameError: Duplicate type names in schema:
+      _type "person" at author, body -> children -> person]
+  `,
   )
   expect(() =>
     verifyUniqueTypeNames(
@@ -250,7 +297,10 @@ test('walks the inline and annotation types of blocks', () => {
       }),
     ),
   ).toThrowErrorMatchingInlineSnapshot(
-    `[Error: Duplicate type names in schema: _type "person" at author, body -> markDefs]`,
+    `
+    [DuplicateTypeNameError: Duplicate type names in schema:
+      _type "person" at author, body -> markDefs]
+  `,
   )
 })
 
@@ -304,6 +354,9 @@ test('finds duplicates inside recursive schemas', () => {
     },
   })
   expect(() => verifyUniqueTypeNames(Node)).toThrowErrorMatchingInlineSnapshot(
-    `[Error: Duplicate type names in schema: _type "node" at (root), next, other]`,
+    `
+    [DuplicateTypeNameError: Duplicate type names in schema:
+      _type "node" at (root), next, other]
+  `,
   )
 })
