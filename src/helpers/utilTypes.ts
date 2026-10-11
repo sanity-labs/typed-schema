@@ -12,6 +12,13 @@ export type Combine<A, B> = {
   : never
 
 /**
+ * Flattens an intersection object type into a single object type. Unlike
+ * {@link Combine} it is a plain mapped type, which TypeScript resolves lazily,
+ * so it is safe to use on the output of recursive schemas.
+ */
+export type Flatten<T> = {[K in keyof T]: T[K]}
+
+/**
  * Formats an intersection object type, so it outputs as `{"foo": 1, "bar": 1}` instead of `{"foo": 1} & {"bar": 2}`
  */
 export type Format<A> = A extends {[Key in keyof A]: A[Key]}

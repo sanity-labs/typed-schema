@@ -1,27 +1,26 @@
 import {
-  type OutputFromShape,
   type SanityDocument,
   type SanityLiteral,
   type SanityObjectShape,
   type SanityString,
-  type UndefinedOptional,
+  type WithDocumentShape,
 } from '../defs'
+import {deferGetters} from '../helpers/deferGetters'
 import {defineType} from '../helpers/defineType'
-import {type Format} from '../helpers/utilTypes'
-import {DocumentBase, type SanityDocumentShape} from '../shapeDefs'
-import {type SafeObject} from './object'
+import {DocumentBase} from '../shapeDefs'
+import {type InvalidFieldNames} from './object'
 
-export function document<Shape extends SanityObjectShape = SanityObjectShape>(
-  shape: SafeObject<Shape, '_id' | '_type'> & {
-    _id?: SanityLiteral<string> | SanityString
-    _type: SanityLiteral<string>
-  },
-): SanityDocument<
-  Format<Shape & SanityDocumentShape>,
-  UndefinedOptional<OutputFromShape<SanityDocumentShape & Shape>>
-> {
+export function document<
+  Shape extends {[key: string]: any} = SanityObjectShape,
+>(
+  shape: Shape &
+    NoInfer<InvalidFieldNames<Shape, '_id' | '_type'>> & {
+      _id?: SanityLiteral<string> | SanityString
+      _type: SanityLiteral<string>
+    },
+): SanityDocument<WithDocumentShape<Shape>> {
   return defineType({
     typeName: 'document',
-    shape: {...DocumentBase.shape, ...shape},
+    shape: {...DocumentBase.shape, ...deferGetters(shape)},
   }) as any
 }

@@ -1,5 +1,6 @@
 import {
   isDocumentSchema,
+  isLazySchema,
   isObjectArraySchema,
   isObjectSchema,
   isObjectUnionSchema,
@@ -7,20 +8,24 @@ import {
 } from '../asserters'
 import {objectArray} from '../creators/array'
 import {document} from '../creators/document'
+import {lazy} from '../creators/lazy'
 import {object} from '../creators/object'
 import {optional} from '../creators/optional'
 import {union} from '../creators/union'
 import {
   type OutputOf,
   type SanityDocument,
+  type SanityLazy,
   type SanityObject,
   type SanityObjectArray,
   type SanityObjectShape,
   type SanityObjectType,
   type SanityObjectUnion,
+  type SanityObjectUnionMemberKind,
   type SanityOptional,
   type SanityType,
 } from '../defs'
+import {getLazySchema} from '../helpers/getLazySchema'
 import {type Combine, type ExtendsNever} from '../helpers/utilTypes'
 
 export type MaybeOptionalType<T extends SanityType> =
@@ -52,24 +57,28 @@ type DeepPartialValue<T> = T extends {_type: string}
   : {[P in keyof T]?: DeepPartialValue<T[P]>}
 
 export type DeepPartialObject<S extends SanityObject | SanityDocument> =
-  S extends SanityObject<infer Shape>
+  S extends SanityObject<infer Shape extends SanityObjectShape>
     ? SanityObjectShape extends Shape
       ? SanityObjectType<DeepPartialValue<OutputOf<S>>>
       : SanityObject<PartialShape<Shape, '_type'>>
-    : S extends SanityDocument<infer Shape>
+    : S extends SanityDocument<infer Shape extends SanityObjectShape>
       ? SanityDocument<PartialShape<Shape, '_type'>>
       : never
 
 export type DeepPartial<S extends SanityType> =
   S extends SanityOptional<any>
     ? S
-    : S extends SanityObject | SanityDocument
-      ? DeepPartialObject<S>
-      : S extends SanityObjectUnion<infer UnionTypes>
-        ? SanityObjectUnion<DeepPartial<UnionTypes>>
-        : S extends SanityObjectArray<infer ElementType>
-          ? SanityObjectArray<DeepPartial<ElementType>>
-          : S
+    : S extends SanityLazy<infer T>
+      ? SanityLazy<DeepPartial<T>>
+      : S extends SanityObject | SanityDocument
+        ? DeepPartialObject<S>
+        : S extends SanityObjectUnion<infer UnionTypes>
+          ? SanityObjectUnion<
+              Extract<DeepPartial<UnionTypes>, SanityObjectUnionMemberKind>
+            >
+          : S extends SanityObjectArray<infer ElementType>
+            ? SanityObjectArray<DeepPartial<ElementType>>
+            : S
 
 function partialShape(shape: SanityObjectShape): SanityObjectShape {
   return Object.fromEntries(
@@ -85,6 +94,10 @@ function partialShape(shape: SanityObjectShape): SanityObjectShape {
 export function deepPartial<S extends SanityType>(schema: S): DeepPartial<S> {
   if (isOptionalSchema(schema)) {
     return optional(deepPartial(schema.type)) as any
+  }
+  if (isLazySchema(schema)) {
+    // Stays deferred, so recursive schemas don't recurse forever
+    return lazy(() => deepPartial(getLazySchema(schema))) as any
   }
   if (isDocumentSchema(schema)) {
     return document(partialShape(schema.shape) as any) as any

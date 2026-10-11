@@ -11,7 +11,6 @@ import {
   type SanityReference,
   type SanityString,
   type SanityType,
-  type UndefinedOptional,
 } from './defs'
 import {defineType as dt} from './helpers/defineType'
 import {type Combine, type OutputFormatFix} from './helpers/utilTypes'
@@ -317,9 +316,7 @@ export type SanityArrayValue<ElementType> = Array<
 > &
   OutputFormatFix
 
-export type SanityDocumentValue = UndefinedOptional<
-  OutputFromShape<SanityDocumentShape>
->
+export type SanityDocumentValue = OutputFromShape<SanityDocumentShape>
 
 /**
  * The value of a `reference()` to a document of type `RefType`, for annotating

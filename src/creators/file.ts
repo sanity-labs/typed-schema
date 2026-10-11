@@ -1,4 +1,5 @@
 import {type SanityFile, type SanityObjectShape} from '../defs'
+import {deferGetters} from '../helpers/deferGetters'
 import {defineType} from '../helpers/defineType'
 import {FileBase, type SanityFileShape} from '../shapeDefs'
 
@@ -8,6 +9,6 @@ export function file<Shape extends SanityObjectShape = SanityObjectShape>(
 ): SanityFile<Shape & SanityFileShape> {
   return defineType({
     typeName: 'file',
-    shape: {...FileBase.shape, ...shape},
+    shape: {...FileBase.shape, ...deferGetters(shape)},
   })
 }

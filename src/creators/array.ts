@@ -8,29 +8,34 @@ import {
   type SanityNever,
   type SanityObjectArray,
   type SanityObjectLike,
+  type SanityObjectLikeKind,
   type SanityObjectUnion,
+  type SanityObjectUnionKind,
   type SanityPrimitive,
   type SanityPrimitiveArray,
   type SanityPrimitiveUnion,
+  type SanityType,
 } from '../defs'
 import {defineType} from '../helpers/defineType'
 import {string} from './string'
 
-function addKeyProperty<T extends SanityObjectUnion | SanityObjectLike>(
+function addKeyProperty<T extends SanityObjectLikeKind | SanityObjectUnionKind>(
   target: T,
 ): T {
-  return isObjectUnionSchema(target)
+  const schema = target as SanityType as SanityObjectUnion | SanityObjectLike
+  const withKey = isObjectUnionSchema(schema)
     ? {
-        ...target,
-        union: target.union.map(unionType =>
+        ...schema,
+        union: schema.union.map(unionType =>
           isNeverSchema(unionType) ? unionType : addKeyProperty(unionType),
         ),
       }
-    : {...target, shape: {...target.shape, _key: string()}}
+    : {...schema, shape: {...schema.shape, _key: string()}}
+  return withKey as SanityType as T
 }
 
 export function objectArray<
-  ElementType extends SanityObjectLike | SanityObjectUnion,
+  ElementType extends SanityObjectLikeKind | SanityObjectUnionKind,
 >(elementSchema: ElementType): SanityObjectArray<ElementType> {
   return defineType({
     typeName: 'objectArray',
@@ -48,7 +53,7 @@ export function primitiveArray<
   return defineType({typeName: 'primitiveArray', element: elementSchema})
 }
 
-export function array<Def extends SanityObjectLike | SanityObjectUnion>(
+export function array<Def extends SanityObjectLikeKind | SanityObjectUnionKind>(
   elementSchema: Def,
 ): SanityObjectArray<Def>
 export function array<Def extends SanityPrimitive | SanityPrimitiveUnion>(
