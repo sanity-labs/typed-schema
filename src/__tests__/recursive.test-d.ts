@@ -274,8 +274,8 @@ test('self-reference inside a nested object field', () => {
 })
 
 // Images, files and references are matched by `typeName` in the constraints of
-// union(), portableText() and block(), so they can refer to the schema that
-// contains them.
+// union(), portableText() and block(), so a schema declared with a getter can
+// pass itself, or a `reference()` to itself, to these creators.
 
 const Collage = image({
   title: string(),

@@ -6,7 +6,7 @@
 `toClassicSchema` does not emit referenced document types, which fields are required, or Portable Text styles, decorators and annotations. Treat the result as a starting point.
 :::
 
-Recursive object types become named top-level types, referred to by their `_type`. `toClassicSchema()` throws on a recursive object type without a `_type` literal.
+Recursive object types become named top-level types, referred to by their `_type`. `toClassicSchema()` throws on a recursive object type without a `_type` literal. An image or file can't become a named type, since its `_type` is always `image` or `file`, so a cycle through one must also pass through an object with a `_type` literal or a `reference()`.
 
 ```ts twoslash
 // @filename: sanity.d.ts

@@ -2,6 +2,7 @@ import {describe, expect, test} from 'vitest'
 
 import {block} from '../creators/block'
 import {document} from '../creators/document'
+import {file} from '../creators/file'
 import {image} from '../creators/image'
 import {literal} from '../creators/literal'
 import {object} from '../creators/object'
@@ -161,5 +162,66 @@ describe('parsing Portable Text with images and references', () => {
     })
     expect(parse(ImageBody, [picture])).toEqual({ok: true, value: [picture]})
     expect(parse(ImageBody, [code]).ok).toBe(false)
+  })
+
+  test('parses a file or a reference alone as the element', () => {
+    const attachment = {
+      _type: 'file',
+      _key: 'f1',
+      title: 'Notes',
+      asset: {_type: 'reference', _ref: 'file-abc-pdf'},
+    }
+    const FileBody = portableText({
+      block: block({}),
+      element: file({title: string()}),
+    })
+    expect(parse(FileBody, [attachment])).toEqual({
+      ok: true,
+      value: [attachment],
+    })
+    expect(parse(FileBody, [{...attachment, title: 1}]).ok).toBe(false)
+
+    const byline = {_type: 'reference', _key: 'r3', _ref: 'author-3'}
+    const ReferenceBody = portableText({
+      block: block({}),
+      element: reference(Author),
+    })
+    expect(parse(ReferenceBody, [byline])).toEqual({ok: true, value: [byline]})
+    expect(parse(ReferenceBody, [{_type: 'reference', _key: 'r4'}]).ok).toBe(
+      false,
+    )
+  })
+
+  test('parses annotations from a union of a reference, a file and a typed object', () => {
+    const AnnotatedBlock = block({
+      annotation: union([
+        reference(Author),
+        file({title: string()}),
+        object({_type: literal('link'), href: string()}),
+      ]),
+    })
+    const value = {
+      _type: 'block',
+      markDefs: [
+        {_type: 'reference', _key: 'm1', _ref: 'author-1'},
+        {
+          _type: 'file',
+          _key: 'm2',
+          title: 'Source',
+          asset: {_type: 'reference', _ref: 'file-abc-pdf'},
+        },
+        {_type: 'link', _key: 'm3', href: 'https://example.com'},
+      ],
+      children: [
+        {_type: 'span', _key: 's1', text: 'See ', marks: ['m1', 'm2', 'm3']},
+      ],
+    }
+    expect(parse(AnnotatedBlock, value)).toEqual({ok: true, value})
+    expect(
+      parse(AnnotatedBlock, {
+        ...value,
+        markDefs: [{_type: 'file', _key: 'm2', title: 1}],
+      }).ok,
+    ).toBe(false)
   })
 })

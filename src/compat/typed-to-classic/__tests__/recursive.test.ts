@@ -1,11 +1,14 @@
 import {describe, expect, test} from 'vitest'
 
 import {array} from '../../../creators/array'
+import {block} from '../../../creators/block'
 import {document} from '../../../creators/document'
+import {image} from '../../../creators/image'
 import {lazy} from '../../../creators/lazy'
 import {literal} from '../../../creators/literal'
 import {object} from '../../../creators/object'
 import {optional} from '../../../creators/optional'
+import {portableText} from '../../../creators/portableText'
 import {reference} from '../../../creators/reference'
 import {string} from '../../../creators/string'
 import {union} from '../../../creators/union'
@@ -392,5 +395,75 @@ describe('recursive schemas', () => {
     const Tree = deepPartial(document({_type: literal('tree'), root: Node}))
 
     expect(() => toClassicSchema(Tree)).toThrow(/needs a `_type` literal/)
+  })
+
+  test('self-reference from an image through a typed object', () => {
+    const Gallery = object({
+      _type: literal('gallery'),
+      cover: image({
+        get related() {
+          return optional(Gallery)
+        },
+      }),
+    })
+    const Page = document({_type: literal('page'), gallery: Gallery})
+
+    expect(toClassicSchema(Page)).toEqual([
+      {
+        type: 'document',
+        name: 'page',
+        fields: [{type: 'gallery', name: 'gallery'}],
+      },
+      {
+        type: 'object',
+        name: 'gallery',
+        fields: [
+          {
+            type: 'image',
+            name: 'cover',
+            fields: [{type: 'gallery', name: 'related'}],
+          },
+        ],
+      },
+    ])
+  })
+
+  test('self-reference from an image through a reference', () => {
+    const Post = document({
+      _type: literal('post'),
+      cover: image({
+        get related() {
+          return optional(reference(Post))
+        },
+      }),
+    })
+
+    expect(toClassicSchema(Post)).toEqual([
+      {
+        type: 'document',
+        name: 'post',
+        fields: [
+          {
+            type: 'image',
+            name: 'cover',
+            fields: [{type: 'reference', to: {type: 'post'}, name: 'related'}],
+          },
+        ],
+      },
+    ])
+  })
+
+  test('throws on an image that contains itself with no typed object or reference in between', () => {
+    const Figure = image({
+      alt: string(),
+      get caption() {
+        return portableText({block: block({inline: Figure}), element: Figure})
+      },
+    })
+    const Doc = document({_type: literal('doc'), figure: Figure})
+
+    expect(() => toClassicSchema(Doc)).toThrow(
+      /Cannot convert recursive image schema: an image or file cannot become a named type, so the cycle must pass through an object with a `_type` literal or a reference\(\)/,
+    )
   })
 })
