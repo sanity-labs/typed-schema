@@ -80,7 +80,7 @@ Sanity accepts almost any shape of content, but it does have rules. A classic Sa
 2. Arrays that mix primitive values and objects.
 3. Unions of untyped objects. Object unions must consist of objects with a `_type` literal, because a partially edited object (an empty one, say) is otherwise impossible to match to a schema type during real-time collaboration.
 4. Field names that start with an underscore. These are reserved for system fields.
-5. Characters that are not allowed in field names.
+5. Field names that do not start with a letter A-Z, or that contain anything other than letters A-Z, digits and underscores (a hyphen, for example).
 
 ### A content model you can share
 
@@ -556,7 +556,7 @@ All functions are named exports of `@sanity-labs/typed-schema`.
 
 | Creator           | Notes                                                                                                           |
 | ----------------- | --------------------------------------------------------------------------------------------------------------- |
-| `object(shape)`   | Field names may not start with `_`, except `_type`, which must be a `literal()`                                 |
+| `object(shape)`   | Field names start with a letter A-Z and contain only letters A-Z, digits and `_`; `_type` must be a `literal()` |
 | `document(shape)` | Requires a `_type` literal; adds optional `_id`, `_rev`, `_createdAt`, `_updatedAt`                             |
 | `image(shape?)`   | `{_type: 'image'; asset: reference to imageAsset}` plus your fields                                             |
 | `file(shape?)`    | `{_type: 'file'; asset: reference to fileAsset}` plus your fields                                               |

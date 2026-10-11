@@ -1,4 +1,4 @@
-import {type FieldSchemas} from '../creators/object'
+import {type FieldSchemas, type InvalidFieldNames} from '../creators/object'
 import {
   type OutputFromShape,
   type SanityDocument,
@@ -42,7 +42,14 @@ export function extend<
   Shape extends {[key: string]: any},
 >(
   source: Obj,
-  shape: Shape & NoInfer<FieldSchemas<Shape>>,
+  shape: Shape &
+    NoInfer<
+      InvalidFieldNames<
+        Shape,
+        Obj extends SanityDocument ? '_id' | '_type' : '_type'
+      > &
+        FieldSchemas<Shape>
+    >,
 ): Extends<Obj, Shape> {
   return {...source, shape: {...source.shape, ...deferGetters(shape)}} as any
 }
