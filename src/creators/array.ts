@@ -4,6 +4,7 @@ import {
   isObjectUnionSchema,
 } from '../asserters'
 import {
+  type SanityArray,
   type SanityLiteral,
   type SanityNever,
   type SanityObjectArray,
@@ -77,6 +78,15 @@ export function array<Def extends SanityPrimitive | SanityPrimitiveUnion>(
 export function array<Def extends SanityNever>(
   elementSchema: Def,
 ): SanityPrimitiveArray<Def>
+// For generic code whose element type may be either object-like or primitive.
+// Last, so concrete calls resolve to the specific overloads above
+export function array<
+  Def extends
+    | SanityObjectLikeKind
+    | SanityObjectUnionKind
+    | SanityPrimitive
+    | SanityPrimitiveUnion,
+>(elementSchema: Def): SanityArray<Def>
 export function array(
   elementSchema:
     | SanityObjectLike
