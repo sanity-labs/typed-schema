@@ -1,9 +1,12 @@
 import {describe, expectTypeOf, test} from 'vitest'
 
 import {block} from '../creators/block'
+import {document} from '../creators/document'
+import {image} from '../creators/image'
 import {literal} from '../creators/literal'
 import {number} from '../creators/number'
 import {object} from '../creators/object'
+import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {
@@ -79,6 +82,26 @@ describe('block type', () => {
 
     expectTypeOf<ActualType>().toEqualTypeOf<ExpectedBlockValue>()
   })
+
+  test('images and references inline and as annotations', () => {
+    const Author = document({_type: literal('author'), name: string()})
+    const Block = block({
+      inline: union([image({alt: string()}), reference(Author)]),
+      annotation: reference(Author),
+    })
+    type Block = Infer<typeof Block>
+    type Child = Block['children'][number]
+    type MarkDef = NonNullable<Block['markDefs']>[number]
+
+    expectTypeOf<Child['_type']>().toEqualTypeOf<
+      'span' | 'image' | 'reference'
+    >()
+    expectTypeOf<
+      Extract<Child, {_type: 'image'}>['alt']
+    >().toEqualTypeOf<string>()
+    expectTypeOf<MarkDef['_type']>().toEqualTypeOf<'reference'>()
+    expectTypeOf<MarkDef['_key']>().toEqualTypeOf<string>()
+  })
 })
 
 describe('invalid block options', () => {
@@ -106,7 +129,7 @@ describe('invalid block options', () => {
     expectTypeOf<
       BlockOptionErrors<{inline: SanityObject<{foo: SanityString}>}>
     >().toEqualTypeOf<{
-      inline: SchemaError<"block() option 'inline' must be a typed object or a union() of typed objects">
+      inline: SchemaError<"block() option 'inline' must be a typed object, reference, image, file or a union() of these">
     }>()
     expectTypeOf<
       BlockOptionErrors<{styles: SanityLiteral<'h1'>}>

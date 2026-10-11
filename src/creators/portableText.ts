@@ -4,7 +4,7 @@ import {
   type SanityNever,
   type SanityObjectArray,
   type SanityObjectUnion,
-  type SanityTypedObject,
+  type SanityPortableTextMember,
   type SchemaAnnotations,
 } from '../defs'
 import {
@@ -17,8 +17,8 @@ import {type FlattenUnionTypes, union} from './union'
 type PortableText<
   BlockType extends SanityBlock,
   ElementType extends
-    | SanityTypedObject
-    | SanityObjectUnion<SanityTypedObject>
+    | SanityPortableTextMember
+    | SanityObjectUnion<SanityPortableTextMember>
     | SanityNever,
 > = SanityObjectArray<
   SanityObjectUnion<FlattenUnionTypes<BlockType | ElementType>>
@@ -27,8 +27,8 @@ type PortableText<
 export function portableText<
   const BlockType extends SanityBlock,
   const ElementType extends
-    | SanityTypedObject
-    | SanityObjectUnion<SanityTypedObject>
+    | SanityPortableTextMember
+    | SanityObjectUnion<SanityPortableTextMember>
     | SanityNever,
 >(
   options: {
@@ -51,8 +51,8 @@ export function portableText(
   options: {
     block: SanityBlock
     element:
-      | SanityTypedObject
-      | SanityObjectUnion<SanityTypedObject>
+      | SanityPortableTextMember
+      | SanityObjectUnion<SanityPortableTextMember>
       | SanityNever
   },
   annotations?: any,

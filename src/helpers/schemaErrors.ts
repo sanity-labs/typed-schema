@@ -10,7 +10,6 @@
  */
 import {
   type SanityAny,
-  type SanityAsset,
   type SanityBlock,
   type SanityDocumentKind,
   type SanityKind,
@@ -19,11 +18,11 @@ import {
   type SanityObjectLikeKind,
   type SanityObjectUnion,
   type SanityObjectUnionKind,
+  type SanityObjectUnionMemberKind,
+  type SanityPortableTextMember,
   type SanityPrimitive,
   type SanityPrimitiveUnion,
-  type SanityReference,
   type SanityString,
-  type SanityTypedObject,
 } from '../defs'
 import {type FieldNameError, type SchemaError} from './utilTypes'
 
@@ -237,12 +236,10 @@ export type ReferenceTargetError<Def> = Def extends SanityDocumentKind
 
 // union()
 
+/** Matches by `typeName`, so recursive members are accepted, see `defs.ts` */
 type ObjectUnionMember =
-  | SanityTypedObject
-  | SanityReference
-  | SanityBlock
-  | SanityAsset
-  | SanityObjectUnion<any>
+  | Exclude<SanityObjectUnionMemberKind, SanityNever>
+  | SanityObjectUnionKind
 
 type PrimitiveUnionMember =
   | SanityPrimitive
@@ -351,10 +348,12 @@ type BlockOptionError<Option, Value> = [Value] extends [undefined]
       : `block() option '${Option}' must be a string literal() or a union() of string literals`
     : Option extends 'inline' | 'annotation'
       ? [Value] extends [
-          SanityTypedObject | SanityObjectUnion<SanityTypedObject> | undefined,
+          | SanityPortableTextMember
+          | SanityObjectUnion<SanityPortableTextMember>
+          | undefined,
         ]
         ? never
-        : `block() option '${Option}' must be a typed object or a union() of typed objects`
+        : `block() option '${Option}' must be a typed object, reference, image, file or a union() of these`
       : Option extends '_type'
         ? [Value] extends [SanityLiteral<string> | undefined]
           ? never
@@ -376,10 +375,12 @@ type PortableTextOptionError<Option, Value> = Option extends 'block'
     : "portableText() option 'block' must be a block() schema"
   : Option extends 'element'
     ? [Value] extends [
-        SanityTypedObject | SanityObjectUnion<SanityTypedObject> | SanityNever,
+        | SanityPortableTextMember
+        | SanityObjectUnion<SanityPortableTextMember>
+        | SanityNever,
       ]
       ? never
-      : "portableText() option 'element' must be a typed object, a union() of typed objects or never()"
+      : "portableText() option 'element' must be a typed object, reference, image, file, a union() of these or never()"
     : `'${Option & string}' is not a portableText() option`
 
 /**

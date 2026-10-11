@@ -1,9 +1,12 @@
 import {describe, expect, test} from 'vitest'
 
 import {block} from '../creators/block'
+import {document} from '../creators/document'
+import {image} from '../creators/image'
 import {literal} from '../creators/literal'
 import {object} from '../creators/object'
 import {portableText} from '../creators/portableText'
+import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {parse} from '../parse'
@@ -102,5 +105,61 @@ describe('parsing portable text', () => {
     expect(
       parse(Body, [{_type: 'image', url: 'https://example.com/a.png'}]).ok,
     ).toBe(false)
+  })
+})
+
+describe('parsing Portable Text with images and references', () => {
+  const Author = document({_type: literal('author'), name: string()})
+  const Body = portableText({
+    block: block({
+      inline: reference(Author),
+      annotation: reference(Author),
+    }),
+    element: union([
+      image({alt: string()}),
+      object({_type: literal('codeBlock'), code: string()}),
+    ]),
+  })
+
+  const paragraph = {
+    _type: 'block',
+    _key: 'b1',
+    markDefs: [{_type: 'reference', _key: 'r1', _ref: 'author-1'}],
+    children: [
+      {_type: 'span', _key: 's1', text: 'By ', marks: ['r1']},
+      {_type: 'reference', _key: 'r2', _ref: 'author-2'},
+    ],
+  }
+  const picture = {
+    _type: 'image',
+    _key: 'i1',
+    alt: 'A cat',
+    asset: {_type: 'reference', _ref: 'image-abc-100x100-png'},
+  }
+  const code = {_type: 'codeBlock', _key: 'c1', code: 'let a = 1'}
+
+  test('parses an array that mixes blocks, images and typed objects', () => {
+    const value = [paragraph, picture, code]
+    expect(parse(Body, value)).toEqual({ok: true, value})
+  })
+
+  test('checks the image against its own schema', () => {
+    const result = parse(Body, [paragraph, {...picture, alt: 1}])
+    expect(result.ok).toBe(false)
+    expect(parse(Body, [{...picture, asset: {_type: 'reference'}}]).ok).toBe(
+      false,
+    )
+    expect(
+      parse(Body, [{_type: 'image', alt: 'no key', asset: picture.asset}]).ok,
+    ).toBe(false)
+  })
+
+  test('parses an image alone as the element', () => {
+    const ImageBody = portableText({
+      block: block({}),
+      element: image({alt: string()}),
+    })
+    expect(parse(ImageBody, [picture])).toEqual({ok: true, value: [picture]})
+    expect(parse(ImageBody, [code]).ok).toBe(false)
   })
 })

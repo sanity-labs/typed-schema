@@ -2,6 +2,7 @@ import {describe, expect, test} from 'vitest'
 
 import {isObjectArraySchema} from '../asserters'
 import {array, getUnkeyedSchema} from '../creators/array'
+import {block} from '../creators/block'
 import {document} from '../creators/document'
 import {file} from '../creators/file'
 import {image} from '../creators/image'
@@ -9,6 +10,7 @@ import {lazy} from '../creators/lazy'
 import {literal} from '../creators/literal'
 import {object} from '../creators/object'
 import {optional} from '../creators/optional'
+import {portableText} from '../creators/portableText'
 import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
@@ -276,5 +278,124 @@ describe('recursive schemas declared with getters', () => {
         cover: {...value.cover, related: {_type: 'gallery', title: 1}},
       }).ok,
     ).toBe(false)
+  })
+
+  test('self-reference through images, files and references in Portable Text and unions', () => {
+    const Figure = image({
+      alt: string(),
+      get caption() {
+        return portableText({
+          block: block({inline: Figure, annotation: Attachment}),
+          element: union([Figure, Attachment]),
+        })
+      },
+    })
+    const Attachment = file({
+      title: string(),
+      get related() {
+        return array(union([reference(Article), Attachment]))
+      },
+    })
+    const Article = document({
+      _type: literal('article'),
+      title: string(),
+      get body() {
+        return portableText({
+          block: block({annotation: reference(Article)}),
+          element: union([Figure, reference(Article)]),
+        })
+      },
+    })
+    const asset = {_type: 'reference', _ref: 'a'}
+    const value = {
+      _type: 'article',
+      _id: 'a1',
+      title: 'a',
+      body: [
+        {
+          _type: 'block',
+          _key: 'b1',
+          children: [{_type: 'span', _key: 's1', text: 't', marks: ['m1']}],
+          markDefs: [{_type: 'reference', _key: 'm1', _ref: 'a2'}],
+        },
+        {_type: 'reference', _key: 'r1', _ref: 'a3'},
+        {
+          _type: 'image',
+          _key: 'f1',
+          asset,
+          alt: 'figure',
+          caption: [
+            {
+              _type: 'block',
+              _key: 'b2',
+              children: [
+                {_type: 'span', _key: 's2', text: 't', marks: ['m2']},
+                {_type: 'image', _key: 'f2', asset, alt: 'inline', caption: []},
+              ],
+              markDefs: [
+                {
+                  _type: 'file',
+                  _key: 'm2',
+                  asset,
+                  title: 'note',
+                  related: [{_type: 'reference', _key: 'r2', _ref: 'a4'}],
+                },
+              ],
+            },
+            {
+              _type: 'file',
+              _key: 'a1',
+              asset,
+              title: 'attachment',
+              related: [
+                {
+                  _type: 'file',
+                  _key: 'a2',
+                  asset,
+                  title: 'nested',
+                  related: [],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+    expect(parse(Article, value)).toEqual({ok: true, value})
+
+    const figure = value.body[2]!
+    const invalid = {
+      ...value,
+      body: [
+        value.body[0],
+        value.body[1],
+        {
+          ...figure,
+          caption: [
+            {
+              _type: 'image',
+              _key: 'f3',
+              asset,
+              alt: 1,
+              caption: [],
+            },
+          ],
+        },
+      ],
+    }
+    const result = parse(Article, invalid)
+    expect(result.ok).toBe(false)
+    expect(!result.ok && result.error.issues).toContainEqual(
+      expect.objectContaining({
+        code: 'INVALID_TYPE',
+        path: [
+          'body',
+          {_key: 'f1', index: 2},
+          'caption',
+          {_key: 'f3', index: 0},
+          'alt',
+        ],
+      }),
+    )
   })
 })

@@ -414,7 +414,19 @@ export type SanityReferenceTarget =
   | SanityDocumentKind
   | SanityType<SanityDocumentValue>
 
-/** Constraint for the members of an object union */
+/**
+ * Constraint for what Portable Text allows besides blocks and spans: the
+ * `element` of `portableText()` and the `inline` and `annotation` options of
+ * `block()`. Matches by `typeName`, see the top of this file.
+ */
+export type SanityPortableTextMember =
+  | SanityTypedObject
+  | (SanityType & {typeName: 'reference' | 'image' | 'file'})
+
+/**
+ * Constraint for the members of an object union. Matches by `typeName`, see
+ * the top of this file.
+ */
 export type SanityObjectUnionMemberKind =
   | SanityTypedObject
   | (SanityType & {typeName: 'reference' | 'block' | 'image' | 'file'})

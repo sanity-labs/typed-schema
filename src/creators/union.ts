@@ -10,17 +10,14 @@ import {
 } from '../asserters'
 import {
   type OutputOf,
-  type SanityAsset,
-  type SanityBlock,
   type SanityKind,
   type SanityLiteral,
   type SanityNever,
   type SanityObjectUnion,
+  type SanityObjectUnionMemberKind,
   type SanityPrimitive,
   type SanityPrimitiveUnion,
-  type SanityReference,
   type SanityType,
-  type SanityTypedObject,
   type SchemaAnnotations,
 } from '../defs'
 import {defineType} from '../helpers/defineType'
@@ -30,13 +27,7 @@ import {
 } from '../helpers/schemaErrors'
 
 export type FlattenUnionTypes<
-  T extends
-    | SanityNever
-    | SanityTypedObject
-    | SanityReference
-    | SanityObjectUnion<any>
-    | SanityBlock
-    | SanityAsset,
+  T extends SanityObjectUnionMemberKind | SanityObjectUnion<any>,
 > =
   T extends SanityObjectUnion<infer UnionTypes>
     ? UnionTypes extends SanityObjectUnion<any>
@@ -58,13 +49,7 @@ export type FlattenPrimitiveUnionTypes<
     : T
 
 export function union<
-  UnionTypes extends
-    | SanityNever
-    | SanityTypedObject
-    | SanityReference
-    | SanityBlock
-    | SanityAsset
-    | SanityObjectUnion<any>,
+  UnionTypes extends SanityObjectUnionMemberKind | SanityObjectUnion<any>,
 >(
   unionTypes: UnionTypes[],
   annotations?: NoInfer<
