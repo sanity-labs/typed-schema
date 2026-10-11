@@ -6,7 +6,7 @@ import {
   isObjectUnionSchema,
   isOptionalSchema,
 } from '../asserters'
-import {objectArray} from '../creators/array'
+import {getUnkeyedSchema, objectArray} from '../creators/array'
 import {document} from '../creators/document'
 import {lazy} from '../creators/lazy'
 import {object} from '../creators/object'
@@ -69,7 +69,21 @@ function requiredShape(shape: SanityObjectShape): SanityObjectShape {
   )
 }
 
+// Cached by input schema, so transforming a recursive schema gives a recursive
+// schema: resolving a transformed getter field returns the transformed schema
+// it is part of, not a fresh copy at every level
+const cache = new WeakMap<SanityType, SanityType>()
+
 export function deepRequired<S extends SanityType>(schema: S): DeepRequired<S> {
+  let result = cache.get(schema)
+  if (result === undefined) {
+    result = transform(schema)
+    cache.set(schema, result)
+  }
+  return result as any
+}
+
+function transform(schema: SanityType): SanityType {
   if (isOptionalSchema(schema)) {
     return deepRequired(schema.type) as any
   }
@@ -89,7 +103,11 @@ export function deepRequired<S extends SanityType>(schema: S): DeepRequired<S> {
     ) as any
   }
   if (isObjectArraySchema(schema)) {
-    return objectArray(deepRequired(schema.element) as any) as any
+    // Transform the schema the element was copied from, not the copy, so a
+    // recursive element maps to the cached result it is part of
+    return objectArray(
+      deepRequired(getUnkeyedSchema(schema.element)) as any,
+    ) as any
   }
   return schema as any
 }

@@ -1,6 +1,7 @@
 import {describe, expect, test} from 'vitest'
 
-import {array} from '../creators/array'
+import {isObjectArraySchema} from '../asserters'
+import {array, getUnkeyedSchema} from '../creators/array'
 import {document} from '../creators/document'
 import {file} from '../creators/file'
 import {image} from '../creators/image'
@@ -11,6 +12,8 @@ import {optional} from '../creators/optional'
 import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
+import {type SanityObjectArray} from '../defs'
+import {getLazySchema} from '../helpers/getLazySchema'
 import {verifyUniqueTypeNames} from '../helpers/verifyUniqueTypeNames'
 import {parse, safeParse} from '../parse'
 import {deepPartial} from '../utils/deepPartial'
@@ -151,6 +154,19 @@ describe('recursive schemas declared with getters', () => {
 
   test('schema walkers terminate', () => {
     expect(() => verifyUniqueTypeNames(Folder)).not.toThrow()
+    expect(() => verifyUniqueTypeNames(deepPartial(Folder))).not.toThrow()
+    expect(() => verifyUniqueTypeNames(deepRequired(Node))).not.toThrow()
+  })
+
+  test('deepPartial and deepRequired keep recursive schemas recursive', () => {
+    const Partial = deepPartial(Category)
+    expect(deepPartial(Category)).toBe(Partial)
+    const subcategories = getLazySchema(Partial.shape.subcategories.type)
+    expect(isObjectArraySchema(subcategories)).toBe(true)
+    expect(getUnkeyedSchema((subcategories as SanityObjectArray).element)).toBe(
+      Partial,
+    )
+    expect(deepRequired(Node)).toBe(deepRequired(Node))
   })
 
   test('deepPartial and deepRequired apply at every depth', () => {
