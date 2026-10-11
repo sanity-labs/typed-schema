@@ -1,12 +1,18 @@
 import {
+  type OutputOf,
   type SanityDocumentKind,
   type SanityLazy,
   type SanityKind,
   type SanityReference,
   type SanityReferenceTarget,
   type SanityType,
+  type SchemaAnnotations,
 } from '../defs'
 import {defineType} from '../helpers/defineType'
+import {
+  type AnnotationsError,
+  type ReferenceTargetError,
+} from '../helpers/schemaErrors'
 import {type SchemaError} from '../helpers/utilTypes'
 import {ReferenceBase, type SanityDocumentValue} from '../shapeDefs'
 
@@ -27,9 +33,11 @@ type AnnotatedSchema<T> =
 // others.
 export function reference<RefType extends SanityDocumentKind>(
   to: RefType,
+  annotations?: NoInfer<SchemaAnnotations<OutputOf<SanityReference<RefType>>>>,
 ): SanityReference<RefType>
 export function reference<RefType extends SanityLazy<SanityDocumentKind>>(
   to: RefType,
+  annotations?: NoInfer<SchemaAnnotations<OutputOf<SanityReference<RefType>>>>,
 ): SanityReference<RefType>
 // A schema annotated by its value (`const Person: SanityType<Person> = ...`)
 // has `typeName: string`. Requiring that, directly or inside `lazy()`, keeps
@@ -37,20 +45,26 @@ export function reference<RefType extends SanityLazy<SanityDocumentKind>>(
 // when they have a `_type`.
 export function reference<RefType extends SanityType<SanityDocumentValue>>(
   to: RefType & AnnotatedSchema<RefType>,
+  annotations?: NoInfer<SchemaAnnotations<OutputOf<SanityReference<RefType>>>>,
 ): SanityReference<RefType>
 // Matches only what the overloads above reject, and its parameter can never be
 // satisfied. TypeScript 7 reports only the last overload's error, which says
 // what is wrong with the target. TypeScript 6 lists every overload's error,
 // ending with this one.
 export function reference<RefType extends SanityKind>(
-  to: RefType & SchemaError<'reference() target must be a document schema'>,
+  to: RefType & SchemaError<ReferenceTargetError<RefType>>,
+  annotations?: AnnotationsError<'reference'>,
 ): never
 export function reference(
   to: SanityReferenceTarget,
+  annotations?: any,
 ): SanityReference<SanityReferenceTarget> {
-  return defineType({
-    typeName: 'reference',
-    referenceType: to,
-    shape: ReferenceBase.shape,
-  })
+  return defineType(
+    {
+      typeName: 'reference',
+      referenceType: to,
+      shape: ReferenceBase.shape,
+    },
+    annotations,
+  )
 }

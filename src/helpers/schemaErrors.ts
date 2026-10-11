@@ -12,10 +12,13 @@ import {
   type SanityAny,
   type SanityAsset,
   type SanityBlock,
+  type SanityDocumentKind,
   type SanityKind,
   type SanityLiteral,
   type SanityNever,
+  type SanityObjectLikeKind,
   type SanityObjectUnion,
+  type SanityObjectUnionKind,
   type SanityPrimitive,
   type SanityPrimitiveUnion,
   type SanityReference,
@@ -161,16 +164,76 @@ export type RequireTypeField<Shape> = '_type' extends keyof Shape
       _type: SchemaError<"document() needs a _type field, e.g. _type: literal('post')">
     }
 
+// Annotations
+
+/**
+ * The message for a call that reaches a creator's catch-all overload with a
+ * valid first argument. The overloads before the catch-all type `examples`
+ * against the schema's value type, so what the catch-all rejects in that case
+ * is the annotations.
+ */
+export type InvalidAnnotations<Creator extends string> =
+  `${Creator}() annotations are invalid: examples must be values of the schema and keys must be title, description, guidelines, examples, deprecated or readOnly`
+
+/**
+ * The `annotations` parameter of a creator's catch-all overload. TypeScript
+ * reports the first argument that fails, so the user sees this message only
+ * when the first parameter accepts the argument, as `union()`'s does for valid
+ * members. The other creators resolve their first parameter's message to
+ * {@link InvalidAnnotations} for a valid argument instead.
+ */
+export type AnnotationsError<Creator extends string> = SchemaError<
+  InvalidAnnotations<Creator>
+>
+
 // array()
 
-/** Says why `Def` cannot be an `array()` element */
+type ValidArrayElement =
+  | SanityObjectLikeKind
+  | SanityObjectUnionKind
+  | SanityPrimitive
+  | SanityPrimitiveUnion
+  | SanityNever
+
+/**
+ * Says why `Def` cannot be an `array()` element, or, for a valid element,
+ * that the annotations are what the catch-all overload rejects
+ */
 export type ArrayElementError<Def> = Def extends {
   typeName: 'objectArray' | 'primitiveArray'
 }
   ? 'array() elements cannot be arrays. Wrap the inner array in an object'
   : Def extends {typeName: 'optional'}
     ? 'array() elements cannot be optional'
-    : 'array() elements must be objects, primitives, references, blocks, images, files or unions of these'
+    : Def extends ValidArrayElement
+      ? InvalidAnnotations<'array'>
+      : 'array() elements must be objects, primitives, references, blocks, images, files or unions of these'
+
+/** Like {@link ArrayElementError}, for `objectArray()` */
+export type ObjectArrayElementError<Def> = Def extends
+  | SanityObjectLikeKind
+  | SanityObjectUnionKind
+  ? InvalidAnnotations<'objectArray'>
+  : 'objectArray() elements must be objects, references, blocks, images, files or unions of these'
+
+/** Like {@link ArrayElementError}, for `primitiveArray()` */
+export type PrimitiveArrayElementError<Def> = Def extends
+  | SanityPrimitive
+  | SanityLiteral
+  | SanityPrimitiveUnion
+  | SanityNever
+  ? InvalidAnnotations<'primitiveArray'>
+  : 'primitiveArray() elements must be primitives, literals or unions of these'
+
+// reference()
+
+/**
+ * Says why `Def` cannot be a `reference()` target, or, for a valid target,
+ * that the annotations are what the catch-all overload rejects
+ */
+export type ReferenceTargetError<Def> = Def extends SanityDocumentKind
+  ? InvalidAnnotations<'reference'>
+  : 'reference() target must be a document schema'
 
 // union()
 
@@ -257,6 +320,8 @@ export type CheckUnionMembers<Members extends readonly unknown[]> =
  * Each option of `Options` with an error, mapped to a `SchemaError` with it.
  * If no option has one, the whole options object is `SchemaError<Fallback>`,
  * so a catch-all overload never accepts a call the overloads before it reject.
+ * The fallback also covers a call with valid options and invalid annotations:
+ * the options are the first argument, so their error is the one reported.
  */
 type OptionErrors<
   Options,
@@ -302,7 +367,7 @@ type BlockOptionError<Option, Value> = [Value] extends [undefined]
 export type BlockOptionErrors<Options> = OptionErrors<
   Options,
   {[Option in keyof Options]: BlockOptionError<Option, Options[Option]>},
-  'Invalid block() options'
+  'Invalid block() options or annotations'
 >
 
 type PortableTextOptionError<Option, Value> = Option extends 'block'
@@ -326,5 +391,5 @@ export type PortableTextOptionErrors<Options> = OptionErrors<
   {
     [Option in keyof Options]: PortableTextOptionError<Option, Options[Option]>
   },
-  "portableText() needs a 'block' and an 'element' option"
+  "Invalid portableText() options or annotations: it needs a 'block' and an 'element' option"
 >

@@ -25,6 +25,7 @@ import {
   type SanityOptional,
   type SanityType,
 } from '../defs'
+import {inheritAnnotations} from '../helpers/annotations'
 import {getLazySchema} from '../helpers/getLazySchema'
 import {type Combine, type ExtendsNever} from '../helpers/utilTypes'
 
@@ -111,25 +112,33 @@ function transform(schema: SanityType): SanityType {
   }
   if (isLazySchema(schema)) {
     // Stays deferred, so recursive schemas don't recurse forever
-    return lazy(() => deepPartial(getLazySchema(schema))) as any
+    return inheritAnnotations(
+      lazy(() => deepPartial(getLazySchema(schema))),
+      schema,
+    )
   }
   if (isDocumentSchema(schema)) {
-    return document(partialShape(schema.shape) as any) as any
+    return inheritAnnotations(
+      document(partialShape(schema.shape) as any),
+      schema,
+    )
   }
   if (isObjectSchema(schema)) {
-    return object(partialShape(schema.shape)) as any
+    return inheritAnnotations(object(partialShape(schema.shape)), schema)
   }
   if (isObjectUnionSchema(schema)) {
-    return union(
-      schema.union.map(unionSchema => deepPartial(unionSchema)) as any,
-    ) as any
+    return inheritAnnotations(
+      union(schema.union.map(unionSchema => deepPartial(unionSchema)) as any),
+      schema,
+    )
   }
   if (isObjectArraySchema(schema)) {
     // Transform the schema the element was copied from, not the copy, so a
     // recursive element maps to the cached result it is part of
-    return objectArray(
-      deepPartial(getUnkeyedSchema(schema.element)) as any,
-    ) as any
+    return inheritAnnotations(
+      objectArray(deepPartial(getUnkeyedSchema(schema.element)) as any),
+      schema,
+    )
   }
   return schema as any
 }

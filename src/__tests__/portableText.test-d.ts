@@ -121,7 +121,7 @@ describe('invalid portableText options', () => {
     expectTypeOf<
       PortableTextOptionErrors<{block: SanityBlock}>
     >().toEqualTypeOf<
-      SchemaError<"portableText() needs a 'block' and an 'element' option">
+      SchemaError<"Invalid portableText() options or annotations: it needs a 'block' and an 'element' option">
     >()
   })
 })

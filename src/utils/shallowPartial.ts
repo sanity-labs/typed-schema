@@ -10,6 +10,7 @@ import {
   type SanityObjectShape,
   type SanityObjectType,
 } from '../defs'
+import {inheritAnnotations} from '../helpers/annotations'
 import {type Combine} from '../helpers/utilTypes'
 import {type MaybeOptionalType} from './deepPartial'
 
@@ -53,9 +54,10 @@ export function shallowPartial<S extends SanityObject | SanityDocument>(
         : optional(propSchema),
     ]),
   )
-  return (
+  return inheritAnnotations(
     isDocumentSchema(schema)
       ? document(partialShape as any)
-      : object(partialShape)
+      : object(partialShape),
+    schema,
   ) as any
 }

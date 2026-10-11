@@ -9,6 +9,7 @@ import {
   type SanityObjectShape,
   type SanityObjectType,
 } from '../defs'
+import {inheritAnnotations} from '../helpers/annotations'
 import {type SanityDocumentShape} from '../shapeDefs'
 import {required, type SanityRequired} from './required'
 
@@ -39,9 +40,11 @@ export function shallowRequired<S extends SanityObject | SanityDocument>(
       required(propSchema),
     ]),
   )
-  return (
+  return inheritAnnotations(
     isDocumentSchema(schema)
       ? document(requiredShape as any)
-      : object(requiredShape)
+      : object(requiredShape),
+    schema,
+    {examples: false},
   ) as any
 }

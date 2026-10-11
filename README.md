@@ -55,6 +55,7 @@ if (result.ok) {
   - [Partial and required variants](#partial-and-required-variants)
   - [Document lifecycles](#document-lifecycles)
   - [Recursive schemas](#recursive-schemas)
+  - [Describing fields and documents](#describing-fields-and-documents)
   - [Loading documents and references](#loading-documents-and-references)
   - [Unique type names for GraphQL](#unique-type-names-for-graphql)
   - [Using a typed schema in Sanity Studio](#using-a-typed-schema-in-sanity-studio)
@@ -65,6 +66,7 @@ if (result.ok) {
   - [Arrays, unions and references](#arrays-unions-and-references)
   - [Portable Text](#portable-text)
   - [Modifiers](#modifiers)
+  - [Annotations](#annotations)
   - [Schema transforms](#schema-transforms)
   - [Parsing](#parsing)
   - [Lifecycle helpers](#lifecycle-helpers)
@@ -478,6 +480,98 @@ const Person: SanityDocumentType<Person> = document({
 })
 ```
 
+### Describing fields and documents
+
+A schema says what shape a value has. Annotations say what the value means and how to write a good one. Every creator takes them as its last argument:
+
+```ts
+import {
+  array,
+  document,
+  enums,
+  getAnnotations,
+  literal,
+  number,
+  optional,
+  string,
+  validateExamples,
+} from '@sanity-labs/typed-schema'
+
+export const Pet = document(
+  {
+    _type: literal('pet'),
+    name: string({description: 'Display name shown on the adoption card'}),
+    species: enums(['dog', 'cat'], {description: 'Picks the care checklist'}),
+    birthYear: optional(
+      number({
+        min: 1990,
+        step: 1,
+        title: 'Birth year',
+        description: 'Four-digit year. Leave out if unknown',
+        examples: [2019],
+      }),
+    ),
+    tags: array(string(), {
+      description: 'Lowercase keywords for search',
+      guidelines: 'No spaces, no duplicates',
+      examples: [['friendly', 'house-trained']],
+    }),
+    nickname: optional(string({deprecated: 'Use `name` instead'})),
+    slug: string({readOnly: true, description: 'Derived from the name'}),
+  },
+  {
+    title: 'Pet',
+    description: 'An animal available for adoption',
+    examples: [
+      {_type: 'pet', name: 'Fido', species: 'dog', tags: [], slug: 'fido'},
+    ],
+  },
+)
+
+getAnnotations(Pet.shape.name)?.description // 'Display name shown on the adoption card'
+validateExamples(Pet) // {ok: true, value: Pet}, or {ok: false, error: ExampleError}
+```
+
+Annotations describe the content model, not any one consumer of it. The set of keys is closed and follows the JSON Schema annotation vocabulary, plus `guidelines`. `title` and `description` say what the value is. `guidelines` say how to write a good one, for whoever authors it. `examples` are valid values. `deprecated` gives the reason and the replacement. `readOnly` marks a value set by the system, such as a slug derived from the name, which editors and agents should not write. There are no keys for how a value is rendered, which input edits it or which tool reads it, so the same annotations serve a form, a generating agent, generated documentation and a test suite.
+
+`examples` are checked against the inferred type, so a wrong shape, a missing `_key` on an array item or a value outside an enum is a compile error. Constraints the type system cannot see, such as `min` on a number or the format of a `date`, are caught by `validateExamples(schema)`, which returns a result like `parse` does, or `validateExamplesOrThrow(schema)`; run one of them in a test.
+
+Annotations belong to the schema node they are given to, and a field's annotations are those of the node in that position. An `array()` and its element are two nodes, so each can have its own:
+
+```ts
+const Address = object({street: string(), city: string()}, {title: 'Address'})
+
+const Order = document({
+  _type: literal('order'),
+  billing: Address, // the field shows Address's title
+  shipping: object(Address.shape, {title: 'Shipping address'}), // a new node, with its own
+  tags: array(string({title: 'Tag'}), {description: 'Keywords'}),
+})
+```
+
+A shared schema used as a field brings its annotations with it: `toClassicSchema` gives the `billing` field the title "Address", where a Studio would otherwise derive one from the field name. To describe a use of a shared schema differently, build a new node from its shape, as `shipping` does; that replaces the annotations rather than merging them.
+
+Annotations are plain data and survive `extend`, `pick`, `omit`, `rename` and the partial/required transforms, with one exception: a transform that changes the value type (`extend`, `rename`, `shallowRequired`, `deepRequired`) drops `examples`, since the source's examples are not values of the result. `getAnnotations(schema)` reads annotations back, looking through `optional()` and `lazy()`, and `toClassicSchema` maps `title`, `description`, `deprecated` and `readOnly` onto the classic field definitions.
+
+Any text can be given per locale. `getAnnotations(schema, {locale: 'nb', fallback: 'en'})` resolves it to a string, and so does `toClassicSchema(schema, {locale})`:
+
+```ts
+string({description: {en: 'The event title', nb: 'Tittelen på arrangementet'}})
+```
+
+The library does not know which locales a project writes, so a locale map accepts any keys. To require your own set, narrow `AnnotationText` where the text is written; a map with a missing or misspelled locale is then a compile error:
+
+```ts
+import {type AnnotationText, string} from '@sanity-labs/typed-schema'
+
+type Text = AnnotationText<'en' | 'nb'>
+const t = (text: Text) => text
+
+string({
+  description: t({en: 'The event title', nb: 'Tittelen på arrangementet'}),
+})
+```
+
 ### Loading documents and references
 
 `createLoader(fetch)` wraps a function that fetches a document by id and returns typed `loadDocument` and `loadReference` helpers. The library does not talk to the Sanity API itself; you supply the fetch, for example with `@sanity/client`:
@@ -540,7 +634,7 @@ const Post = verifyUniqueTypeNames(
 
 ### Using a typed schema in Sanity Studio
 
-`toClassicSchema(documentSchema)` converts a document schema to the array of schema type definitions a Studio config expects. It is a proof of concept: it does not emit referenced document types, required-ness, or Portable Text styles and decorators. Recursive object types become named top-level types, referred to by their `_type`. `toClassicSchema()` throws on a recursive object type without a `_type` literal. Treat the result as a starting point. `examples/compat-studio` runs a Studio on it.
+`toClassicSchema(documentSchema, {locale?})` converts a document schema to the array of schema type definitions a Studio config expects, and maps `title`, `description`, `deprecated` and `readOnly` from the [annotations](#describing-fields-and-documents) onto the classic definitions. It is a proof of concept: it does not emit referenced document types, required-ness, or Portable Text styles and decorators. Recursive object types become named top-level types, referred to by their `_type`. `toClassicSchema()` throws on a recursive object type without a `_type` literal. Treat the result as a starting point. `examples/compat-studio` runs a Studio on it.
 
 ```ts
 import {
@@ -663,6 +757,19 @@ type Body = Infer<typeof Body>
 | `optional(s)`   | The field may be `undefined` or absent                         |
 | `required(s)`   | Removes `optional()`, however many times it was applied        |
 | `lazy(() => s)` | Defers evaluation; see [Recursive schemas](#recursive-schemas) |
+
+### Annotations
+
+Every creator except `optional()` and `never()` takes a `SchemaAnnotations` object as its last argument; `number()` and its aliases (`safeint()`, `int32()`, ...) take it together with the constraints. See [Describing fields and documents](#describing-fields-and-documents).
+
+| Export                                    | Notes                                                                                                                           |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `SchemaAnnotations<Output>`               | `{title?, description?, guidelines?, examples?, deprecated?, readOnly?}`. Text is a string or a locale map                      |
+| `AnnotationText<Locale?>`                 | `string \| {[locale]: string}`. Narrow `Locale` to require a project's locales                                                  |
+| `getAnnotations(s, {locale?, fallback?})` | The annotations with text resolved to strings, or `undefined`. Looks through `optional()` and `lazy()`, outer wins              |
+| `validateExamples(s)`                     | Parses every `examples` entry in the tree against its schema; returns `{ok: true, value}` or `{ok: false, error: ExampleError}` |
+| `validateExamplesOrThrow(s)`              | Same, returning the schema and throwing the `ExampleError` instead                                                              |
+| `resolveAnnotationText(text, opts)`       | Resolves one `AnnotationText` value                                                                                             |
 
 ### Schema transforms
 

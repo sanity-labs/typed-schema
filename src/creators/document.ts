@@ -1,6 +1,8 @@
 import {
+  type OutputOf,
   type SanityDocument,
   type SanityObjectShape,
+  type SchemaAnnotations,
   type WithDocumentShape,
 } from '../defs'
 import {deferGetters} from '../helpers/deferGetters'
@@ -24,9 +26,17 @@ type DocumentShapeInput<Shape> = Shape &
 
 export function document<
   Shape extends {[key: string]: any} = SanityObjectShape,
->(shape: DocumentShapeInput<Shape>): SanityDocument<WithDocumentShape<Shape>> {
-  return defineType({
-    typeName: 'document',
-    shape: {...DocumentBase.shape, ...deferGetters(shape)},
-  }) as any
+>(
+  shape: DocumentShapeInput<Shape>,
+  annotations?: NoInfer<
+    SchemaAnnotations<OutputOf<SanityDocument<WithDocumentShape<Shape>>>>
+  >,
+): SanityDocument<WithDocumentShape<Shape>> {
+  return defineType(
+    {
+      typeName: 'document',
+      shape: {...DocumentBase.shape, ...deferGetters(shape)},
+    },
+    annotations,
+  ) as any
 }

@@ -24,6 +24,7 @@ import {
   type SanityOptional,
   type SanityType,
 } from '../defs'
+import {inheritAnnotations} from '../helpers/annotations'
 import {getLazySchema} from '../helpers/getLazySchema'
 
 export type DeepRequiredShape<S> = S extends SanityObjectShape
@@ -89,25 +90,39 @@ function transform(schema: SanityType): SanityType {
   }
   if (isLazySchema(schema)) {
     // Stays deferred, so recursive schemas don't recurse forever
-    return lazy(() => deepRequired(getLazySchema(schema))) as any
+    return inheritAnnotations(
+      lazy(() => deepRequired(getLazySchema(schema))),
+      schema,
+      {examples: false},
+    )
   }
   if (isDocumentSchema(schema)) {
-    return document(requiredShape(schema.shape) as any) as any
+    return inheritAnnotations(
+      document(requiredShape(schema.shape) as any),
+      schema,
+      {examples: false},
+    )
   }
   if (isObjectSchema(schema)) {
-    return object(requiredShape(schema.shape)) as any
+    return inheritAnnotations(object(requiredShape(schema.shape)), schema, {
+      examples: false,
+    })
   }
   if (isObjectUnionSchema(schema)) {
-    return union(
-      schema.union.map(unionSchema => deepRequired(unionSchema)) as any,
-    ) as any
+    return inheritAnnotations(
+      union(schema.union.map(unionSchema => deepRequired(unionSchema)) as any),
+      schema,
+      {examples: false},
+    )
   }
   if (isObjectArraySchema(schema)) {
     // Transform the schema the element was copied from, not the copy, so a
     // recursive element maps to the cached result it is part of
-    return objectArray(
-      deepRequired(getUnkeyedSchema(schema.element)) as any,
-    ) as any
+    return inheritAnnotations(
+      objectArray(deepRequired(getUnkeyedSchema(schema.element)) as any),
+      schema,
+      {examples: false},
+    )
   }
   return schema as any
 }

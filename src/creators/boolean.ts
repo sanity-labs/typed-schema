@@ -1,6 +1,8 @@
-import {type SanityBoolean} from '../defs'
+import {type SanityBoolean, type SchemaAnnotations} from '../defs'
 import {defineType} from '../helpers/defineType'
 
-export function boolean(): SanityBoolean {
-  return defineType({typeName: 'boolean'})
+export function boolean(
+  annotations?: SchemaAnnotations<boolean>,
+): SanityBoolean {
+  return defineType({typeName: 'boolean'}, annotations)
 }

@@ -6,6 +6,7 @@ import {
   type SanityObjectShape,
   type SanityObjectType,
 } from '../defs'
+import {withoutExamples} from '../helpers/annotations'
 import {deferGetters} from '../helpers/deferGetters'
 import {type FieldErrors} from '../helpers/schemaErrors'
 import {type Combine, type Flatten} from '../helpers/utilTypes'
@@ -47,5 +48,11 @@ export function extend<
       FieldErrors<Shape, Obj extends SanityDocument ? '_id' | '_type' : '_type'>
     >,
 ): Extends<Obj, Shape> {
-  return {...source, shape: {...source.shape, ...deferGetters(shape)}} as any
+  const {annotations: _annotations, ...rest} = source
+  const annotations = withoutExamples(source.annotations)
+  return {
+    ...rest,
+    shape: {...source.shape, ...deferGetters(shape)},
+    ...(annotations && {annotations}),
+  } as any
 }

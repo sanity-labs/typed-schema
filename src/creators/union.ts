@@ -9,6 +9,7 @@ import {
   isTypedObjectSchema,
 } from '../asserters'
 import {
+  type OutputOf,
   type SanityAsset,
   type SanityBlock,
   type SanityKind,
@@ -20,9 +21,13 @@ import {
   type SanityReference,
   type SanityType,
   type SanityTypedObject,
+  type SchemaAnnotations,
 } from '../defs'
 import {defineType} from '../helpers/defineType'
-import {type CheckUnionMembers} from '../helpers/schemaErrors'
+import {
+  type AnnotationsError,
+  type CheckUnionMembers,
+} from '../helpers/schemaErrors'
 
 export type FlattenUnionTypes<
   T extends
@@ -60,7 +65,14 @@ export function union<
     | SanityBlock
     | SanityAsset
     | SanityObjectUnion<any>,
->(unionTypes: UnionTypes[]): SanityObjectUnion<FlattenUnionTypes<UnionTypes>>
+>(
+  unionTypes: UnionTypes[],
+  annotations?: NoInfer<
+    SchemaAnnotations<
+      OutputOf<SanityObjectUnion<FlattenUnionTypes<UnionTypes>>>
+    >
+  >,
+): SanityObjectUnion<FlattenUnionTypes<UnionTypes>>
 export function union<
   UnionTypes extends
     | SanityNever
@@ -69,6 +81,11 @@ export function union<
     | SanityPrimitiveUnion<any>,
 >(
   unionTypes: UnionTypes[],
+  annotations?: NoInfer<
+    SchemaAnnotations<
+      OutputOf<SanityPrimitiveUnion<FlattenPrimitiveUnionTypes<UnionTypes>>>
+    >
+  >,
 ): SanityPrimitiveUnion<FlattenPrimitiveUnionTypes<UnionTypes>>
 // Matches only what the overloads above reject, and its parameter can never be
 // satisfied. TypeScript 7 reports only the last overload's error, which says
@@ -76,8 +93,9 @@ export function union<
 // ending with this one.
 export function union<const Members extends readonly SanityKind[]>(
   unionTypes: Members & NoInfer<CheckUnionMembers<Members>>,
+  annotations?: AnnotationsError<'union'>,
 ): never
-export function union(unionTypes: SanityType[]): unknown {
+export function union(unionTypes: SanityType[], annotations?: any): unknown {
   if (
     unionTypes.every(
       schema =>
@@ -87,10 +105,13 @@ export function union(unionTypes: SanityType[]): unknown {
         isPrimitiveUnionSchema(schema),
     )
   ) {
-    return defineType({
-      typeName: 'primitiveUnion',
-      union: unionTypes.filter(schema => !isNeverSchema(schema)),
-    })
+    return defineType(
+      {
+        typeName: 'primitiveUnion',
+        union: unionTypes.filter(schema => !isNeverSchema(schema)),
+      },
+      annotations,
+    )
   }
 
   if (
@@ -103,10 +124,13 @@ export function union(unionTypes: SanityType[]): unknown {
         isAssetSchema(schema),
     )
   ) {
-    return defineType({
-      typeName: 'union',
-      union: unionTypes.filter(schema => !isNeverSchema(schema)),
-    })
+    return defineType(
+      {
+        typeName: 'union',
+        union: unionTypes.filter(schema => !isNeverSchema(schema)),
+      },
+      annotations,
+    )
   }
 
   throw new Error(
