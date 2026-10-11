@@ -3,7 +3,7 @@
 `toClassicSchema(documentSchema, {locale?, fallback?})` converts a document schema to the array of schema type definitions a Studio config expects. It maps `title`, `description`, `deprecated` and `readOnly` from the [annotations](/guide/annotations) onto the classic definitions, resolving translated text to `locale`, or to `fallback` when `locale` has no entry.
 
 ::: warning Proof of concept
-`toClassicSchema` does not emit referenced document types, which fields are required, or Portable Text styles and decorators. Treat the result as a starting point.
+`toClassicSchema` does not emit referenced document types, which fields are required, or Portable Text styles, decorators and annotations. Treat the result as a starting point.
 :::
 
 Recursive object types become named top-level types, referred to by their `_type`. `toClassicSchema()` throws on a recursive object type without a `_type` literal.

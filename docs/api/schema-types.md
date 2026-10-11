@@ -87,10 +87,12 @@ See [Arrays and `_key`](/guide/arrays) for how keys are added.
 
 ## Portable Text
 
-| Creator                          | Notes                                                                                                                                                                                                                   |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `block(options)`                 | One Portable Text block. Options: `style`, `list`, `decorator` (literals or unions of literals), `inline` and `annotation` (typed objects, references, images, files or unions of these), `_type` (defaults to `block`) |
-| `portableText({block, element})` | `array(union([block, element]))`: blocks plus the block-level objects allowed between them (typed objects, references, images, files or unions of these)                                                                |
+| Creator                          | Notes                                                                                                                                                                 |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `block(options)`                 | One Portable Text block. Options: `style`, `list`, `decorator` (literals or unions of literals), `inline` and `annotation` (see below), `_type` (defaults to `block`) |
+| `portableText({block, element})` | `array(union([block, element]))`: blocks plus the block-level objects allowed between them                                                                            |
+
+`inline`, `annotation` and `element` each take typed objects, references, images, files or unions of these.
 
 The inferred block type matches what Sanity stores: `style`, `listItem`, `level` and `markDefs` are optional, `children` holds spans (`{_type: 'span'; text; marks: string[]}`) and inline objects. Unconfigured `style` and `list` accept any string.
 
