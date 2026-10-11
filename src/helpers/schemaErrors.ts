@@ -236,7 +236,10 @@ export type ReferenceTargetError<Def> = Def extends SanityDocumentKind
 
 // union()
 
-/** Matches by `typeName`, so recursive members are accepted, see `defs.ts` */
+/**
+ * Matches by `typeName` rather than by output, so members declared with
+ * getters are accepted; see `defs.ts`
+ */
 type ObjectUnionMember =
   | Exclude<SanityObjectUnionMemberKind, SanityNever>
   | SanityObjectUnionKind
@@ -353,7 +356,7 @@ type BlockOptionError<Option, Value> = [Value] extends [undefined]
           | undefined,
         ]
         ? never
-        : `block() option '${Option}' must be a typed object, reference, image, file or a union() of these`
+        : `block() option '${Option}' must be an object() with a _type literal, a reference(), image(), file() or a union() of these`
       : Option extends '_type'
         ? [Value] extends [SanityLiteral<string> | undefined]
           ? never
@@ -380,7 +383,7 @@ type PortableTextOptionError<Option, Value> = Option extends 'block'
         | SanityNever,
       ]
       ? never
-      : "portableText() option 'element' must be a typed object, reference, image, file, a union() of these or never()"
+      : "portableText() option 'element' must be an object() with a _type literal, a reference(), image(), file(), a union() of these or never()"
     : `'${Option & string}' is not a portableText() option`
 
 /**

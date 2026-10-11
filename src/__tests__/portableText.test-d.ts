@@ -162,7 +162,7 @@ describe('invalid portableText options', () => {
   test('are rejected', () => {
     // @ts-expect-error - block must be a block() schema
     portableText({block: Link, element: Link})
-    // @ts-expect-error - element must be a typed object
+    // @ts-expect-error - element cannot be a primitive
     portableText({block: block({}), element: string()})
 
     // @ts-expect-error - element cannot be another block
@@ -181,7 +181,7 @@ describe('invalid portableText options', () => {
       }>
     >().toEqualTypeOf<{
       block: SchemaError<"portableText() option 'block' must be a block() schema">
-      element: SchemaError<"portableText() option 'element' must be a typed object, reference, image, file, a union() of these or never()">
+      element: SchemaError<"portableText() option 'element' must be an object() with a _type literal, a reference(), image(), file(), a union() of these or never()">
     }>()
     expectTypeOf<
       PortableTextOptionErrors<{block: SanityBlock}>

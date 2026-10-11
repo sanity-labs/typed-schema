@@ -343,7 +343,9 @@ function objectToClassicSchema<S extends SanityObjectLike>(
         .some(entry => entry.name !== undefined)
     ) {
       throw new Error(
-        `Cannot convert recursive ${schema.typeName} schema: it needs a \`_type\` literal to become a named type`,
+        isAssetSchema(schema)
+          ? `Cannot convert recursive ${schema.typeName} schema: an image or file cannot become a named type, so the cycle must pass through an object with a \`_type\` literal or a reference()`
+          : `Cannot convert recursive ${schema.typeName} schema: it needs a \`_type\` literal to become a named type`,
       )
     }
   } else {

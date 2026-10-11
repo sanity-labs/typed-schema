@@ -138,7 +138,7 @@ export type BlockOptions<
   decorator?: DecoratorType
   /** Typed objects, references, images or files allowed inline among the spans */
   inline?: InlineType
-  /** Typed objects, references, images or files allowed in `markDefs` (annotations referenced from span marks by `_key`) */
+  /** Typed objects, references, images or files allowed in `markDefs` (annotations, which span marks refer to by `_key`) */
   annotation?: AnnotationType
 }
 

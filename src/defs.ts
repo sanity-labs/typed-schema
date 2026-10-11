@@ -417,15 +417,17 @@ export type SanityReferenceTarget =
 /**
  * Constraint for what Portable Text allows besides blocks and spans: the
  * `element` of `portableText()` and the `inline` and `annotation` options of
- * `block()`. Matches by `typeName`, see the top of this file.
+ * `block()`. Matches by `typeName`, and for objects by the `_type` field's
+ * schema, never by output; see the top of this file.
  */
 export type SanityPortableTextMember =
   | SanityTypedObject
   | (SanityType & {typeName: 'reference' | 'image' | 'file'})
 
 /**
- * Constraint for the members of an object union. Matches by `typeName`, see
- * the top of this file.
+ * Constraint for the members of an object union. Matches by `typeName`, and
+ * for objects by the `_type` field's schema, never by output; see the top of
+ * this file.
  */
 export type SanityObjectUnionMemberKind =
   | SanityTypedObject

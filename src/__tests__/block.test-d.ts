@@ -129,7 +129,7 @@ describe('invalid block options', () => {
     expectTypeOf<
       BlockOptionErrors<{inline: SanityObject<{foo: SanityString}>}>
     >().toEqualTypeOf<{
-      inline: SchemaError<"block() option 'inline' must be a typed object, reference, image, file or a union() of these">
+      inline: SchemaError<"block() option 'inline' must be an object() with a _type literal, a reference(), image(), file() or a union() of these">
     }>()
     expectTypeOf<
       BlockOptionErrors<{styles: SanityLiteral<'h1'>}>
