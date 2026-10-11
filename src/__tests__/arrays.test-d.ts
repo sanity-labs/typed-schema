@@ -65,7 +65,7 @@ describe('arrays of object-like types', () => {
     expectTypeOf(Refs.typeName).toEqualTypeOf<'objectArray'>()
     expectTypeOf<Infer<typeof Refs>[number]['_key']>().toEqualTypeOf<string>()
 
-    const Images = array(image({}))
+    const Images = array(image())
     expectTypeOf(Images.typeName).toEqualTypeOf<'objectArray'>()
     expectTypeOf<Infer<typeof Images>[number]['_key']>().toEqualTypeOf<string>()
   })

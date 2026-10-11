@@ -24,7 +24,7 @@ describe('arrays of object-like types are keyed object arrays', () => {
   })
 
   test('array of images', () => {
-    const Images = array(image({}))
+    const Images = array(image())
     expect(Images.typeName).toBe('objectArray')
     const value = [
       {
@@ -38,7 +38,7 @@ describe('arrays of object-like types are keyed object arrays', () => {
 
   test('array of a union containing non-object types', () => {
     const Items = array(
-      union([object({_type: literal('note'), text: string()}), image({})]),
+      union([object({_type: literal('note'), text: string()}), image()]),
     )
     expect(Items.typeName).toBe('objectArray')
     const value = [

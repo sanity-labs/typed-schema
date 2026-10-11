@@ -4,7 +4,7 @@ import {image} from '../creators/image'
 import {string} from '../creators/string'
 import {safeParse} from '../parse'
 
-const PlainImage = image({})
+const PlainImage = image()
 
 const CustomImage = image({
   caption: string(),
@@ -54,6 +54,21 @@ describe('image type', () => {
         },
       }
     `)
+  })
+  test('without a shape, unknown fields are stripped', () => {
+    expect(
+      safeParse(image(), {
+        _type: 'image',
+        asset: {_type: 'reference', _ref: '123'},
+        caption: 'not declared',
+      }),
+    ).toEqual({
+      status: 'ok',
+      value: {_type: 'image', asset: {_type: 'reference', _ref: '123'}},
+    })
+  })
+  test('without a shape is the same schema as an empty shape', () => {
+    expect(JSON.stringify(image())).toEqual(JSON.stringify(image({})))
   })
   test('errors', () => {
     expect(

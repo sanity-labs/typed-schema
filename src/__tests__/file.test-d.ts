@@ -12,7 +12,7 @@ import {type FileAssetShape} from '../shapeDefs'
 
 describe('file type', () => {
   test('plain file type definition', () => {
-    const FileSchema = file({})
+    const FileSchema = file()
 
     type FileValue = {
       _type: 'file'
@@ -25,8 +25,22 @@ describe('file type', () => {
 
     expectTypeOf<Infer<typeof FileSchema>>().toEqualTypeOf<FileValue>()
   })
+  test('without a shape, the output has no extra keys', () => {
+    const FileSchema = file()
+
+    expectTypeOf<keyof Infer<typeof FileSchema>>().toEqualTypeOf<
+      '_type' | 'asset'
+    >()
+    expectTypeOf<Infer<typeof FileSchema>>().toEqualTypeOf<
+      Infer<ReturnType<typeof file<{}>>>
+    >()
+  })
+  test('fields must still be schemas', () => {
+    // @ts-expect-error not a schema
+    file({caption: 'foo'})
+  })
   test('parsed file values include the asset schema on the reference', () => {
-    const FileSchema = file({})
+    const FileSchema = file()
 
     expectTypeOf<Parsed<typeof FileSchema>['asset']>().toEqualTypeOf<{
       _type: 'reference'

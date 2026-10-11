@@ -49,7 +49,7 @@ export const Human = document({
           object({_type: literal('book'), bar: number()}),
         ]),
       }),
-      image({}),
+      image(),
     ]),
   ),
   pets: array(
