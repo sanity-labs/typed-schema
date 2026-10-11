@@ -32,7 +32,7 @@ Config files are TypeScript where the tool supports it (`oxlint.config.ts`, `oxf
 
 ## Releasing
 
-Changesets, not conventional commits. `.github/workflows/release.yml` opens a "chore: version packages" PR on push to `main` when `.changeset/*.md` files exist; merging it publishes to npm with trusted publishing (OIDC, `npm-publish` environment) and provenance. Every user-facing change needs a changeset file. `CHANGELOG.md` is generated, do not edit by hand. This repo lives in the `sanity-labs` GitHub org and follows the conventions of sibling repos there (react-table-kit, sanity-plugin-resonance): single `ci.yml`, `GITHUB_TOKEN` rather than an app token.
+Changesets, not conventional commits. `.github/workflows/release.yml` opens a "chore: version packages" PR on push to `main` when `.changeset/*.md` files exist; merging it publishes to npm with trusted publishing (OIDC, `npm-publish` environment) and provenance. Every user-facing change needs a changeset file. Changeset notes are short and written for package users: what changed for them and anything they must do. No implementation notes, internal file or helper names, refactor rationale, branch names, PR process or test changes. `CHANGELOG.md` is generated, do not edit by hand. This repo lives in the `sanity-labs` GitHub org.
 
 ## Architecture
 
@@ -60,3 +60,4 @@ The central idea: every schema type is a plain object carrying `typeName` plus a
 - Sanity system fields (`_type`, `_id`, `_ref`, `_key`) are the only identifiers allowed to start with `_`; user-defined schema fields starting with `_` are a compile-time error by design.
 - When changing inference, add or update a `.test-d.ts` test and run `pnpm test`; `tsc` alone will not catch regressions in `expectTypeOf` assertions.
 - `pkg build --strict` runs TSDoc checks; TSDoc, where present, must parse (`@param name -` hyphen form, balanced backticks).
+- Commit messages are a single subject line with no body. Context belongs in the PR description or the changeset. Never mention branch names, base branches, stacking, worktrees or how the work was assembled.
