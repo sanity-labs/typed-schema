@@ -217,16 +217,6 @@ describe('object array parsing', () => {
         "error": ParseError {
           "issues": [
             {
-              "code": "INVALID_OBJECT_UNION",
-              "message": "Cannot parse input as union type "foo"",
-              "path": [
-                {
-                  "_key": "key213s",
-                  "index": 0,
-                },
-              ],
-            },
-            {
               "code": "INVALID_TYPE",
               "message": "Expected a string",
               "path": [
@@ -239,9 +229,7 @@ describe('object array parsing', () => {
               ],
             },
           ],
-          "message": "Invalid input (2 issues):
-        [_key=="key213s"]: Cannot parse input as union type "foo"
-        [_key=="key213s"].nested.foo: Expected a string",
+          "message": "Invalid input at [_key=="key213s"].nested.foo: Expected a string",
         },
         "ok": false,
       }
@@ -553,11 +541,9 @@ describe('formatIssues', () => {
     expect(result.ok).toBe(false)
     if (result.ok) return
     expect(result.error.message).toMatchInlineSnapshot(`
-      "Invalid input (5 issues):
-        items[_key=="x\\"]\\n  name: Expected a string\\n  y"]: Cannot parse input as union type "a"
+      "Invalid input (3 issues):
         items[_key=="x\\"]\\n  name: Expected a string\\n  y"].n: Expected a finite number
         items[_key=="k2"]: Type "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz…" not found among valid union types
-        items[_key=="k3"]: Cannot parse input as union type "a"
         items[_key=="k3"].n: Expected a finite number"
     `)
   })

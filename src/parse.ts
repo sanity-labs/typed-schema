@@ -600,37 +600,27 @@ function parseEnum<S extends SanityEnum>(
   }
 }
 
+/**
+ * The member of an object union whose `_type` literal is `typeName`, looked up
+ * through nested unions so the result is never itself a union.
+ */
 function findUnionSchemaForType(
   unionSchema: SanityObjectUnion,
   typeName: string,
-):
-  | SanityTypedObject
-  | SanityObjectUnion
-  | SanityReference
-  | SanityBlock
-  | SanityAsset
-  | undefined {
-  return unionSchema.union
-    .filter(
-      (unionType): unionType is Exclude<typeof unionType, SanityNever> =>
-        !isNeverSchema(unionType),
-    )
-    .find(
-      (
-        objectDef:
-          | SanityTypedObject
-          | SanityObjectUnion
-          | SanityReference
-          | SanityBlock
-          | SanityAsset,
-      ) => {
-        if (isObjectUnionSchema(objectDef)) {
-          return findUnionSchemaForType(objectDef, typeName)
-        }
-        const typeLiteral = objectDef.shape._type
-        return isLiteralSchema(typeLiteral) && typeLiteral.value === typeName
-      },
-    )
+): SanityTypedObject | SanityReference | SanityBlock | SanityAsset | undefined {
+  for (const member of unionSchema.union) {
+    if (isNeverSchema(member)) continue
+    if (isObjectUnionSchema(member)) {
+      const found = findUnionSchemaForType(member, typeName)
+      if (found) return found
+      continue
+    }
+    const typeLiteral = member.shape._type
+    if (isLiteralSchema(typeLiteral) && typeLiteral.value === typeName) {
+      return member
+    }
+  }
+  return undefined
 }
 
 function hasTypeField(input: any): input is {_type: string} {
@@ -667,22 +657,9 @@ function parseObjectUnion<S extends SanityObjectUnion>(
       ],
     }
   }
-  const result = parseInternal(unionSchema, input)
-  if (result.ok) {
-    return result as any
-  }
-  return {
-    ok: false,
-    issues: [
-      {
-        code: 'INVALID_OBJECT_UNION',
-        input,
-        path: [],
-        message: `Cannot parse input as union type ${inspect(input._type)}`,
-      },
-      ...result.issues,
-    ],
-  }
+  // `_type` picked the member, so its issues say what is wrong; a union-level
+  // issue on top would only repeat the element's path and `_type`.
+  return parseInternal(unionSchema, input) as any
 }
 
 type PlainObject = {[key: string]: unknown}
