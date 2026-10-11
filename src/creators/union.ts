@@ -57,22 +57,26 @@ export type FlattenPrimitiveUnionTypes<
       : UnionTypes
     : T
 
+// The members are a tuple so that `CheckUnionMembers` can reject a second
+// `reference()`: reference values all have `_type: 'reference'`, so parsing
+// could not tell them apart.
 export function union<
-  UnionTypes extends
+  const Members extends readonly (
     | SanityNever
     | SanityTypedObject
     | SanityReference
     | SanityBlock
     | SanityAsset
-    | SanityObjectUnion<any>,
+    | SanityObjectUnion<any>
+  )[],
 >(
-  unionTypes: UnionTypes[],
+  unionTypes: Members & NoInfer<CheckUnionMembers<Members>>,
   annotations?: NoInfer<
     SchemaAnnotations<
-      OutputOf<SanityObjectUnion<FlattenUnionTypes<UnionTypes>>>
+      OutputOf<SanityObjectUnion<FlattenUnionTypes<Members[number]>>>
     >
   >,
-): SanityObjectUnion<FlattenUnionTypes<UnionTypes>>
+): SanityObjectUnion<FlattenUnionTypes<Members[number]>>
 export function union<
   UnionTypes extends
     | SanityNever
@@ -124,6 +128,11 @@ export function union(unionTypes: SanityType[], annotations?: any): unknown {
         isAssetSchema(schema),
     )
   ) {
+    if (unionTypes.filter(hasReference).length > 1) {
+      throw new Error(
+        'union() can have only one reference() member. Use one reference() with several targets instead, e.g. reference([Author, Book])',
+      )
+    }
     return defineType(
       {
         typeName: 'union',
@@ -135,5 +144,13 @@ export function union(unionTypes: SanityType[], annotations?: any): unknown {
 
   throw new Error(
     'Union types must either be of primitive values or typed objects',
+  )
+}
+
+/** Whether `schema` is a `reference()` or a union that has a `reference()` member */
+function hasReference(schema: SanityType): boolean {
+  return (
+    isReferenceSchema(schema) ||
+    (isObjectUnionSchema(schema) && schema.union.some(hasReference))
   )
 }

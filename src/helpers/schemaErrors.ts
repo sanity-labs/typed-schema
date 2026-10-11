@@ -23,8 +23,10 @@ import {
   type SanityPrimitiveUnion,
   type SanityReference,
   type SanityString,
+  type SanityType,
   type SanityTypedObject,
 } from '../defs'
+import {type SanityDocumentValue} from '../shapeDefs'
 import {type FieldNameError, type SchemaError} from './utilTypes'
 
 // Fields
@@ -235,6 +237,57 @@ export type ReferenceTargetError<Def> = Def extends SanityDocumentKind
   ? InvalidAnnotations<'reference'>
   : 'reference() target must be a document schema'
 
+/**
+ * `true` if `Def` can be a reference target: a document schema, a schema
+ * typed by a document value type (`typeName: string`), or a `lazy()` of
+ * either. Checks `typeName` first, so it never compares a document schema's
+ * output, which can read getters of a recursive schema.
+ */
+type IsReferenceTarget<Def> = Def extends {typeName: 'document'}
+  ? true
+  : Def extends {typeName: 'lazy'; get: () => infer Inner}
+    ? IsReferenceTarget<Inner>
+    : Def extends {typeName: infer Name}
+      ? string extends Name
+        ? Def extends SanityType<SanityDocumentValue>
+          ? true
+          : false
+        : false
+      : false
+
+/** The error for `reference([])` */
+export type NoTargets =
+  SchemaError<'reference() needs at least one target document schema'>
+
+/**
+ * The expected type of the targets passed to `reference([...])`: each target
+ * left as is if it is a document schema, or intersected with a `SchemaError`
+ * saying it must be one
+ */
+export type CheckReferenceTargets<Targets extends readonly unknown[]> =
+  Targets extends readonly []
+    ? NoTargets
+    : {
+        [Index in keyof Targets]: IsReferenceTarget<Targets[Index]> extends true
+          ? Targets[Index]
+          : Targets[Index] &
+              SchemaError<'reference() targets must be document schemas'>
+      }
+
+/**
+ * The expected type of the first argument of `reference()`'s catch-all
+ * overload. For one target, this is {@link ReferenceTargetError}. For several,
+ * it is {@link CheckReferenceTargets}, unless every target is valid, in which
+ * case the error is about the annotations.
+ */
+export type ReferenceTargetErrors<Def> = Def extends readonly unknown[]
+  ? Def extends readonly []
+    ? NoTargets
+    : [IsReferenceTarget<Def[number]>] extends [true]
+      ? SchemaError<InvalidAnnotations<'reference'>>
+      : CheckReferenceTargets<Def>
+  : SchemaError<ReferenceTargetError<Def>>
+
 // union()
 
 type ObjectUnionMember =
@@ -282,28 +335,59 @@ type FirstKind<Members> = Members extends readonly [infer Member, ...infer Rest]
 
 type MixedKinds = 'union() members cannot mix primitive types and object types'
 
+type MultipleReferences =
+  'union() can have only one reference() member. Use one reference() with several targets instead, e.g. reference([Author, Book])'
+
+/**
+ * `true` if `Member` is a `reference()` or a union that has a `reference()`
+ * member. Checks `typeName` only, so it never compares the referenced
+ * document schemas.
+ */
+type HasReference<Member> = Member extends {typeName: 'reference'}
+  ? true
+  : Member extends {typeName: 'union'; union: readonly (infer Inner)[]}
+    ? [Extract<Inner, {typeName: 'reference'}>] extends [never]
+      ? false
+      : true
+    : false
+
 /**
  * Checks each member of a tuple. The first member whose kind (primitive or
- * object) differs from the members before it gets a `SchemaError`, and
- * checking stops there, so the catch-all overload fails with one error, like
+ * object) differs from the members before it gets a `SchemaError`, and so
+ * does the second member that is a `reference()` or a union containing one.
+ * Checking stops there, so the catch-all overload fails with one error, like
  * the overloads above it. TypeScript 6 then lists every overload's error,
  * this one included. With more errors here than in another overload, it would
  * show only that other overload's error.
+ *
+ * Tail-recursive, collecting the checked members in `Checked`: `union()` runs
+ * this on every call, and a check that is not tail-recursive hits
+ * TypeScript's recursion limit at around 50 members.
  */
-type CheckUnionTuple<Members, Kind> = Members extends readonly [
-  infer Member,
-  ...infer Rest,
-]
+type CheckUnionTuple<
+  Members,
+  Kind,
+  SeenReference extends boolean = false,
+  Checked extends unknown[] = [],
+> = Members extends readonly [infer Member, ...infer Rest]
   ? [MemberKind<Member>] extends [Kind]
-    ? [CheckUnionMember<Member>, ...CheckUnionTuple<Rest, Kind>]
-    : [Member & SchemaError<MixedKinds>, ...Rest]
-  : []
+    ? [SeenReference, HasReference<Member>] extends [true, true]
+      ? [...Checked, Member & SchemaError<MultipleReferences>, ...Rest]
+      : CheckUnionTuple<
+          Rest,
+          Kind,
+          HasReference<Member> extends true ? true : SeenReference,
+          [...Checked, CheckUnionMember<Member>]
+        >
+    : [...Checked, Member & SchemaError<MixedKinds>, ...Rest]
+  : Checked
 
 /**
  * The expected type of the members passed to `union()`: each member left as is
  * if it can be in the union, or intersected with a `SchemaError` saying
  * why not. For an array that is not a tuple, mixing primitives and objects is
- * reported on the whole array.
+ * reported on the whole array, and more than one `reference()` is not
+ * checked, since the number of members is unknown.
  */
 export type CheckUnionMembers<Members extends readonly unknown[]> =
   number extends Members['length']

@@ -13,7 +13,6 @@ import {REF_SCHEMA} from '../defs'
 import {parse} from '../parse'
 
 const Person = document({_type: literal('person'), name: string()})
-const Company = document({_type: literal('company'), name: string()})
 
 describe('parse attaches the referenced schema at every depth', () => {
   test('nested object', () => {
@@ -42,12 +41,22 @@ describe('parse attaches the referenced schema at every depth', () => {
   })
 
   test('union member', () => {
-    const Either = union([reference(Person), reference(Company)])
-    const eitherResult = parse(Either, {_type: 'reference', _ref: 'acme'})
+    const Link = object({_type: literal('link'), href: string()})
+    const Either = union([Link, reference(Person)])
+    const eitherResult = parse(Either, {_type: 'reference', _ref: 'knut'})
     assert(eitherResult.ok)
     const either = eitherResult.value
-    // both members share the reference `_type`; the first match wins
+    assert(either._type === 'reference')
     expect(either[REF_SCHEMA]).toBe(Person)
+  })
+
+  test('several targets', () => {
+    const Company = document({_type: literal('company'), name: string()})
+    const Owner = reference([Person, Company])
+    const ownerResult = parse(Owner, {_type: 'reference', _ref: 'acme'})
+    assert(ownerResult.ok)
+    expect(ownerResult.value[REF_SCHEMA]).toEqual([Person, Company])
+    expect(Object.keys(ownerResult.value)).not.toContain(REF_SCHEMA)
   })
 
   test('optional', () => {

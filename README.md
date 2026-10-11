@@ -607,6 +607,28 @@ const writer = await loadReference(welcome.author) // Parsed<Committed<typeof Au
 
 `loadDocument` returns `Parsed<Committed<typeof Post>>`, where each reference value includes the schema it points to under a hidden `$refSchema` key. That is how `loadReference(welcome.author)` knows to parse the result as an `Author`. A reference typed as `Infer<typeof Post>['author']`, for example one built by hand or read straight from the client, has no `$refSchema`, so `loadReference` falls back to parsing only the document system fields: the result is typed as a committed document with `_type`, `_id`, `_rev`, `_createdAt` and `_updatedAt` and nothing else.
 
+A reference can point to documents of several types. The stored value does not say which type it points to, so `loadReference` fetches the fields of every target and parses the document against the target whose `_type` matches. If the document has any other type, `loadReference` rejects with a `ParseError`. The targets must have different `_type` literals.
+
+```ts
+import {document, literal, reference, string} from '@sanity-labs/typed-schema'
+
+const Author = document({_type: literal('author'), name: string()})
+const Book = document({_type: literal('book'), title: string()})
+const Review = document({
+  _type: literal('review'),
+  subject: reference([Author, Book]),
+})
+
+// loadDocument and loadReference from the example above
+const review = await loadDocument(Review, 'cosmos-review')
+const subject = await loadReference(review.subject)
+if (subject._type === 'book') {
+  console.log(subject.title)
+}
+```
+
+`loadReference(review.subject)` resolves to `Parsed<Committed<typeof Author>> | Parsed<Committed<typeof Book>>`, which you can narrow on `_type`.
+
 ### Unique type names for GraphQL
 
 Sanity's GraphQL API needs every `_type` in a schema to map to exactly one shape. `verifyUniqueTypeNames(schema)` returns the schema unchanged, or throws a `DuplicateTypeNameError` if two different schemas declare the same `_type`. Reusing the same schema in several places is fine. Two declarations of one `_type` are rejected even if they are identical, so each type has one definition. The check covers fields declared with getters, the custom fields of images and files, and the inline and annotation types of Portable Text blocks. The error's `duplicates` lists each duplicated name and every path where it appears.
@@ -678,6 +700,7 @@ Other things to know:
 - `date()` accepts `YYYY-MM-DD`; `dateTime()` accepts ISO 8601 with a time zone (`Z` or `±HH:mm`), with or without fractional seconds.
 - Union members must all be primitives or all be typed objects. Mixing the two is a type error.
 - Unknown `_type` values in an object union fail to parse.
+- An object union can have only one `reference()` member, since every reference value has `_type: 'reference'` and parsing cannot tell which document type it points to. A second reference member is a type error, and `union()` throws at runtime. Use one reference with several targets instead: `reference([Author, Book])`.
 
 ## API reference
 
@@ -711,11 +734,11 @@ All functions are named exports of `@sanity-labs/typed-schema`.
 
 ### Arrays, unions and references
 
-| Creator               | Notes                                                                                                                                                                                                                 |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `array(element)`      | Object-like elements get a required `_key`; primitive elements do not. Arrays of arrays are a type error                                                                                                              |
-| `union([...members])` | All primitives (including literals and dates) or all typed objects, references, images, files and blocks. Nested unions are flattened                                                                                 |
-| `reference(doc)`      | `{_type: 'reference'; _ref: string; _weak?: boolean}`. In `Parsed<>` the value also includes the referenced schema as `$refSchema`, which `loadReference` uses. It is not serialized, and it is absent from `Infer<>` |
+| Creator               | Notes                                                                                                                                                                                                                                                                                                                      |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `array(element)`      | Object-like elements get a required `_key`; primitive elements do not. Arrays of arrays are a type error                                                                                                                                                                                                                   |
+| `union([...members])` | All primitives (including literals and dates) or all typed objects, references, images, files and blocks. Nested unions are flattened. At most one `reference()` member                                                                                                                                                    |
+| `reference(doc)`      | `{_type: 'reference'; _ref: string; _weak?: boolean}`. In `Parsed<>` the value also includes the referenced schema as `$refSchema`, which `loadReference` uses. It is not serialized, and it is absent from `Infer<>`. `reference([docA, docB])` accepts several document types; `$refSchema` is then the array of targets |
 
 ### Portable Text
 

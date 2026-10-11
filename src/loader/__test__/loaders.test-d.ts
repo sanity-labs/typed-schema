@@ -139,3 +139,26 @@ test('loadReference stays typed for a recursive schema annotated with SanityRefe
     parent?: SanityReferenceValue<TreeNode>
   }>()
 })
+
+test('loadReference resolves a reference with several targets to a union', async () => {
+  const Author = document({_type: literal('author'), name: string()})
+  const Review = document({
+    _type: literal('review'),
+    subject: reference([Author, lazy(() => Country)]),
+  })
+  const reviewResult = parse(Review, {})
+  assert(reviewResult.ok)
+  const {subject} = reviewResult.value
+  expectTypeOf<ReferencedSchema<typeof subject>>().toEqualTypeOf<
+    typeof Author | ReturnType<typeof lazy<typeof Country>>
+  >()
+
+  const loadReference = createReferenceLoader(fetch)
+  const loaded = await loadReference(subject)
+  expectTypeOf(loaded).toEqualTypeOf<
+    Parsed<Committed<typeof Author>> | Parsed<Committed<typeof Country>>
+  >()
+  if (loaded._type === 'author') {
+    expectTypeOf(loaded.name).toEqualTypeOf<string>()
+  }
+})

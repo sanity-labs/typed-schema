@@ -310,9 +310,15 @@ export interface SanityLazy<T extends SanityType> extends SanityType {
 }
 
 export interface SanityReference<
-  RefType extends SanityReferenceTarget = SanityReferenceTarget,
+  RefType extends SanityReferenceTarget | readonly SanityKind[] =
+    | SanityReferenceTarget
+    | readonly SanityKind[],
 > extends SanityType<WithRefTypeDef<RefType>> {
   typeName: 'reference'
+  /**
+   * The schema of the referenced document, or the schemas of the documents
+   * it may point to when `reference()` is given several targets
+   */
   referenceType: RefType
 
   shape: SanityReferenceShape
@@ -520,13 +526,13 @@ export type WithDocumentShape<Shape> = Flatten<
 export const REF_SCHEMA = '$refSchema' as const
 
 export interface Conceal<T> {
-  /** The schema of the referenced document. Only values returned by `parse` have it; see {@link REF_SCHEMA}. */
+  /** The schema of the referenced document, or the schemas of the documents it may point to. Only values returned by `parse` have it; see {@link REF_SCHEMA}. */
   [REF_SCHEMA]: T
 }
 
-export type WithRefTypeDef<RefType extends SanityReferenceTarget> = Flatten<
-  ReferenceBase & Conceal<RefType>
->
+export type WithRefTypeDef<
+  RefType extends SanityReferenceTarget | readonly SanityKind[],
+> = Flatten<ReferenceBase & Conceal<RefType>>
 
 /**
  * The type of a value returned by `parse`, `parseOrThrow` and the document
