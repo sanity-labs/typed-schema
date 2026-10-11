@@ -1,6 +1,6 @@
 # Portable Text
 
-A Portable Text field is an array of blocks. `block()` describes one block, and `portableText()` builds the array, with the custom objects allowed between the blocks. With no custom objects, use `array(block)`.
+A Portable Text field is an array of blocks. `block()` describes one block, and `portableText()` builds the array, with the other items allowed between the blocks. With nothing between the blocks, use `array(block)`.
 
 ## A minimal block
 
@@ -26,14 +26,16 @@ The inferred type matches what Sanity stores: `style`, `listItem`, `level` and `
 
 Each option narrows one part of the block:
 
-| Option       | What it allows                                                                                                     |
-| ------------ | ------------------------------------------------------------------------------------------------------------------ |
-| `style`      | Block styles, such as `normal` and `h2`, as a literal or a union of literals                                       |
-| `list`       | List item types, such as `bullet` and `number`                                                                     |
-| `decorator`  | Decorators, such as `strong` and `em`. Spans don't check them: `marks` stays `string[]`                            |
-| `inline`     | Typed objects, references, images or files that can sit among the spans in `children`                              |
-| `annotation` | Typed objects, references, images or files in `markDefs`, which spans refer to by `_key` in `marks`, such as links |
-| `_type`      | The block's type name, `block` by default                                                                          |
+| Option       | What it allows                                                                          |
+| ------------ | --------------------------------------------------------------------------------------- |
+| `style`      | Block styles, such as `normal` and `h2`, as a literal or a union of literals            |
+| `list`       | List item types, such as `bullet` and `number`                                          |
+| `decorator`  | Decorators, such as `strong` and `em`. Spans don't check them: `marks` stays `string[]` |
+| `inline`     | Objects that can sit among the spans in `children`, such as mentions                    |
+| `annotation` | Objects in `markDefs`, such as links, which spans refer to by `_key` in `marks`         |
+| `_type`      | The block's type name, `block` by default                                               |
+
+`inline` and `annotation` each take a typed object (an object schema with a `_type` literal), a reference, an image, a file or a union of these. Sanity Studio's own schema types allow only objects and references for these two options.
 
 ```ts twoslash
 import * as s from '@sanity-labs/typed-schema'
@@ -69,7 +71,7 @@ A style outside the union is a type error in a block you write yourself, and `pa
 
 ## Objects between blocks
 
-`portableText({block, element})` is the array of blocks plus the block-level objects allowed between them, such as figures or code samples. `element` takes an object schema with a `_type` literal, a reference, an image or a file, or a union of these:
+`portableText({block, element})` is the array of blocks plus the block-level objects allowed between them, such as images or code samples. `element` takes a typed object, a reference, an image, a file or a union of these, or `never()` for none:
 
 ```ts twoslash
 import * as s from '@sanity-labs/typed-schema'
