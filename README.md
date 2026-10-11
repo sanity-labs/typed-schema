@@ -100,7 +100,7 @@ Sanity attaches data to your content that you did not declare. Typed schemas mod
 
 1. Objects inside arrays get a `_key: string`. The inferred array element type includes it, so there is no `item as T & {_key: string}`.
 2. Documents get `_id`, `_rev`, `_createdAt` and `_updatedAt`.
-3. A document goes through stages, and each stage has its own type. A document fetched from the API always has `_id` and `_rev`; one created on the client does not yet. A draft has every field optional. A published document has passed validation, so required fields are present. See [Document lifecycles](#document-lifecycles).
+3. Whether a document is complete and whether it has been committed to the Content Lake are two separate questions, and each has its own transform. A document fetched from the API always has `_id` and `_rev`; one you construct locally does not yet. A document read from the `drafts` perspective, or one being edited, may be missing fields. See [Document lifecycles](#document-lifecycles).
 
 ### Type-safe content migrations
 
@@ -296,26 +296,44 @@ type PartialContactDetails = Infer<typeof PartialContactDetails>
 
 ### Document lifecycles
 
-A document schema describes the published, validated form. `draft()` and `stored()` derive the other stages:
+A document schema describes a complete document as you construct it locally. Drafts, documents fetched from the API and documents mid-edit are derived from it. `document()` makes the four system fields optional, so a new pet needs its declared fields and nothing else:
 
-- `draft(doc)` makes every field except `_type` optional, recursively.
-- `stored(doc)` makes `_id`, `_rev`, `_createdAt` and `_updatedAt` required, which is what the API returns.
-- `stored(draft(doc))` is a draft as the API returns it.
+```ts
+const Pet = document({_type: literal('pet'), name: string()})
+const pet: Infer<typeof Pet> = {_type: 'pet', name: 'Rex'}
+```
+
+Two transforms move away from that shape, and they are independent of each other:
+
+- `partial(doc)` relaxes completeness: every field except `_type` becomes optional, recursively. This is what you hold while editing, and what the `drafts` or `raw` perspective may return. It is `deepPartial` restricted to documents.
+- `committed(doc)` adds persistence: `_id`, `_rev`, `_createdAt` and `_updatedAt` become required, because the Content Lake assigns them when it accepts a mutation. Every document the API returns is committed.
+
+Because the axes are independent, the four combinations are four schemas:
+
+|                   | Complete         | May be incomplete         |
+| ----------------- | ---------------- | ------------------------- |
+| **Not committed** | `Pet`            | `partial(Pet)`            |
+| **Committed**     | `committed(Pet)` | `committed(partial(Pet))` |
+
+Apply `committed` last: `partial` would make the system fields optional again.
+
+`DeepPartial<typeof Pet>` and `Committed<typeof Pet>` are the schema types these return, so `Infer<Committed<typeof Pet>>` is the type of a pet as the API returns it. There is no separate value-level transform: derive the schema, then infer.
 
 ```ts
 import {
+  committed,
+  type Committed,
   document,
-  draft,
   type Infer,
   literal,
   parse,
-  stored,
+  partial,
   string,
 } from '@sanity-labs/typed-schema'
 
 const Pet = document({_type: literal('pet'), name: string()})
 
-const storedPet = parse(stored(Pet), {
+const committedPet = parse(committed(Pet), {
   _type: 'pet',
   _id: 'fido',
   _rev: 'abc',
@@ -323,23 +341,30 @@ const storedPet = parse(stored(Pet), {
   _updatedAt: '2024-01-01T00:00:00Z',
   name: 'Fido',
 })
-storedPet._rev.toUpperCase() // _rev is a string, not string | undefined
+committedPet._rev.toUpperCase() // _rev is a string, not string | undefined
 
-const PetDraft = draft(Pet)
-const storedDraft = parse(stored(PetDraft), {
+const PartialPet = partial(Pet)
+const committedPartialPet = parse(committed(PartialPet), {
   _type: 'pet',
   _id: 'drafts.fido',
   _rev: 'abc',
   _createdAt: '2024-01-01T00:00:00Z',
   _updatedAt: '2024-01-01T00:00:00Z',
 })
-storedDraft.name // string | undefined
+committedPartialPet.name // string | undefined
 
-// A new published pet needs its required fields but no system fields
+// A new pet needs its declared fields but no system fields
 const newPet: Infer<typeof Pet> = {_type: 'pet', name: 'Rex'}
-// A new draft needs neither
-const newDraft: Infer<typeof PetDraft> = {_type: 'pet'}
+// A partial one needs neither
+const newPartialPet: Infer<typeof PartialPet> = {_type: 'pet'}
+
+// Name the committed type without calling committed() at runtime
+type CommittedPet = Infer<Committed<typeof Pet>>
 ```
+
+Published, draft and version are perspectives on committed documents rather than shapes of their own. The Content Lake tells them apart by `_id` prefix and by the `perspective` you query with, and under `perspective: 'drafts'` it returns the published `_id` and keeps the real one in `_originalId`. A type that encoded the prefix into `_id` would be wrong under some perspectives, so the library does not model the variant.
+
+In `@sanity/client` terms, `SanityDocumentStub` corresponds to the base schema and `SanityDocument` to `committed(doc)`. `IdentifiedSanityDocumentStub` (`_id` known, nothing else assigned) has no counterpart.
 
 ### Recursive schemas
 
@@ -400,13 +425,13 @@ const Post = document({
   author: reference(Author),
 })
 
-const welcome = await loadDocument(Post, 'welcome') // Parsed<typeof Post>
-const writer = await loadReference(welcome.author) // the stored Author document
+const welcome = await loadDocument(Post, 'welcome') // Parsed<Committed<typeof Post>>
+const writer = await loadReference(welcome.author) // Parsed<Committed<typeof Author>>
 ```
 
-`loadDocument` parses what the fetch returns, so a document that does not match its schema rejects with a `ParseError`. `fields` is the list of top-level field names in the schema, so you can project only what you need.
+`loadDocument` parses what the fetch returns against `committed(Post)`, so a document that does not match its schema, or that lacks `_id`, `_rev`, `_createdAt` or `_updatedAt`, rejects with a `ParseError`. `fields` is the list of top-level field names in the schema, including those four, so you can project only what you need.
 
-`loadDocument` returns `Parsed<typeof Post>`, where each reference value includes the schema it points to under a hidden `$refSchema` key. That is how `loadReference(welcome.author)` knows to parse the result as an `Author`. A reference typed as `Infer<typeof Post>['author']`, for example one built by hand or read straight from the client, has no `$refSchema`, so `loadReference` falls back to parsing only the document system fields and returns a `StoredDocument<DocumentLike>`.
+`loadDocument` returns `Parsed<Committed<typeof Post>>`, where each reference value includes the schema it points to under a hidden `$refSchema` key. That is how `loadReference(welcome.author)` knows to parse the result as an `Author`. A reference typed as `Infer<typeof Post>['author']`, for example one built by hand or read straight from the client, has no `$refSchema`, so `loadReference` falls back to parsing only the document system fields: the result is typed as a committed document with `_type`, `_id`, `_rev`, `_createdAt` and `_updatedAt` and nothing else.
 
 ### Unique type names (GraphQL strict mode)
 
@@ -583,20 +608,21 @@ Each returns a new schema. Types follow the runtime change.
 
 ### Lifecycle helpers
 
-| Export                                                  | Notes                                                            |
-| ------------------------------------------------------- | ---------------------------------------------------------------- |
-| `draft(doc)`                                            | `deepPartial` for documents; `_type` stays required              |
-| `stored(doc)`                                           | `_id`, `_rev`, `_createdAt`, `_updatedAt` become required        |
-| `StoredDocument<T>`                                     | The type-level equivalent of `stored()`, applied to a value type |
-| `strictMode(s)`, `safeStrictMode(s)`, `StrictModeError` | See [Unique type names](#unique-type-names-graphql-strict-mode)  |
+| Export                                                  | Notes                                                                                                                 |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `partial(doc)`                                          | `deepPartial` for documents: every field but `_type` becomes optional, recursively. Returns `DeepPartial<typeof doc>` |
+| `committed(doc)`                                        | `_id`, `_rev`, `_createdAt`, `_updatedAt` become required                                                             |
+| `Committed<typeof doc>`                                 | The schema type `committed()` returns; `Infer<Committed<typeof doc>>` is a document as the API returns it             |
+| `COMMITTED_KEYS`, `CommittedKeys`                       | The fields `committed()` requires, as a constant and as a union of their names                                        |
+| `strictMode(s)`, `safeStrictMode(s)`, `StrictModeError` | See [Unique type names](#unique-type-names-graphql-strict-mode)                                                       |
 
 ### Loaders
 
-| Export                         | Notes                                                                                                                 |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| `createLoader(fetch)`          | `fetch: (id, fieldNames) => Promise<unknown>`. Returns `{loadDocument, loadDocuments, loadReference, loadReferences}` |
-| `createDocumentLoader(fetch)`  | Only `loadDocument`                                                                                                   |
-| `createReferenceLoader(fetch)` | Only `loadReference`                                                                                                  |
+| Export                         | Notes                                                                                                                         |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `createLoader(fetch)`          | `fetch: (id, fieldNames) => Promise<unknown>`. Returns `{loadDocument, loadDocuments, loadReference, loadReferences}`         |
+| `createDocumentLoader(fetch)`  | Only `loadDocument`. It resolves to `Parsed<Committed<typeof Doc>>`                                                           |
+| `createReferenceLoader(fetch)` | Only `loadReference`. It resolves to `Parsed<Committed<typeof Target>>`, where `Target` is the schema the reference points to |
 
 ### Types
 

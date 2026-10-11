@@ -5,7 +5,8 @@ import {
   type SanityType,
 } from '../defs'
 import {getLazySchema} from '../helpers/getLazySchema'
-import {ParseError, safeParse} from '../parse'
+import {type Committed, committed} from '../lifecycle'
+import {ParseError, type ParseResult, safeParse} from '../parse'
 import {type SanityDocumentValue} from '../shapeDefs'
 
 export type MaybeLazy<T extends SanityType> = T | SanityLazy<T>
@@ -18,7 +19,9 @@ export function createSafeLoadDocument(
   >(schema: MaybeLazy<DocumentSchema>, id: string) {
     const nonlazySchema = getLazySchema(schema) as DocumentSchema
     const fields = Object.keys(nonlazySchema.shape)
-    return fetch(id, fields).then(input => safeParse(nonlazySchema, input))
+    return fetch(id, fields).then(input =>
+      safeParse(committed(nonlazySchema as any), input),
+    ) as Promise<ParseResult<Parsed<Committed<DocumentSchema>>>>
   }
 }
 
@@ -32,7 +35,7 @@ export function createDocumentLoader(
   >(
     schema: MaybeLazy<DocumentSchema>,
     id: string,
-  ): Promise<Parsed<DocumentSchema>> {
+  ): Promise<Parsed<Committed<DocumentSchema>>> {
     return safeFetchDocument(schema, id).then(result =>
       result.status === 'ok'
         ? result.value
