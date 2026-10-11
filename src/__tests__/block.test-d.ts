@@ -116,6 +116,6 @@ describe('invalid block options', () => {
     // No option is wrong, so the whole options object is the error
     expectTypeOf<
       BlockOptionErrors<{style: SanityLiteral<'normal'>}>
-    >().toEqualTypeOf<SchemaError<'Invalid block() options'>>()
+    >().toEqualTypeOf<SchemaError<'Invalid block() options or annotations'>>()
   })
 })

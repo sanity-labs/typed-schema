@@ -1,1 +1,1 @@
-export {toClassicSchema} from './toClassicSchema'
+export {toClassicSchema, type ToClassicSchemaOptions} from './toClassicSchema'

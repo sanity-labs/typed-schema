@@ -32,7 +32,38 @@ import {
   type SanityReference,
   type SanityType,
 } from '../../defs'
+import {
+  type GetAnnotationsOptions,
+  getAnnotations,
+} from '../../helpers/annotations'
 import {getLazySchema} from '../../helpers/getLazySchema'
+
+export type ToClassicSchemaOptions = GetAnnotationsOptions
+
+/**
+ * The classic field/type properties a schema's annotations map to
+ * @param schema - the schema to read annotations from
+ * @param options - which locale to resolve annotation text in
+ */
+function classicAnnotations(
+  schema: SanityType,
+  options: ToClassicSchemaOptions,
+) {
+  const annotations = getAnnotations(schema, options)
+  if (!annotations) {
+    return {}
+  }
+  return {
+    ...(annotations.title !== undefined && {title: annotations.title}),
+    ...(annotations.description !== undefined && {
+      description: annotations.description,
+    }),
+    ...(annotations.deprecated !== undefined && {
+      deprecated: {reason: annotations.deprecated},
+    }),
+    ...(annotations.readOnly !== undefined && {readOnly: annotations.readOnly}),
+  }
+}
 
 // Untyped objects are keyed by identity. A `lazy()` that builds a new schema
 // each time it resolves never repeats an identity, so past this depth the
@@ -59,10 +90,12 @@ interface Context {
   converting: Array<{name: string | undefined; schema: SanityObjectLike}>
   /** `_type` names of object types found to contain themselves */
   recursive: Set<string>
+  options: ToClassicSchemaOptions
 }
 
 export function toClassicSchema<S extends SanityDocument>(
   schema: S,
+  options: ToClassicSchemaOptions = {},
 ): classic.SchemaTypeDefinition[] {
   const typeLiteral = schema.shape._type
 
@@ -78,10 +111,12 @@ export function toClassicSchema<S extends SanityDocument>(
     hoisted: new Map(),
     converting: [],
     recursive: new Set(),
+    options,
   }
   const document = {
     type: 'document',
     name: typeLiteral.value,
+    ...classicAnnotations(schema, options),
     fields: convertFields(schema.shape, context),
   }
   return [
@@ -97,6 +132,17 @@ function convertFields(shape: SanityObjectShape, context: Context) {
 }
 
 function convertItem(
+  lazySchema: SanityType,
+  context: Context,
+): classic.ArrayOfType | classic.ArrayOfType[] {
+  const items = convertItemType(lazySchema, context)
+  const annotations = classicAnnotations(lazySchema, context.options)
+  return Array.isArray(items)
+    ? items.map(item => ({...item, ...annotations}))
+    : {...items, ...annotations}
+}
+
+function convertItemType(
   lazySchema: SanityType,
   context: Context,
 ): classic.ArrayOfType | classic.ArrayOfType[] {
@@ -158,9 +204,23 @@ function convertField(
   lazySchema: SanityType,
   context: Context,
 ): classic.FieldDefinition | classic.FieldDefinition[] {
+  const fields = convertFieldType(fieldName, lazySchema, context)
+  const annotations = classicAnnotations(lazySchema, context.options)
+  return Array.isArray(fields)
+    ? fields.map(
+        field => ({...field, ...annotations}) as classic.FieldDefinition,
+      )
+    : ({...fields, ...annotations} as classic.FieldDefinition)
+}
+
+function convertFieldType(
+  fieldName: string,
+  lazySchema: SanityType,
+  context: Context,
+): classic.FieldDefinition | classic.FieldDefinition[] {
   const schema = getLazySchema(lazySchema)
   if (isOptionalSchema(schema)) {
-    return convertField(fieldName, schema.type, context)
+    return convertFieldType(fieldName, schema.type, context)
   }
 
   if (isObjectSchema(schema)) {
@@ -314,6 +374,7 @@ function objectToClassicSchema<S extends SanityObjectLike>(
   const definition = {
     type: schema.typeName,
     name: typeName,
+    ...classicAnnotations(schema, context.options),
     fields: convertFields(shape, context),
   }
   context.converting.pop()

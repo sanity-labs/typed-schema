@@ -94,6 +94,20 @@ export {
   verifyUniqueTypeNames,
 } from './helpers/verifyUniqueTypeNames'
 
+// Annotations (title, description, examples, ...)
+export {
+  ExampleError,
+  type ExampleFailure,
+  validateExamples,
+  validateExamplesOrThrow,
+  type ValidateExamplesResult,
+} from './helpers/validateExamples'
+export {
+  getAnnotations,
+  type GetAnnotationsOptions,
+  resolveAnnotationText,
+} from './helpers/annotations'
+
 // Loading documents and references
 export * from './loader/createDocumentLoader'
 export * from './loader/createLoader'

@@ -1,6 +1,8 @@
-import {type SanityDateTime} from '../defs'
+import {type SanityDateTime, type SchemaAnnotations} from '../defs'
 import {defineType} from '../helpers/defineType'
 
-export function dateTime(): SanityDateTime {
-  return defineType({typeName: 'dateTime'})
+export function dateTime(
+  annotations?: SchemaAnnotations<string>,
+): SanityDateTime {
+  return defineType({typeName: 'dateTime'}, annotations)
 }

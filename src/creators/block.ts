@@ -1,4 +1,5 @@
 import {
+  type OutputOf,
   type SanityBlock,
   type SanityLiteral,
   type SanityNever,
@@ -11,9 +12,13 @@ import {
   type SanityPrimitiveUnion,
   type SanityString,
   type SanityTypedObject,
+  type SchemaAnnotations,
 } from '../defs'
 import {defineType} from '../helpers/defineType'
-import {type BlockOptionErrors} from '../helpers/schemaErrors'
+import {
+  type AnnotationsError,
+  type BlockOptionErrors,
+} from '../helpers/schemaErrors'
 import {array} from './array'
 import {literal} from './literal'
 import {never} from './never'
@@ -139,6 +144,40 @@ export type BlockOptions<
 
 export type VoidNever<T> = void extends T ? SanityNever : Exclude<T, void>
 
+/** The schema `block()` returns for the given options */
+type BlockType<
+  StyleType extends
+    | void
+    | SanityLiteral<string>
+    | SanityPrimitiveUnion<SanityLiteral<string>>,
+  ListType extends
+    | void
+    | SanityLiteral<string>
+    | SanityPrimitiveUnion<SanityLiteral<string>>,
+  InlineType extends
+    | void
+    | SanityTypedObject
+    | SanityObjectUnion<SanityTypedObject>,
+  DecoratorType extends
+    | void
+    | SanityLiteral<string>
+    | SanityPrimitiveUnion<SanityLiteral<string>>,
+  AnnotationType extends
+    | void
+    | SanityTypedObject
+    | SanityObjectUnion<SanityTypedObject>,
+  TypeName extends SanityLiteral<string>,
+> = SanityBlock<
+  BlockObjectShape<
+    VoidNever<StyleType>,
+    VoidNever<ListType>,
+    VoidNever<InlineType>,
+    VoidNever<DecoratorType>,
+    VoidNever<AnnotationType>,
+    TypeName
+  >
+>
+
 /**
  * A Portable Text block. Use together with `portableText()` to declare a
  * rich text field.
@@ -174,15 +213,27 @@ export function block<
     AnnotationType,
     TypeName
   >,
-): SanityBlock<
-  BlockObjectShape<
-    VoidNever<StyleType>,
-    VoidNever<ListType>,
-    VoidNever<InlineType>,
-    VoidNever<DecoratorType>,
-    VoidNever<AnnotationType>,
-    TypeName
-  >
+  annotations?: NoInfer<
+    SchemaAnnotations<
+      OutputOf<
+        BlockType<
+          StyleType,
+          ListType,
+          InlineType,
+          DecoratorType,
+          AnnotationType,
+          TypeName
+        >
+      >
+    >
+  >,
+): BlockType<
+  StyleType,
+  ListType,
+  InlineType,
+  DecoratorType,
+  AnnotationType,
+  TypeName
 >
 // Matches only what the overload above rejects, and its parameter can never be
 // satisfied. TypeScript 7 reports only the last overload's error, which says
@@ -190,9 +241,11 @@ export function block<
 // ending with this one.
 export function block<Options extends object>(
   options: Options & NoInfer<BlockOptionErrors<Options>>,
+  annotations?: AnnotationsError<'block'>,
 ): never
 export function block(
   options: BlockOptions<any, any, any, any, any, any>,
+  annotations?: any,
 ): SanityBlock {
   const Marks = options.decorator
     ? array(union([options.decorator, string()]))
@@ -203,17 +256,20 @@ export function block(
     marks: Marks,
     text: string(),
   })
-  return defineType({
-    typeName: 'block',
-    shape: {
-      _type: options._type || literal('block'),
-      style: optional(options.style || string()),
-      listItem: optional(options.list || string()),
-      level: optional(number()),
-      children: array(union([Span, options.inline || never()])),
-      markDefs: optional(
-        options.annotation ? array(options.annotation) : array(never()),
-      ),
+  return defineType(
+    {
+      typeName: 'block',
+      shape: {
+        _type: options._type || literal('block'),
+        style: optional(options.style || string()),
+        listItem: optional(options.list || string()),
+        level: optional(number()),
+        children: array(union([Span, options.inline || never()])),
+        markDefs: optional(
+          options.annotation ? array(options.annotation) : array(never()),
+        ),
+      },
     },
-  }) as any
+    annotations,
+  ) as any
 }

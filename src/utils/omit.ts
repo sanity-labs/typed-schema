@@ -8,6 +8,7 @@ import {
   type SanityObjectShape,
   type SanityObjectType,
 } from '../defs'
+import {inheritAnnotations} from '../helpers/annotations'
 import {type ElementType, type Format} from '../helpers/utilTypes'
 
 export type OmitObjectLike<
@@ -31,7 +32,8 @@ export function omit<
   const shape = Object.fromEntries(
     Object.entries(type.shape).filter(([key]) => !keys.includes(key)),
   )
-  return (
-    type.typeName === 'object' ? object(shape) : document(shape as any)
+  return inheritAnnotations(
+    type.typeName === 'object' ? object(shape) : document(shape as any),
+    type,
   ) as any
 }

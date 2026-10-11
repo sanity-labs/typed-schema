@@ -39,6 +39,14 @@ import {type StandardSchemaV1} from './standardSchema'
 export interface SanityType<Output = any> {
   typeName: string
   /**
+   * What the value means and how to author it. See {@link SchemaAnnotations}.
+   * Typed without `Output`: a member that reads the output type breaks the
+   * inference of recursive schemas (see the top of this file). The creators
+   * type `examples` against the output, and `getAnnotations` reads it back
+   * typed.
+   */
+  annotations?: SchemaAnnotations
+  /**
    * @deprecated ** DO NOT USE ** This will throw an error if you try to access it at runtime
    */
   output: Output
@@ -72,6 +80,74 @@ export interface StandardProps<Output> extends StandardSchemaV1.Props<
   readonly validate: (value: unknown) => StandardSchemaV1.Result<Output>
 }
 
+/**
+ * Text in schema annotations: a plain string, or one string per locale (BCP 47
+ * tags, e.g. `'en'` or `'nb-NO'`). `getAnnotations` resolves a locale map to
+ * a single string.
+ *
+ * `Locale` lets a project declare its locales so a map with a missing or
+ * misspelled one is a compile error: `AnnotationText<'en' | 'nb'>` requires
+ * both. The schema itself does not carry the set; it stays `string` for the
+ * creators and `getAnnotations`.
+ */
+export type AnnotationText<Locale extends string = string> =
+  | string
+  | {[locale in Locale]: string}
+
+/**
+ * Annotations describe the content model: what a value means and how to
+ * author a good one. They never describe a consumer of the model, so there
+ * are no keys for how a value is rendered, which input edits it or which tool
+ * reads it. The same annotations serve a form, a generating agent, generated
+ * documentation and a test suite.
+ *
+ * The keys follow the JSON Schema annotation vocabulary (`title`,
+ * `description`, `examples`, `deprecated`, `readOnly`) plus `guidelines`.
+ *
+ * Every creator accepts them as its last argument: `string({description: '...'})`.
+ */
+export type SchemaAnnotations<
+  Output = unknown,
+  Locale extends string = string,
+> = {
+  /** Short human label for the type or field */
+  title?: AnnotationText<Locale>
+  /** What the value is and why it exists */
+  description?: AnnotationText<Locale>
+  /** How to write a good value, for whoever authors it: length, tone, what to leave out */
+  guidelines?: AnnotationText<Locale>
+  /** Valid values, checked against the inferred output type. See `validateExamples` */
+  examples?: ExampleValue<Output>[]
+  /** Reason the value should no longer be written, and what replaces it */
+  deprecated?: AnnotationText<Locale>
+  /** The value is managed by the system that owns the content; nothing authoring against the schema should write it */
+  readOnly?: boolean
+}
+
+/**
+ * The output type, written as a literal value: the phantom
+ * `$refSchema` key that parsed reference values have for type-level lookups
+ * is removed, recursively
+ */
+export type ExampleValue<T> = T extends (infer Element)[]
+  ? ExampleValue<Element>[]
+  : T extends object
+    ? {
+        [K in keyof T as K extends typeof REF_SCHEMA ? never : K]: ExampleValue<
+          T[K]
+        >
+      }
+    : T
+
+/** Resolved annotations, as returned by `getAnnotations`: every text is a plain string */
+export type ResolvedSchemaAnnotations<Output = unknown> = {
+  title?: string
+  description?: string
+  guidelines?: string
+  examples?: ExampleValue<Output>[]
+  deprecated?: string
+  readOnly?: boolean
+}
 export interface SanityObjectType<
   Output = OutputFromShape<SanityObjectShape>,
 > extends SanityType<Output> {
