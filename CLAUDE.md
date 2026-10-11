@@ -32,7 +32,11 @@ Config files are TypeScript where the tool supports it (`oxlint.config.ts`, `oxf
 
 ## Releasing
 
-Changesets, not conventional commits. `.github/workflows/release.yml` opens a "chore: version packages" PR on push to `main` when `.changeset/*.md` files exist; merging it publishes to npm with trusted publishing (OIDC, `npm-publish` environment) and provenance. Every user-facing change needs a changeset file. Changeset notes are short and written for package users: what changed for them and anything they must do. No implementation notes, internal file or helper names, refactor rationale, branch names, PR process or test changes. `CHANGELOG.md` is generated, do not edit by hand. This repo lives in the `sanity-labs` GitHub org.
+Changesets, not conventional commits. `.github/workflows/release.yml` opens a "chore: version packages" PR on push to `main` when `.changeset/*.md` files exist; merging it publishes to npm with trusted publishing (OIDC, `npm-publish` environment) and provenance. Every user-facing change needs a changeset file. Changeset notes are short and written for package users: what changed for them and anything they must do. No implementation notes, internal file or helper names, refactor rationale, branch names, PR process or test changes. `CHANGELOG.md` is generated, do not edit by hand.
+
+Pending changesets together describe the difference between the last published version (`git describe --tags --abbrev=0`; `git show <tag>:<path>` shows what it shipped) and the next one, not the history of PRs in between. Before adding a changeset, read the pending ones in `.changeset/`. If the change fixes, renames, reworks or removes something that is not yet released, edit or delete the existing changeset instead of adding a new one; a fix to an unreleased feature needs no changeset of its own. If the change makes a pending note wrong (it names a removed API, or a behaviour that changed again), rewrite that note so the set reads as one release. In prerelease mode (`.changeset/pre.json` exists), changesets listed in its `changesets` array are already published; leave them as they are and add a new changeset instead.
+
+This repo lives in the `sanity-labs` GitHub org.
 
 ## Architecture
 
