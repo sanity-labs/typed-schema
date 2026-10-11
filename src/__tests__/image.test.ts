@@ -81,14 +81,13 @@ describe('image type', () => {
           "issues": [
             {
               "code": "INVALID_TYPE",
-              "input": undefined,
               "message": "Expected an object with keys {_type, _ref, _weak}",
               "path": [
                 "asset",
               ],
             },
           ],
-          "message": "Invalid input at "asset": Expected an object with keys {_type, _ref, _weak}",
+          "message": "Invalid input at asset: Expected an object with keys {_type, _ref, _weak}",
         },
         "ok": false,
       }
@@ -104,7 +103,6 @@ describe('image type', () => {
           "issues": [
             {
               "code": "INVALID_TYPE",
-              "input": undefined,
               "message": "Expected literal value "reference"",
               "path": [
                 "asset",
@@ -113,7 +111,6 @@ describe('image type', () => {
             },
             {
               "code": "INVALID_TYPE",
-              "input": undefined,
               "message": "Expected a string",
               "path": [
                 "asset",
@@ -121,7 +118,9 @@ describe('image type', () => {
               ],
             },
           ],
-          "message": "Invalid input at "asset._type": Expected literal value "reference" (+ 1)",
+          "message": "Invalid input (2 issues):
+        asset._type: Expected literal value "reference"
+        asset._ref: Expected a string",
         },
         "ok": false,
       }
@@ -140,14 +139,13 @@ describe('image type', () => {
           "issues": [
             {
               "code": "INVALID_TYPE",
-              "input": undefined,
               "message": "Expected a string",
               "path": [
                 "caption",
               ],
             },
           ],
-          "message": "Invalid input at "caption": Expected a string",
+          "message": "Invalid input at caption: Expected a string",
         },
         "ok": false,
       }

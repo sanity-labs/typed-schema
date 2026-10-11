@@ -39,12 +39,11 @@ describe('date type', () => {
           "issues": [
             {
               "code": "INVALID_TYPE",
-              "input": "2023-12-06 ",
               "message": "Expected a date string on the format "YYYY-MM-DD"",
               "path": [],
             },
           ],
-          "message": "Invalid input at "<root>": Expected a date string on the format "YYYY-MM-DD"",
+          "message": "Invalid input at <root>: Expected a date string on the format "YYYY-MM-DD"",
         },
         "ok": false,
       }
@@ -55,12 +54,11 @@ describe('date type', () => {
           "issues": [
             {
               "code": "INVALID_TYPE",
-              "input": "2023-1-6",
               "message": "Expected a date string on the format "YYYY-MM-DD"",
               "path": [],
             },
           ],
-          "message": "Invalid input at "<root>": Expected a date string on the format "YYYY-MM-DD"",
+          "message": "Invalid input at <root>: Expected a date string on the format "YYYY-MM-DD"",
         },
         "ok": false,
       }
@@ -71,12 +69,11 @@ describe('date type', () => {
           "issues": [
             {
               "code": "INVALID_TYPE",
-              "input": "xyz",
               "message": "Expected a date string on the format "YYYY-MM-DD"",
               "path": [],
             },
           ],
-          "message": "Invalid input at "<root>": Expected a date string on the format "YYYY-MM-DD"",
+          "message": "Invalid input at <root>: Expected a date string on the format "YYYY-MM-DD"",
         },
         "ok": false,
       }
@@ -87,12 +84,11 @@ describe('date type', () => {
           "issues": [
             {
               "code": "INVALID_TYPE",
-              "input": undefined,
               "message": "Expected a date string on the format "YYYY-MM-DD"",
               "path": [],
             },
           ],
-          "message": "Invalid input at "<root>": Expected a date string on the format "YYYY-MM-DD"",
+          "message": "Invalid input at <root>: Expected a date string on the format "YYYY-MM-DD"",
         },
         "ok": false,
       }
@@ -103,12 +99,11 @@ describe('date type', () => {
           "issues": [
             {
               "code": "INVALID_TYPE",
-              "input": {},
               "message": "Expected a date string on the format "YYYY-MM-DD"",
               "path": [],
             },
           ],
-          "message": "Invalid input at "<root>": Expected a date string on the format "YYYY-MM-DD"",
+          "message": "Invalid input at <root>: Expected a date string on the format "YYYY-MM-DD"",
         },
         "ok": false,
       }

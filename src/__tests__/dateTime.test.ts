@@ -22,12 +22,11 @@ describe('dateTime type', () => {
           "issues": [
             {
               "code": "INVALID_TYPE",
-              "input": "2023-12-06",
               "message": "Expected an ISO 8601 dateTime string on the format "YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)"",
               "path": [],
             },
           ],
-          "message": "Invalid input at "<root>": Expected an ISO 8601 dateTime string on the format "YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)"",
+          "message": "Invalid input at <root>: Expected an ISO 8601 dateTime string on the format "YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)"",
         },
         "ok": false,
       }
@@ -38,12 +37,11 @@ describe('dateTime type', () => {
           "issues": [
             {
               "code": "INVALID_TYPE",
-              "input": "2023-12-06T19:01:07  ",
               "message": "Expected an ISO 8601 dateTime string on the format "YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)"",
               "path": [],
             },
           ],
-          "message": "Invalid input at "<root>": Expected an ISO 8601 dateTime string on the format "YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)"",
+          "message": "Invalid input at <root>: Expected an ISO 8601 dateTime string on the format "YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)"",
         },
         "ok": false,
       }
@@ -54,12 +52,11 @@ describe('dateTime type', () => {
           "issues": [
             {
               "code": "INVALID_TYPE",
-              "input": "xyz",
               "message": "Expected an ISO 8601 dateTime string on the format "YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)"",
               "path": [],
             },
           ],
-          "message": "Invalid input at "<root>": Expected an ISO 8601 dateTime string on the format "YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)"",
+          "message": "Invalid input at <root>: Expected an ISO 8601 dateTime string on the format "YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)"",
         },
         "ok": false,
       }
@@ -70,12 +67,11 @@ describe('dateTime type', () => {
           "issues": [
             {
               "code": "INVALID_TYPE",
-              "input": undefined,
               "message": "Expected a string",
               "path": [],
             },
           ],
-          "message": "Invalid input at "<root>": Expected a string",
+          "message": "Invalid input at <root>: Expected a string",
         },
         "ok": false,
       }
@@ -86,12 +82,11 @@ describe('dateTime type', () => {
           "issues": [
             {
               "code": "INVALID_TYPE",
-              "input": {},
               "message": "Expected a string",
               "path": [],
             },
           ],
-          "message": "Invalid input at "<root>": Expected a string",
+          "message": "Invalid input at <root>: Expected a string",
         },
         "ok": false,
       }

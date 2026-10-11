@@ -20,7 +20,6 @@ test('reports failing elements with their index instead of throwing', () => {
         "issues": [
           {
             "code": "INVALID_TYPE",
-            "input": 1,
             "message": "Expected a string",
             "path": [
               1,
@@ -28,14 +27,15 @@ test('reports failing elements with their index instead of throwing', () => {
           },
           {
             "code": "INVALID_TYPE",
-            "input": null,
             "message": "Expected a string",
             "path": [
               3,
             ],
           },
         ],
-        "message": "Invalid input at "[1]": Expected a string (+ 1)",
+        "message": "Invalid input (2 issues):
+      [1]: Expected a string
+      [3]: Expected a string",
       },
       "ok": false,
     }
