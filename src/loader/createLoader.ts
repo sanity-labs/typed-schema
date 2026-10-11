@@ -1,4 +1,4 @@
-import {type Infer, type SanityDocumentType, type SanityType} from '../defs'
+import {type Parsed, type SanityDocumentType, type SanityType} from '../defs'
 import {type ElementType} from '../helpers/utilTypes'
 import {type StoredDocument} from '../lifecycle'
 import {type SanityDocumentValue} from '../shapeDefs'
@@ -30,7 +30,7 @@ export function createLoader(
   >(
     schema: MaybeLazy<DocumentSchema>,
     ids: string[],
-  ): Promise<Infer<DocumentSchema>[]> {
+  ): Promise<Parsed<DocumentSchema>[]> {
     return Promise.all(ids.map(id => loadDocument(schema, id)))
   }
 

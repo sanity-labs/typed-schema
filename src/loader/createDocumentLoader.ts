@@ -1,5 +1,5 @@
 import {
-  type Infer,
+  type Parsed,
   type SanityDocumentType,
   type SanityLazy,
   type SanityType,
@@ -32,7 +32,7 @@ export function createDocumentLoader(
   >(
     schema: MaybeLazy<DocumentSchema>,
     id: string,
-  ): Promise<Infer<DocumentSchema>> {
+  ): Promise<Parsed<DocumentSchema>> {
     return safeFetchDocument(schema, id).then(result =>
       result.status === 'ok'
         ? result.value

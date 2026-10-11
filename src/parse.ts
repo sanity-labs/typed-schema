@@ -16,9 +16,9 @@ import {
   isStringSchema,
 } from './asserters'
 import {
-  type Infer,
   REF_SCHEMA,
   type OutputOf,
+  type Parsed,
   type SanityAsset,
   type SanityBlock,
   type SanityBoolean,
@@ -72,7 +72,7 @@ export type ParseResult<T> = ParseOk<T> | ParseFail
 export function safeParse<T extends SanityType>(
   _schema: T,
   input: unknown,
-): ParseResult<Infer<T>> {
+): ParseResult<Parsed<T>> {
   const schema = getLazySchema(_schema)
   if (isOptionalSchema(schema)) {
     return parseOptional(schema, input) as any
@@ -154,7 +154,7 @@ export class ParseError extends Error {
 export function parse<T extends SanityType>(
   schema: T,
   input: unknown,
-): Infer<T> {
+): Parsed<T> {
   const safeResult = safeParse(schema, input)
   if (safeResult.status === 'fail') {
     throw new ParseError(safeResult.errors)

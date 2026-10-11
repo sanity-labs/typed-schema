@@ -210,6 +210,8 @@ try {
 
 Parsing strips properties the schema does not declare rather than rejecting them.
 
+`parse` returns `Parsed<typeof Pet>`, which is `Infer<typeof Pet>` plus a hidden `$refSchema` key on reference values; see [Loading documents and references](#loading-documents-and-references).
+
 ### Arrays and `_key`
 
 Sanity requires every object in an array to carry a `_key`. When the element of `array()` is object-like (an object, reference, image, file, block, or a union of those), the inferred element type includes `_key` and parsing requires it. Arrays of primitives do not have keys.
@@ -398,11 +400,13 @@ const Post = document({
   author: reference(Author),
 })
 
-const welcome = await loadDocument(Post, 'welcome') // Infer<typeof Post>
+const welcome = await loadDocument(Post, 'welcome') // Parsed<typeof Post>
 const writer = await loadReference(welcome.author) // the stored Author document
 ```
 
 `loadDocument` parses what the fetch returns, so a document that does not match its schema rejects with a `ParseError`. `fields` is the list of top-level field names in the schema, so you can project only what you need.
+
+`loadDocument` returns `Parsed<typeof Post>`, where each reference value includes the schema it points to under a hidden `$refSchema` key. That is how `loadReference(welcome.author)` knows to parse the result as an `Author`. A reference typed as `Infer<typeof Post>['author']`, for example one built by hand or read straight from the client, has no `$refSchema`, so `loadReference` falls back to parsing only the document system fields and returns a `StoredDocument<DocumentLike>`.
 
 ### Unique type names (GraphQL strict mode)
 
@@ -509,7 +513,7 @@ All functions are named exports of `@sanity-labs/typed-schema`.
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `array(element)`      | Object-like elements get a required `_key`; primitive elements do not. Arrays of arrays are a type error                                                                                                              |
 | `union([...members])` | All primitives (including literals and dates) or all typed objects, references, images, files and blocks. Nested unions are flattened                                                                                 |
-| `reference(doc)`      | `{_type: 'reference'; _ref: string; _weak?: boolean}`. Values returned by `parse` also carry the referenced schema as `$refSchema`, which `loadReference` uses. It is not serialized, and you never need to supply it |
+| `reference(doc)`      | `{_type: 'reference'; _ref: string; _weak?: boolean}`. In `Parsed<>` the value also includes the referenced schema as `$refSchema`, which `loadReference` uses. It is not serialized, and it is absent from `Infer<>` |
 
 ### Portable Text
 
@@ -571,7 +575,7 @@ Each returns a new schema. Types follow the runtime change.
 
 | Export                     | Notes                                                                                                                                       |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `parse(schema, input)`     | Returns `Infer<typeof schema>` or throws `ParseError`                                                                                       |
+| `parse(schema, input)`     | Returns `Parsed<typeof schema>` or throws `ParseError`                                                                                      |
 | `safeParse(schema, input)` | Returns `{status: 'ok', value}` or `{status: 'fail', errors}`                                                                               |
 | `ParseError`               | `message` summarises the first error; `errors` holds all of them                                                                            |
 | `ParseErrorDetails`        | `{path, code, input, message}`. `path` is an array of field names and array indexes or `_key`s                                              |
@@ -598,7 +602,8 @@ Each returns a new schema. Types follow the runtime change.
 
 | Type                        | Notes                                                                                     |
 | --------------------------- | ----------------------------------------------------------------------------------------- |
-| `Infer<typeof schema>`      | The value type of a schema                                                                |
+| `Infer<typeof schema>`      | The value type of a schema as stored: plain data, without `$refSchema` on references      |
+| `Parsed<typeof schema>`     | What `parse` and the loaders return: `Infer` plus `$refSchema` on every reference value   |
 | `SanityType<Output>`        | Base type of every schema; `SanityObject`, `SanityDocument`, `SanityArray`, ... extend it |
 | `SanityDocumentType<Value>` | A document schema annotated by its value type; use for recursive schemas                  |
 | `SanityDocumentValue`       | `{_type: string; _id?: string; _rev?: string; _createdAt?: string; _updatedAt?: string}`  |

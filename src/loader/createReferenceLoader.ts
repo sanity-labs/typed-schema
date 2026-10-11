@@ -1,4 +1,4 @@
-import {type Conceal, type Infer, REF_SCHEMA, type SanityType} from '../defs'
+import {type Conceal, type OutputOf, REF_SCHEMA, type SanityType} from '../defs'
 import {type StoredDocument} from '../lifecycle'
 import {ParseError, type ParseOk, type ParseResult, safeParse} from '../parse'
 import {
@@ -7,11 +7,16 @@ import {
   type SanityDocumentValue,
 } from '../shapeDefs'
 
-export type DocumentLike = Infer<typeof DocumentBase>
-export type ReferenceLike = Infer<typeof ReferenceBase>
+export type DocumentLike = OutputOf<typeof DocumentBase>
+export type ReferenceLike = OutputOf<typeof ReferenceBase>
 
+/**
+ * A reference value that may or may not include its referenced schema: a
+ * `Parsed` reference has it, an `Infer` reference (hand-written or from a raw
+ * client result) does not.
+ */
 export type ReferenceWithOptionalRefType<RefTypeDef> = ReferenceLike &
-  Conceal<RefTypeDef>
+  Partial<Conceal<RefTypeDef>>
 
 const NO_REF: Promise<ParseOk<any>> = Promise.resolve({
   status: 'ok',
@@ -20,14 +25,13 @@ const NO_REF: Promise<ParseOk<any>> = Promise.resolve({
 
 export type InferReferenceType<
   T extends ReferenceWithOptionalRefType<SanityType<SanityDocumentValue>>,
-> =
-  T extends Conceal<infer Ref>
-    ? Ref extends SanityType<infer Output>
-      ? Output
-      : T extends {_weak: true}
-        ? undefined | DocumentLike
-        : DocumentLike
-    : DocumentLike
+> = T extends {[REF_SCHEMA]?: infer Ref}
+  ? Ref extends SanityType<infer Output>
+    ? Output
+    : T extends {_weak: true}
+      ? undefined | DocumentLike
+      : DocumentLike
+  : DocumentLike
 
 export function createSafeLoadReference(
   fetch: (id: string, fieldSelection: string[]) => Promise<unknown>,

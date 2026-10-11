@@ -2,7 +2,12 @@ import {describe, expectTypeOf, test} from 'vitest'
 
 import {image} from '../creators/image'
 import {string} from '../creators/string'
-import {type Infer, type REF_SCHEMA, type SanityDocument} from '../defs'
+import {
+  type Infer,
+  type Parsed,
+  type REF_SCHEMA,
+  type SanityDocument,
+} from '../defs'
 import {type ImageAssetShape} from '../shapeDefs'
 
 describe('image type', () => {
@@ -15,11 +20,20 @@ describe('image type', () => {
         _type: 'reference'
         _ref: string
         _weak?: boolean
-        [REF_SCHEMA]?: SanityDocument<ImageAssetShape>
       }
     }
 
     expectTypeOf<Infer<typeof ImageSchema>>().toEqualTypeOf<ImageValue>()
+  })
+  test('parsed image values include the asset schema on the reference', () => {
+    const ImageSchema = image({})
+
+    expectTypeOf<Parsed<typeof ImageSchema>['asset']>().toEqualTypeOf<{
+      _type: 'reference'
+      _ref: string
+      _weak?: boolean
+      [REF_SCHEMA]: SanityDocument<ImageAssetShape>
+    }>()
   })
   test('custom image type definition', () => {
     const ImageSchema = image({
@@ -32,7 +46,6 @@ describe('image type', () => {
         _type: 'reference'
         _ref: string
         _weak?: boolean
-        [REF_SCHEMA]?: SanityDocument<ImageAssetShape>
       }
       caption: string
     }
