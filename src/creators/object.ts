@@ -1,4 +1,8 @@
-import {type SanityObject, type SanityObjectShape} from '../defs'
+import {
+  type SanityAny,
+  type SanityObject,
+  type SanityObjectShape,
+} from '../defs'
 import {deferGetters} from '../helpers/deferGetters'
 import {defineType} from '../helpers/defineType'
 import {type ValidFieldName} from '../helpers/utilTypes'
@@ -22,8 +26,38 @@ export type InvalidFieldNames<Shape, Allowed extends string = never> = {
   ]: never
 }
 
+type Equals<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
+    ? true
+    : false
+
+/**
+ * `Shape` with every value replaced by `0` and `?` removed. A homomorphic
+ * mapped type keeps the `readonly` modifier without reading the values.
+ */
+type ReadonlyModifiers<Shape> = {[Property in keyof Shape]-?: 0}
+
+/**
+ * Requires every field of `Shape` to be a schema, except fields declared with
+ * getters. Reading a getter's type while `Shape` is inferred breaks recursive
+ * schemas, so those are told apart by their modifier instead: a getter without
+ * a setter is a `readonly` property, and checking that reads no values. Wrap it
+ * in `NoInfer`, like {@link InvalidFieldNames}.
+ */
+export type FieldSchemas<Shape> = {
+  [
+    Property in keyof Shape as Equals<
+      Pick<ReadonlyModifiers<Shape>, Property>,
+      {-readonly [P in Property]: 0}
+    > extends true
+      ? Property
+      : never
+  ]: SanityAny
+}
+
 export function object<Shape extends {[key: string]: any} = SanityObjectShape>(
-  shape: Shape & NoInfer<InvalidFieldNames<Shape, '_type'>>,
+  shape: Shape &
+    NoInfer<InvalidFieldNames<Shape, '_type'> & FieldSchemas<Shape>>,
 ): SanityObject<Shape> {
   return defineType({typeName: 'object', shape: deferGetters(shape)})
 }

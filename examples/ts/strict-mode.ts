@@ -1,4 +1,4 @@
-import {array, literal, object, union} from '@sanity-labs/typed-schema'
+import {array, literal, object, string, union} from '@sanity-labs/typed-schema'
 
 import {strictMode} from '../../src/helpers/strictMode'
 
@@ -7,8 +7,8 @@ const Person = strictMode(
     _type: literal('person'),
     name: object({
       _type: literal('name'),
-      first: 'string',
-      last: 'string',
+      first: string(),
+      last: string(),
     }),
     arr: array(
       union([

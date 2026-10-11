@@ -2,6 +2,8 @@ import {describe, expect, test} from 'vitest'
 
 import {array} from '../creators/array'
 import {document} from '../creators/document'
+import {file} from '../creators/file'
+import {image} from '../creators/image'
 import {lazy} from '../creators/lazy'
 import {literal} from '../creators/literal'
 import {object} from '../creators/object'
@@ -199,5 +201,48 @@ describe('recursive schemas declared with getters', () => {
         parent: {_type: 'tree', name: 'b'},
       }),
     ).toEqual({_type: 'tree', name: 'a', parent: {_type: 'tree', name: 'b'}})
+  })
+
+  test('self-reference inside image and file fields', () => {
+    const Gallery = object({
+      _type: literal('gallery'),
+      title: string(),
+      cover: optional(
+        image({
+          get related() {
+            return optional(Gallery)
+          },
+        }),
+      ),
+      attachment: optional(
+        file({
+          get gallery() {
+            return optional(Gallery)
+          },
+        }),
+      ),
+    })
+    const asset = {_type: 'reference', _ref: 'a'}
+    const value = {
+      _type: 'gallery',
+      title: 'a',
+      cover: {
+        _type: 'image',
+        asset,
+        related: {_type: 'gallery', title: 'b'},
+      },
+      attachment: {
+        _type: 'file',
+        asset,
+        gallery: {_type: 'gallery', title: 'c'},
+      },
+    }
+    expect(parse(Gallery, value)).toEqual(value)
+    expect(
+      safeParse(Gallery, {
+        ...value,
+        cover: {...value.cover, related: {_type: 'gallery', title: 1}},
+      }).status,
+    ).toBe('fail')
   })
 })
