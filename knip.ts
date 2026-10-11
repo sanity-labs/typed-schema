@@ -24,6 +24,19 @@ const config: KnipConfig = {
         'examples/{ts,content-migration}/**/*.{ts,tsx}',
       ],
     },
+    docs: {
+      // knip does not read Markdown: playground.md imports Playground.vue
+      // and Twoslash examples import @sanity/client. The two workers are
+      // loaded with `new URL(...)`, which knip does not follow
+      entry: [
+        '.vitepress/playground/worker.ts',
+        '.vitepress/playground/runner.ts',
+        '.vitepress/playground/Playground.vue',
+        '.vitepress/**/*.test.ts',
+      ],
+      project: ['.vitepress/**/*.{ts,vue}'],
+      ignoreDependencies: ['@sanity/client'],
+    },
   },
 }
 

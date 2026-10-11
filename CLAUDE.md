@@ -23,11 +23,13 @@ pnpm knip                 # unused files/deps/exports (config: knip.ts)
 pnpm build                # pkg build + pkg check + publint + arethetypeswrong -> dist/
 pnpm check                # clean, build, then typecheck+lint+format:check+knip+test+package checks
 pnpm changeset            # add a release note for a user-facing change
+pnpm docs:dev             # pkg build + docs site dev server (docs/, VitePress)
+pnpm docs:build           # pkg build + docs site build; fails on Twoslash type errors
 ```
 
-Tests live in `src/**/__tests__/`. Files ending in `.test-d.ts` are type-level tests run by vitest's typecheck mode; a change that breaks inference shows up there, not at runtime. Every runtime behaviour needs a `.test.ts` next to its `.test-d.ts`: several past bugs lived in paths covered only by type tests.
+Library tests live in `src/**/__tests__/`; tests for the docs site's build plugins and playground sit next to their files in `docs/.vitepress/`. Files ending in `.test-d.ts` are type-level tests run by vitest's typecheck mode; a change that breaks inference shows up there, not at runtime. Every runtime behaviour needs a `.test.ts` next to its `.test-d.ts`: several past bugs lived in paths covered only by type tests.
 
-`src/index.ts` is a curated export list, not a mirror of the file tree. Internal helpers (sub-parsers, built-in shape constants, helper types) are deliberately not exported; add to the index only what the README documents.
+`src/index.ts` is a curated export list, not a mirror of the file tree. Internal helpers (sub-parsers, built-in shape constants, helper types) are deliberately not exported; add to the index only what the docs site documents.
 
 Config files are TypeScript where the tool supports it (`oxlint.config.ts`, `oxfmt.config.ts`, `knip.ts`, `vitest.config.ts`, `package.config.ts`, `taze.config.ts`).
 
@@ -56,11 +58,13 @@ The central idea: every schema type is a plain object carrying `typeName` plus a
 - `src/loader/*`: `createLoader(fetchImpl)` is client-agnostic; given a `(id, fieldSelection) => Promise<unknown>` it returns typed `loadDocument`/`loadReference` helpers that parse what comes back against the schema.
 - `src/compat/typed-to-classic/` is a proof of concept (drops referenced types, required-ness and block metadata); treat its output as a starting point.
 
+`docs/` is the documentation site: a private workspace package built with VitePress and deployed to GitHub Pages by `.github/workflows/docs.yml`. Code blocks marked `ts twoslash` are type-checked against `src/` at build time (TypeScript 6, since Twoslash needs the JS compiler API that TypeScript 7 lacks), so an example that stops compiling fails `pnpm docs:build`. `docs/.vitepress/playground/` is the in-browser playground: CodeMirror plus a TypeScript worker fed the package's `dist/index.d.ts`, examples in `presets.ts` (each default-exports a schema), and validation run in a separate worker.
+
 `examples/ts`, `examples/content-migration` and `experiments/` are loose folders without their own `package.json`; they are typechecked (`typecheck:examples`) but not built, and vitest excludes `experiments/`. `experiments/form/` is the experimental form-definition sketch that used to ship from the package.
 
 ## Conventions
 
-- Schema constants are PascalCase and share their name with the inferred type: `const Pet = document({...})`, `type Pet = Infer<typeof Pet>`. Creator and transform functions stay camelCase, `_type` literals stay camelCase (`literal('pet')`), and instances stay camelCase (`const pet = parse(Pet, data)`). This applies to README snippets, examples and tests alike; throwaway test locals like `schema` or `doc` are the only exception.
+- Schema constants are PascalCase and share their name with the inferred type: `const Pet = document({...})`, `type Pet = Infer<typeof Pet>`. Creator and transform functions stay camelCase, `_type` literals stay camelCase (`literal('pet')`), and instances stay camelCase (`const pet = parse(Pet, data)`). This applies to README snippets, docs pages, playground examples, examples and tests alike; throwaway test locals like `schema` or `doc` are the only exception.
 - Type-only imports must be inline: `import {type Foo} from './x'` (enforced by oxlint).
 - Sanity system fields (`_type`, `_id`, `_ref`, `_key`) are the only identifiers allowed to start with `_`; user-defined schema fields starting with `_` are a compile-time error by design.
 - A type-level check that rejects a schema resolves to `SchemaError<'what is wrong'>` (from `src/helpers/utilTypes.ts`) at the offending spot, not to `never`, so the type error says what to fix. Test the message with `expectTypeOf`, next to the `@ts-expect-error` cases.

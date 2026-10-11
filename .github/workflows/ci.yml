@@ -34,6 +34,23 @@ jobs:
       # pkg build + pkg check + publint + arethetypeswrong
       - run: pnpm build
 
+  docs:
+    name: Docs
+    # on main, docs.yml builds the site for deployment
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # fails on Twoslash errors, so every docs example is typechecked
+      - run: pnpm docs:build
+      - run: pnpm docs:typecheck
+
   test:
     name: Test (node ${{ matrix.node-version }})
     runs-on: ubuntu-latest

@@ -20,7 +20,7 @@ pre-commit:
       skip:
         - run: node scripts/is-agent.js
       glob: '*.{js,mjs,cjs,ts,tsx,mts}'
-      run: pnpm exec oxlint --fix {staged_files}
+      run: pnpm exec oxlint --fix --no-error-on-unmatched-pattern {staged_files}
       stage_fixed: true
 
     # --- Agents: full project checks ---

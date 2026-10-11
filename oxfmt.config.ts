@@ -13,6 +13,7 @@ export default defineConfig({
   },
   ignorePatterns: [
     'dist',
+    'docs/.vitepress/cache',
     'coverage',
     '.tmp',
     'tmp',

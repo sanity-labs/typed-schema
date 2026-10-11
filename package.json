@@ -10,7 +10,7 @@
     "typescript",
     "validation"
   ],
-  "homepage": "https://github.com/sanity-labs/typed-schema#readme",
+  "homepage": "https://sanity-labs.github.io/typed-schema/",
   "bugs": {
     "url": "https://github.com/sanity-labs/typed-schema/issues"
   },
@@ -48,12 +48,16 @@
   "scripts": {
     "build": "run-s pkg:build pkg:check check:publint check:attw",
     "changeset": "changeset",
-    "check": "npm-run-all --serial clean pkg:build --parallel typecheck typecheck:ts6 lint format:check knip test pkg:check check:publint check:attw",
+    "check": "npm-run-all --serial clean pkg:build --parallel typecheck typecheck:ts6 docs:typecheck lint format:check knip test pkg:check check:publint check:attw",
     "check:attw": "pnpm pack --out .tmp/package.tgz && attw .tmp/package.tgz --profile esm-only",
     "check:publint": "publint --strict --pack pnpm",
     "clean": "rimraf dist",
     "coverage": "vitest run --coverage",
     "dev": "run-p pkg:watch typecheck:watch test:watch",
+    "docs:build": "pnpm pkg:build && pnpm --filter @sanity-labs/typed-schema-docs build",
+    "docs:dev": "pnpm pkg:build && pnpm --filter @sanity-labs/typed-schema-docs dev",
+    "docs:preview": "pnpm --filter @sanity-labs/typed-schema-docs preview",
+    "docs:typecheck": "pnpm --filter @sanity-labs/typed-schema-docs typecheck",
     "example:compat-studio": "(cd examples/compat-studio && npm run dev)",
     "examples": "run-p example:*",
     "format": "oxfmt",

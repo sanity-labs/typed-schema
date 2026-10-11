@@ -38,6 +38,9 @@ export default defineConfig({
         'examples/**',
         'experiments/**',
         'scripts/**',
+        // docs build-time code runs in Node
+        'docs/.vitepress/*.ts',
+        'docs/.vitepress/playground/plugin.ts',
         '**/*.test.ts',
         '**/*.test-d.ts',
       ],
@@ -46,6 +49,23 @@ export default defineConfig({
         'import/no-nodejs-modules': 'off',
       },
     },
+    {
+      // the theme entry imports its stylesheets for their side effects
+      files: ['docs/.vitepress/theme/index.ts'],
+      rules: {
+        'import/no-unassigned-import': 'off',
+      },
+    },
   ],
-  ignorePatterns: ['dist', 'coverage', '.tmp', 'tmp', '**/.*/**'],
+  ignorePatterns: [
+    'dist',
+    'coverage',
+    '.tmp',
+    'tmp',
+    // dot-directories hold tooling state, except the docs site's source
+    '**/.*/**',
+    '!docs/.vitepress/**',
+    'docs/.vitepress/cache/**',
+    'docs/.vitepress/dist/**',
+  ],
 })

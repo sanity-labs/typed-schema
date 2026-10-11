@@ -1,6 +1,7 @@
 packages:
   - '.'
   - 'examples/*'
+  - 'docs'
 allowBuilds:
   esbuild: false
   # lefthook's postinstall installs the git hooks from lefthook.yml
