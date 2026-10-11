@@ -32,6 +32,13 @@ export type Format<A> = A extends {[Key in keyof A]: A[Key]}
 
 export type ExtendsNever<T> = [T] extends [never] ? true : false
 
+/**
+ * `true` if `T` is `any`. `any` is the only type that absorbs an
+ * intersection: `1 & any` is `any`, which `0` extends, while `1 & T` is `1`
+ * or `never` for every other `T`, `unknown` included.
+ */
+export type IsAny<T> = 0 extends 1 & T ? true : false
+
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type OutputFormatFix = {}
 

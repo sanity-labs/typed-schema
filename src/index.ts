@@ -68,6 +68,9 @@ export {
   safeParse,
 } from './parse'
 
+// Standard Schema (https://standardschema.dev)
+export type {StandardSchemaV1} from './standardSchema'
+
 // Schema transforms
 export * from './utils/deepPartial'
 export * from './utils/deepRequired'
