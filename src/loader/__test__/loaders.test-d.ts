@@ -6,6 +6,7 @@ import {literal} from '../../creators/literal'
 import {optional} from '../../creators/optional'
 import {reference} from '../../creators/reference'
 import {string} from '../../creators/string'
+import {union} from '../../creators/union'
 import {type Infer, type Parsed, type SanityDocumentType} from '../../defs'
 import {type Committed} from '../../lifecycle'
 import {parse} from '../../parse'
@@ -138,4 +139,42 @@ test('loadReference stays typed for a recursive schema annotated with SanityRefe
     name: string
     parent?: SanityReferenceValue<TreeNode>
   }>()
+})
+
+test('loadReference resolves a reference to a union of documents to a union', async () => {
+  const Author = document({_type: literal('author'), name: string()})
+  const Review = document({
+    _type: literal('review'),
+    subject: reference(union([Author, lazy(() => Country)])),
+  })
+  const reviewResult = parse(Review, {})
+  assert(reviewResult.ok)
+  const {subject} = reviewResult.value
+  expectTypeOf<ReferencedSchema<typeof subject>>().toEqualTypeOf<
+    typeof Author | ReturnType<typeof lazy<typeof Country>>
+  >()
+
+  const loadReference = createReferenceLoader(fetch)
+  const loaded = await loadReference(subject)
+  expectTypeOf(loaded).toEqualTypeOf<
+    Parsed<Committed<typeof Author>> | Parsed<Committed<typeof Country>>
+  >()
+  if (loaded._type === 'author') {
+    expectTypeOf(loaded.name).toEqualTypeOf<string>()
+  }
+})
+
+test('loadReference resolves a union of references like a reference to a union', async () => {
+  const Author = document({_type: literal('author'), name: string()})
+  const Review = document({
+    _type: literal('review'),
+    subject: union([reference(Author), reference(lazy(() => Country))]),
+  })
+  const reviewResult = parse(Review, {})
+  assert(reviewResult.ok)
+  const {subject} = reviewResult.value
+  const loaded = await createReferenceLoader(fetch)(subject)
+  expectTypeOf(loaded).toEqualTypeOf<
+    Parsed<Committed<typeof Author>> | Parsed<Committed<typeof Country>>
+  >()
 })

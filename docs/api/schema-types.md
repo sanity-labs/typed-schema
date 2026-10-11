@@ -55,35 +55,94 @@ type Photo = s.Infer<typeof Recipe>['photo']
 //   ^?
 ```
 
-## Arrays, unions and references
+## Arrays
 
-| Creator                                           | Notes                                                                                                                                                                                                                 |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `array(element)`                                  | Object-like elements get a required `_key`; primitive elements do not. Arrays of arrays are a type error                                                                                                              |
-| `union([...members])`                             | All primitives (including literals and dates) or all typed objects, references, images, files and blocks. Nested unions are flattened                                                                                 |
-| `objectArray(element)`, `primitiveArray(element)` | `array()` for one kind of element: `array()` picks between them from the element schema                                                                                                                               |
-| `getUnkeyedSchema(element)`                       | The element schema as given to `array()`, without the `_key` field `array()` adds                                                                                                                                     |
-| `reference(doc)`                                  | `{_type: 'reference'; _ref: string; _weak?: boolean}`. In `Parsed<>` the value also includes the referenced schema as `$refSchema`, which `loadReference` uses. It is not serialized, and it is absent from `Infer<>` |
+| Creator                                           | Notes                                                                                                                                                                    |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `array(element)`                                  | Object-like elements (objects, references, images, files, blocks and unions of these) get a required `_key`; primitive elements don't. Arrays of arrays are a type error |
+| `objectArray(element)`, `primitiveArray(element)` | `array()` for one kind of element. `array()` picks between them from the element schema                                                                                  |
+| `getUnkeyedSchema(element)`                       | The element schema as given to `array()`, without the `_key` field that `array()` adds                                                                                   |
+
+An `array()` element can't be `optional()`, and it can't be a `union()` of documents. For references to several document types, use `array(reference(union([...])))`.
 
 ```ts twoslash
 import * as s from '@sanity-labs/typed-schema'
 
+const Ingredients = s.array(s.object({name: s.string(), grams: s.number()}))
+
+type Ingredients = s.Infer<typeof Ingredients>
+//   ^?
+```
+
+See [Arrays and `_key`](/guide/arrays) for how keys are added.
+
+## Unions
+
+| Creator               | Notes                                                                                                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `union([...members])` | All primitives (including literals and dates), all typed objects, references, images, files and blocks, or all documents. Mixing these kinds is a type error |
+
+A union of objects tells its members apart by `_type`, so every object member needs a `_type` literal. Nested unions are flattened in the inferred type.
+
+Every reference value has `_type: 'reference'`, so `union()` combines several `reference()` members into one reference to a union of their documents (see [References](#references)). For the inferred type to match, `union()` needs to see how many references there are. It can for members written inline, but not for a variable, which TypeScript types as an array of unknown length. Pass members that include a `reference()` inline, or declare the variable with `as const`:
+
+```ts twoslash
+// @errors: 2769
+import * as s from '@sanity-labs/typed-schema'
+
 const Author = s.document({_type: s.literal('author'), name: s.string()})
+const Link = s.object({_type: s.literal('link'), href: s.string()})
 
-type Author = s.Infer<typeof Author>
+s.union([s.reference(Author), Link])
 
-const Content = s.array(
-  s.union([
-    s.object({_type: s.literal('quote'), text: s.string()}),
-    s.reference(Author),
-  ]),
-)
+const members = [s.reference(Author), Link]
+s.union(members)
+
+const tuple = [s.reference(Author), Link] as const
+s.union(tuple)
+```
+
+A union of documents is the target of a reference to several document types. It can also parse a value that can be one of several documents, such as a query result: `parse(union([Author, Book]), doc)`. A document typed by its value must be typed as `SanityDocumentType<Value>` to be a member.
+
+```ts twoslash
+import * as s from '@sanity-labs/typed-schema'
+
+const Content = s.union([
+  s.object({_type: s.literal('quote'), text: s.string()}),
+  s.object({_type: s.literal('link'), href: s.string()}),
+])
 
 type Content = s.Infer<typeof Content>
 //   ^?
 ```
 
-See [Arrays and `_key`](/guide/arrays) for how keys are added.
+## References
+
+| Creator             | Inferred type                                         |
+| ------------------- | ----------------------------------------------------- |
+| `reference(target)` | `{_type: 'reference'; _ref: string; _weak?: boolean}` |
+
+`reference()` takes a document or a `union()` of documents. `reference(union([Author, Book]))` can point to either type, and is the same as `union([reference(Author), reference(Book)])`. For documents that reference each other, a document or a union member can be wrapped in `lazy()`.
+
+Values returned by `parse` include the target under `$refSchema`, which `loadReference` uses to parse the referenced document. `Infer<>` leaves it out.
+
+```ts twoslash
+import * as s from '@sanity-labs/typed-schema'
+
+const Author = s.document({_type: s.literal('author'), name: s.string()})
+const Book = s.document({_type: s.literal('book'), title: s.string()})
+
+const Review = s.document({
+  _type: s.literal('review'),
+  author: s.reference(Author),
+  subject: s.reference(s.union([Author, Book])),
+})
+
+type Review = s.Infer<typeof Review>
+//   ^?
+```
+
+See [Loading documents and references](/guide/loaders) for `loadReference`.
 
 ## Portable Text
 

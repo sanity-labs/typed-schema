@@ -1,5 +1,6 @@
 import {
   isDocumentSchema,
+  isDocumentUnionSchema,
   isLazySchema,
   isObjectArraySchema,
   isObjectSchema,
@@ -15,6 +16,8 @@ import {union} from '../creators/union'
 import {
   type OutputOf,
   type SanityDocument,
+  type SanityDocumentUnion,
+  type SanityDocumentUnionMemberKind,
   type SanityLazy,
   type SanityObject,
   type SanityObjectArray,
@@ -77,9 +80,13 @@ export type DeepPartial<S extends SanityType> =
           ? SanityObjectUnion<
               Extract<DeepPartial<UnionTypes>, SanityObjectUnionMemberKind>
             >
-          : S extends SanityObjectArray<infer ElementType>
-            ? SanityObjectArray<DeepPartial<ElementType>>
-            : S
+          : S extends SanityDocumentUnion<infer UnionTypes>
+            ? SanityDocumentUnion<
+                Extract<DeepPartial<UnionTypes>, SanityDocumentUnionMemberKind>
+              >
+            : S extends SanityObjectArray<infer ElementType>
+              ? SanityObjectArray<DeepPartial<ElementType>>
+              : S
 
 function partialShape(shape: SanityObjectShape): SanityObjectShape {
   return Object.fromEntries(
@@ -126,9 +133,13 @@ function transform(schema: SanityType): SanityType {
   if (isObjectSchema(schema)) {
     return inheritAnnotations(object(partialShape(schema.shape)), schema)
   }
-  if (isObjectUnionSchema(schema)) {
+  if (isObjectUnionSchema(schema) || isDocumentUnionSchema(schema)) {
     return inheritAnnotations(
-      union(schema.union.map(unionSchema => deepPartial(unionSchema)) as any),
+      union(
+        (schema.union as SanityType[]).map(unionSchema =>
+          deepPartial(unionSchema),
+        ) as any,
+      ),
       schema,
     )
   }

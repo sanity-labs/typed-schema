@@ -1,4 +1,5 @@
 import {
+  isDocumentUnionSchema,
   isLazySchema,
   isObjectArraySchema,
   isObjectLikeSchema,
@@ -8,7 +9,11 @@ import {
   isPrimitiveUnionSchema,
 } from '../asserters'
 import {getUnkeyedSchema} from '../creators/array'
-import {type SanityType} from '../defs'
+import {
+  type SanityObjectUnion,
+  type SanityPrimitiveUnion,
+  type SanityType,
+} from '../defs'
 import {formatPath, type ParseIssue, parse} from '../parse'
 import {getLazySchema} from './getLazySchema'
 
@@ -133,8 +138,14 @@ function collectExampleFailures(
       seen,
       next,
     )
-  } else if (isObjectUnionSchema(schema) || isPrimitiveUnionSchema(schema)) {
-    schema.union.forEach((member, index) => {
+  } else if (
+    isObjectUnionSchema(schema) ||
+    isDocumentUnionSchema(schema) ||
+    isPrimitiveUnionSchema(schema)
+  ) {
+    // like an object union, a union of documents has a `union` list of members with shapes
+    const {union} = schema as SanityObjectUnion | SanityPrimitiveUnion
+    union.forEach((member, index) => {
       const name =
         'shape' in member && member.shape._type && 'value' in member.shape._type
           ? String(member.shape._type.value)

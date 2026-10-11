@@ -61,12 +61,12 @@ describe('Infer strips $refSchema, Parsed keeps it', () => {
   })
 
   test('union member', () => {
-    const Company = document({_type: literal('company'), name: string()})
-    const Either = union([reference(Person), reference(Company)])
-    type InferredMember = Infer<typeof Either>
-    expectTypeOf<InferredMember>().toEqualTypeOf<PersonRef>()
+    const Link = object({_type: literal('link'), href: string()})
+    const Either = union([reference(Person), Link])
+    type Link = {_type: 'link'; href: string}
+    expectTypeOf<Infer<typeof Either>>().toEqualTypeOf<PersonRef | Link>()
     expectTypeOf<Parsed<typeof Either>>().toEqualTypeOf<
-      ParsedPersonRef | Format<PersonRef & {$refSchema: typeof Company}>
+      ParsedPersonRef | Link
     >()
   })
 

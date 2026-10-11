@@ -1,13 +1,20 @@
-import {assert, expect, test, vi} from 'vitest'
+import {assert, describe, expect, test, vi} from 'vitest'
 
 import {document} from '../../creators/document'
 import {lazy} from '../../creators/lazy'
 import {literal} from '../../creators/literal'
+import {object} from '../../creators/object'
 import {optional} from '../../creators/optional'
 import {reference} from '../../creators/reference'
 import {string} from '../../creators/string'
-import {type Infer, type SanityDocumentType} from '../../defs'
-import {parse} from '../../parse'
+import {union} from '../../creators/union'
+import {
+  type Infer,
+  REF_SCHEMA,
+  type SanityDocumentType,
+  type SanityType,
+} from '../../defs'
+import {parse, parseOrThrow} from '../../parse'
 import {
   type SanityDocumentValue,
   type SanityReferenceValue,
@@ -253,4 +260,166 @@ test('loadReferenceResult passes an explicit field selection through', async () 
   ])
   expect(fetch.mock.calls).toEqual([['usa', ['_id', 'name']]])
   expect(result).toEqual({ok: true, value: usa})
+})
+
+describe('a reference to a union of documents', () => {
+  const Author = document({_type: literal('author'), name: string()})
+  const Book = document({
+    _type: literal('book'),
+    title: string(),
+    author: reference(Author),
+  })
+  const Review = document({
+    _type: literal('review'),
+    subject: reference(union([Author, lazy(() => Book)])),
+  })
+  const review = parseOrThrow(Review, {
+    _type: 'review',
+    subject: {_type: 'reference', _ref: 'cosmos'},
+  })
+  const cosmos = {
+    _type: 'book',
+    _id: 'cosmos',
+    ...committedFields,
+    title: 'Cosmos',
+    author: {_type: 'reference', _ref: 'carl'},
+  }
+
+  test('selects the fields of every target', async () => {
+    const fetch = vi.fn().mockResolvedValueOnce(cosmos)
+    await createReferenceLoader(fetch)(review.subject)
+    expect(fetch.mock.calls).toEqual([
+      [
+        'cosmos',
+        [
+          '_type',
+          '_id',
+          '_createdAt',
+          '_updatedAt',
+          '_rev',
+          'name',
+          'title',
+          'author',
+        ],
+      ],
+    ])
+  })
+
+  test('parses the document against the target with a matching _type', async () => {
+    const fetch = vi.fn().mockResolvedValueOnce(cosmos)
+    const subject = await createReferenceLoader(fetch)(review.subject)
+    expect(subject).toEqual(cosmos)
+    assert(subject._type === 'book')
+    expect(subject.author[REF_SCHEMA]).toBe(Author)
+  })
+
+  test('reports field errors in a document of a target type', async () => {
+    const fetch = vi.fn().mockResolvedValueOnce({...cosmos, title: 42})
+    await expect(createReferenceLoader(fetch)(review.subject)).rejects.toThrow(
+      /title/,
+    )
+  })
+
+  test('rejects lazy targets with the same _type before fetching', async () => {
+    const OtherAuthor = document({
+      _type: literal('author'),
+      fullName: string(),
+    })
+    const Mixed = reference(union([Author, lazy(() => OtherAuthor)]))
+    const ref = parseOrThrow(Mixed, {_type: 'reference', _ref: 'carl'})
+    const fetch = vi.fn()
+    await expect(createReferenceLoader(fetch)(ref)).rejects.toThrow(
+      'reference() targets must have different _type literals, but more than one has _type "author"',
+    )
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  test('rejects a document of another type', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce({...cosmos, _type: 'magazine'})
+      .mockResolvedValueOnce(null)
+    const loadReferenceResult = createLoadReferenceResult(fetch)
+    const result = await loadReferenceResult(review.subject)
+    assert(!result.ok)
+    expect(result.error.issues).toEqual([
+      {
+        code: 'INVALID_OBJECT_UNION',
+        path: ['_type'],
+        message:
+          'Expected a referenced document of type "author" or "book", got "magazine"',
+      },
+    ])
+    const missing = await loadReferenceResult(review.subject)
+    assert(!missing.ok)
+    expect(missing.error.issues).toEqual([
+      {
+        code: 'INVALID_TYPE',
+        path: [],
+        message: 'Expected a referenced document of type "author" or "book"',
+      },
+    ])
+  })
+})
+
+test('a union of references loads like a reference to a union', async () => {
+  const Author = document({_type: literal('author'), name: string()})
+  const Book = document({_type: literal('book'), title: string()})
+  const Review = document({
+    _type: literal('review'),
+    subject: union([reference(Author), reference(lazy(() => Book))]),
+  })
+  const review = parseOrThrow(Review, {
+    _type: 'review',
+    subject: {_type: 'reference', _ref: 'cosmos'},
+  })
+  const cosmos = {
+    _type: 'book',
+    _id: 'cosmos',
+    ...committedFields,
+    title: 'Cosmos',
+  }
+  const fetch = vi.fn().mockResolvedValueOnce(cosmos)
+  const subject = await createReferenceLoader(fetch)(review.subject)
+  expect(fetch.mock.calls).toEqual([
+    [
+      'cosmos',
+      ['_type', '_id', '_createdAt', '_updatedAt', '_rev', 'name', 'title'],
+    ],
+  ])
+  expect(subject).toEqual(cosmos)
+})
+
+test('a target listed twice counts once', async () => {
+  const Author = document({_type: literal('author'), name: string()})
+  const Book = document({_type: literal('book'), title: string()})
+  const Ref = reference(union([Author, lazy(() => Author), Book]))
+  const ref = parseOrThrow(Ref, {_type: 'reference', _ref: 'x'})
+  const fetch = vi.fn().mockResolvedValueOnce({
+    _type: 'magazine',
+    _id: 'x',
+    ...committedFields,
+  })
+  const result = await createLoadReferenceResult(fetch)(ref)
+  assert(!result.ok)
+  expect(result.error.issues[0]?.message).toBe(
+    'Expected a referenced document of type "author" or "book", got "magazine"',
+  )
+})
+
+test('a lazy target that is not a document rejects before fetching', async () => {
+  interface Folder extends SanityDocumentValue {
+    name: string
+  }
+  const Folder: SanityType<Folder> = object({
+    _type: literal('folder'),
+    name: string(),
+  })
+  const Ref = reference(lazy(() => Folder))
+  const ref = parseOrThrow(Ref, {_type: 'reference', _ref: 'x'})
+  const fetch = vi.fn()
+  await expect(createReferenceLoader(fetch)(ref)).rejects.toThrow(
+    'reference() target must be a document schema, got object',
+  )
+  expect(fetch).not.toHaveBeenCalled()
 })

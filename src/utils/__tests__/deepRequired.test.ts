@@ -6,6 +6,7 @@ import {literal} from '../../creators/literal'
 import {object} from '../../creators/object'
 import {optional} from '../../creators/optional'
 import {string} from '../../creators/string'
+import {union} from '../../creators/union'
 import {parse} from '../../parse'
 import {deepRequired} from '../deepRequired'
 
@@ -49,4 +50,13 @@ test('works on documents and keeps them documents', () => {
   expect(typeNames(req)._id).toBe('string')
   expect(typeNames(req).name).toBe('string')
   expect(parse(req, {_type: 'pet'}).ok).toBe(false)
+})
+
+test('deepRequired transforms each document in a union of documents', () => {
+  const Author = document({_type: literal('author'), name: optional(string())})
+  const Book = document({_type: literal('book'), title: string()})
+  const Docs = deepRequired(union([Author, Book]))
+  expect(Docs.typeName).toBe('documentUnion')
+  expect(parse(Docs, {_type: 'book'}).ok).toBe(false)
+  expect(parse(Docs, {_type: 'author'}).ok).toBe(false)
 })

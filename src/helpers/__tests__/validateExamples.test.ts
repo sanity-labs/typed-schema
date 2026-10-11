@@ -130,3 +130,23 @@ test('follows lazy schemas and stops on cycles', () => {
     res.error.failures.map(f => [f.schemaPath.join('.'), f.index]),
   ).toEqual([['parent', 1]])
 })
+
+test('checks the examples of a union of documents and of its members', () => {
+  const Author = document(
+    {_type: literal('author'), name: string()},
+    {examples: [{_type: 'author', name: 'Carl'}, {_type: 'author'} as any]},
+  )
+  const Book = document({_type: literal('book'), title: string()})
+  const Subjects = union([Author, lazy(() => Book)], {
+    examples: [{_type: 'book', title: 'Cosmos'}, {_type: 'magazine'} as any],
+  })
+  const res = validateExamples(Subjects)
+  expect(res.ok).toBe(false)
+  if (res.ok) return
+  expect(
+    res.error.failures.map(f => [f.schemaPath.join('.'), f.index]),
+  ).toEqual([
+    ['', 1],
+    ['author', 1],
+  ])
+})

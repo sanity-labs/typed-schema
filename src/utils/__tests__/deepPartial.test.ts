@@ -75,3 +75,12 @@ test('deep partial does not double wrap optional fields', () => {
   expect(partial.shape.a.typeName).toBe('optional')
   expect((partial.shape.a as any).type.typeName).toBe('string')
 })
+
+test('deepPartial transforms each document in a union of documents', () => {
+  const Author = document({_type: literal('author'), name: optional(string())})
+  const Book = document({_type: literal('book'), title: string()})
+  const Docs = deepPartial(union([Author, Book]))
+  expect(Docs.typeName).toBe('documentUnion')
+  expect(parse(Docs, {_type: 'book'}).ok).toBe(true)
+  expect(parse(Docs, {_type: 'author'}).ok).toBe(true)
+})

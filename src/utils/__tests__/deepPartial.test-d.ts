@@ -1,10 +1,12 @@
 import {assert, assertType, expectTypeOf, test} from 'vitest'
 
+import {document} from '../../creators/document'
 import {lazy} from '../../creators/lazy'
 import {literal} from '../../creators/literal'
 import {object} from '../../creators/object'
 import {optional} from '../../creators/optional'
 import {string} from '../../creators/string'
+import {union} from '../../creators/union'
 import {
   type Infer,
   type SanityBoolean,
@@ -17,6 +19,7 @@ import {
   type SanityObjectUnion,
   type SanityOptional,
   type SanityString,
+  type SanityDocumentUnion,
 } from '../../defs'
 import {parse} from '../../parse'
 import {type DeepPartial, deepPartial} from '../deepPartial'
@@ -213,4 +216,13 @@ test('deep partial on circular object type', () => {
         }
       | undefined
   }>()
+})
+
+test('DeepPartial of a union of documents is a union of the transformed documents', () => {
+  const Author = document({_type: literal('author'), name: string()})
+  const Book = document({_type: literal('book'), title: string()})
+  const Docs = union([Author, Book])
+  expectTypeOf(deepPartial(Docs)).toEqualTypeOf<
+    SanityDocumentUnion<DeepPartial<typeof Author> | DeepPartial<typeof Book>>
+  >()
 })

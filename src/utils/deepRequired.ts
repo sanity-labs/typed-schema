@@ -1,5 +1,6 @@
 import {
   isDocumentSchema,
+  isDocumentUnionSchema,
   isLazySchema,
   isObjectArraySchema,
   isObjectSchema,
@@ -14,6 +15,8 @@ import {union} from '../creators/union'
 import {
   type OutputOf,
   type SanityDocument,
+  type SanityDocumentUnion,
+  type SanityDocumentUnionMemberKind,
   type SanityLazy,
   type SanityObject,
   type SanityObjectArray,
@@ -57,9 +60,13 @@ export type DeepRequired<S extends SanityType> =
           ? SanityObjectUnion<
               Extract<DeepRequired<UnionTypes>, SanityObjectUnionMemberKind>
             >
-          : S extends SanityObjectArray<infer ElementType>
-            ? SanityObjectArray<DeepRequired<ElementType>>
-            : S
+          : S extends SanityDocumentUnion<infer UnionTypes>
+            ? SanityDocumentUnion<
+                Extract<DeepRequired<UnionTypes>, SanityDocumentUnionMemberKind>
+              >
+            : S extends SanityObjectArray<infer ElementType>
+              ? SanityObjectArray<DeepRequired<ElementType>>
+              : S
 
 function requiredShape(shape: SanityObjectShape): SanityObjectShape {
   return Object.fromEntries(
@@ -108,9 +115,13 @@ function transform(schema: SanityType): SanityType {
       examples: false,
     })
   }
-  if (isObjectUnionSchema(schema)) {
+  if (isObjectUnionSchema(schema) || isDocumentUnionSchema(schema)) {
     return inheritAnnotations(
-      union(schema.union.map(unionSchema => deepRequired(unionSchema)) as any),
+      union(
+        (schema.union as SanityType[]).map(unionSchema =>
+          deepRequired(unionSchema),
+        ) as any,
+      ),
       schema,
       {examples: false},
     )

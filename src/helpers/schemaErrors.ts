@@ -204,9 +204,11 @@ export type ArrayElementError<Def> = Def extends {
   ? 'array() elements cannot be arrays. Wrap the inner array in an object'
   : Def extends {typeName: 'optional'}
     ? 'array() elements cannot be optional'
-    : Def extends ValidArrayElement
-      ? InvalidAnnotations<'array'>
-      : 'array() elements must be objects, primitives, references, blocks, images, files or unions of these'
+    : Def extends {typeName: 'documentUnion'}
+      ? 'array() elements cannot be a union() of documents. For references to several document types, use array(reference(union([...])))'
+      : Def extends ValidArrayElement
+        ? InvalidAnnotations<'array'>
+        : 'array() elements must be objects, primitives, references, blocks, images, files or unions of these'
 
 /** Like {@link ArrayElementError}, for `objectArray()` */
 export type ObjectArrayElementError<Def> = Def extends
@@ -230,9 +232,11 @@ export type PrimitiveArrayElementError<Def> = Def extends
  * Says why `Def` cannot be a `reference()` target, or, for a valid target,
  * that the annotations are what the catch-all overload rejects
  */
-export type ReferenceTargetError<Def> = Def extends SanityDocumentKind
+export type ReferenceTargetError<Def> = Def extends
+  | SanityDocumentKind
+  | {typeName: 'documentUnion'}
   ? InvalidAnnotations<'reference'>
-  : 'reference() target must be a document schema'
+  : 'reference() target must be a document schema or a union() of document schemas'
 
 // union()
 
@@ -249,14 +253,45 @@ type PrimitiveUnionMember =
   | SanityLiteral
   | SanityPrimitiveUnion<any>
 
+/**
+ * `true` if `Member` can be in a union of documents: a document, a union of
+ * documents, or a `lazy()` of a document. Checks `typeName` only, so it never
+ * compares a document schema's output.
+ */
+type IsDocumentUnionMember<Member> = Member extends {
+  typeName: 'document' | 'documentUnion'
+}
+  ? true
+  : Member extends {typeName: 'lazy'; get: () => infer Inner}
+    ? IsDocumentUnionMember<Inner>
+    : false
+
+/** `true` if `Member` is typed by its value as `SanityType<Value>`, directly or inside `lazy()` */
+type IsTypedByValue<Member> = Member extends {
+  typeName: 'lazy'
+  get: () => infer Inner
+}
+  ? IsTypedByValue<Inner>
+  : Member extends {typeName: infer Name}
+    ? string extends Name
+      ? true
+      : false
+    : false
+
 type UnionMemberError<Member> = Member extends
   | SanityNever
   | ObjectUnionMember
   | PrimitiveUnionMember
   ? never
-  : Member extends {typeName: 'object'}
-    ? "union() members that are objects need a _type literal field, e.g. _type: literal('link')"
-    : 'union() members must be primitives, literals, typed objects, references, blocks, images or files'
+  : IsDocumentUnionMember<Member> extends true
+    ? never
+    : IsTypedByValue<Member> extends true
+      ? 'union() members typed by their value must be typed as SanityDocumentType<Value> or SanityObjectType<Value>, not SanityType<Value>'
+      : Member extends {typeName: 'object'}
+        ? "union() members that are objects need a _type literal field, e.g. _type: literal('link')"
+        : Member extends {typeName: 'lazy'}
+          ? 'union() members that are lazy() must be documents'
+          : 'union() members must be primitives, literals, typed objects, documents, references, blocks, images or files'
 
 /**
  * `Member` intersected with a `SchemaError` saying why it cannot be in a
@@ -272,7 +307,9 @@ type MemberKind<Member> = Member extends ObjectUnionMember
   ? 'object'
   : Member extends PrimitiveUnionMember
     ? 'primitive'
-    : never
+    : IsDocumentUnionMember<Member> extends true
+      ? 'document'
+      : never
 
 type FirstKind<Members> = Members extends readonly [infer Member, ...infer Rest]
   ? [MemberKind<Member>] extends [never]
@@ -280,38 +317,93 @@ type FirstKind<Members> = Members extends readonly [infer Member, ...infer Rest]
     : MemberKind<Member>
   : never
 
-type MixedKinds = 'union() members cannot mix primitive types and object types'
+type MixedKinds<Kinds> = 'primitive' extends Kinds
+  ? 'union() members cannot mix primitive types and object types'
+  : 'union() members cannot mix documents and other object types'
+
+type UnionToIntersection<T> = (
+  T extends unknown ? (value: T) => void : never
+) extends (value: infer Intersection) => void
+  ? Intersection
+  : never
+
+/** `true` if `Kinds` holds more than one kind */
+type IsMixed<Kinds> = [Kinds] extends [UnionToIntersection<Kinds>]
+  ? false
+  : true
 
 /**
- * Checks each member of a tuple. The first member whose kind (primitive or
- * object) differs from the members before it gets a `SchemaError`, and
- * checking stops there, so the catch-all overload fails with one error, like
- * the overloads above it. TypeScript 6 then lists every overload's error,
- * this one included. With more errors here than in another overload, it would
- * show only that other overload's error.
+ * Checks each member of a tuple. The first member whose kind (primitive,
+ * object or document) differs from the members before it gets a
+ * `SchemaError`, and checking stops there, so the catch-all overload fails
+ * with one error, like the overloads above it. TypeScript 6 then lists every
+ * overload's error, this one included. With more errors here than in another
+ * overload, it would show only that other overload's error.
+ *
+ * Tail-recursive, collecting the checked members in `Checked`, so that a
+ * union of many members stays within TypeScript's recursion limit.
  */
-type CheckUnionTuple<Members, Kind> = Members extends readonly [
-  infer Member,
-  ...infer Rest,
-]
+type CheckUnionTuple<
+  Members,
+  Kind,
+  Checked extends unknown[] = [],
+> = Members extends readonly [infer Member, ...infer Rest]
   ? [MemberKind<Member>] extends [Kind]
-    ? [CheckUnionMember<Member>, ...CheckUnionTuple<Rest, Kind>]
-    : [Member & SchemaError<MixedKinds>, ...Rest]
-  : []
+    ? CheckUnionTuple<Rest, Kind, [...Checked, CheckUnionMember<Member>]>
+    : [
+        ...Checked,
+        Member & SchemaError<MixedKinds<Kind | MemberKind<Member>>>,
+        ...Rest,
+      ]
+  : Checked
+
+/**
+ * `true` if `Member` is a `reference()` or a union with a `reference()`
+ * member. Checks `typeName` only.
+ */
+type HasReference<Member> = Member extends {typeName: 'reference'}
+  ? true
+  : Member extends {typeName: 'union'; union: readonly (infer Inner)[]}
+    ? [Extract<Inner, {typeName: 'reference'}>] extends [never]
+      ? false
+      : true
+    : false
+
+/** `true` if `Members` is not a tuple and its members include a `reference()` */
+type HasUncountedReferences<Members extends readonly unknown[]> =
+  number extends Members['length']
+    ? true extends HasReference<Members[number]>
+      ? true
+      : false
+    : false
+
+type UncountedReferencesError =
+  'union() members that include a reference() must be an array literal, e.g. union([reference(Author), Link]), not a variable typed as an array'
+
+/**
+ * A `SchemaError` when the members of `union()` include a `reference()` and
+ * are not a tuple, such as a variable typed as an array, otherwise `unknown`.
+ * `union()` merges several references into one, and the types can only do
+ * that when they can count the references.
+ */
+export type UncountedReferences<Members extends readonly unknown[]> =
+  HasUncountedReferences<Members> extends true
+    ? SchemaError<UncountedReferencesError>
+    : unknown
 
 /**
  * The expected type of the members passed to `union()`: each member left as is
  * if it can be in the union, or intersected with a `SchemaError` saying
- * why not. For an array that is not a tuple, mixing primitives and objects is
- * reported on the whole array.
+ * why not. For an array that is not a tuple, mixing kinds of members, or
+ * including a `reference()`, is reported on the whole array.
  */
 export type CheckUnionMembers<Members extends readonly unknown[]> =
   number extends Members['length']
-    ? [Extract<Members[number], ObjectUnionMember>] extends [never]
-      ? {[Index in keyof Members]: CheckUnionMember<Members[Index]>}
-      : [Extract<Members[number], PrimitiveUnionMember>] extends [never]
-        ? {[Index in keyof Members]: CheckUnionMember<Members[Index]>}
-        : SchemaError<MixedKinds>
+    ? IsMixed<MemberKind<Members[number]>> extends true
+      ? SchemaError<MixedKinds<MemberKind<Members[number]>>>
+      : HasUncountedReferences<Members> extends true
+        ? SchemaError<UncountedReferencesError>
+        : {[Index in keyof Members]: CheckUnionMember<Members[Index]>}
     : CheckUnionTuple<Members, FirstKind<Members>>
 
 // Options objects
