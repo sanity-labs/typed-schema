@@ -214,7 +214,7 @@ export type UndefinedOptional<T> = Combine<
 >
 
 export type OutputFromShape<T extends SanityObjectShape> = {
-  [Property in keyof T]: Infer<T[Property]>
+  [Property in keyof T]: OutputOf<T[Property]>
 }
 
 export type AddArrayKey<T> = Combine<T, {_key: string}>
@@ -300,26 +300,50 @@ export type SanityDocument<
 > = _SanityDocument<SanityDocumentShape & Shape, Output>
 
 /**
- * Key under which a reference value returned by `parse` carries the schema of
+ * Key under which a reference value returned by `parse` holds the schema of
  * the document it points to. `parse` adds it as a getter that `JSON.stringify`
  * and `Object.keys` ignore. Values that did not come from `parse`, including
- * copies made with spread, do not have it.
+ * copies made with spread, do not have it, which is why it is part of
+ * {@link Parsed} but stripped from {@link Infer}.
  */
 export const REF_SCHEMA = '$refSchema' as const
 
 export interface Conceal<T> {
   /** The schema of the referenced document. Only values returned by `parse` have it; see {@link REF_SCHEMA}. */
-  [REF_SCHEMA]?: T
+  [REF_SCHEMA]: T
 }
 
 export type WithRefTypeDef<RefType extends SanityType<SanityDocumentValue>> =
   Combine<ReferenceBase, Conceal<RefType>>
 
-export type Infer<T> = T extends () => infer R
-  ? Infer<R>
+/**
+ * The type of a value returned by `parse`, `safeParse` and the document
+ * loaders. Same as {@link Infer}, except that reference values include the
+ * schema of the document they point to under {@link REF_SCHEMA}, which is what
+ * lets `loadReference` type and validate what it fetches.
+ */
+export type Parsed<T> = T extends () => infer R
+  ? Parsed<R>
   : T extends SanityAny
     ? OutputOf<T>
     : T
+
+type StripRefSchema<T> = T extends (infer Element)[]
+  ? StripRefSchema<Element>[]
+  : T extends object
+    ? {
+        [
+          K in keyof T as K extends typeof REF_SCHEMA ? never : K
+        ]: StripRefSchema<T[K]>
+      }
+    : T
+
+/**
+ * The type of a schema's value as it is stored: plain data, without the
+ * {@link REF_SCHEMA} key that `parse` attaches to reference values. Use
+ * {@link Parsed} for the type that `parse` returns.
+ */
+export type Infer<T> = StripRefSchema<Parsed<T>>
 
 export type LiteralKeys<T extends SanityObjectShape> = {
   [

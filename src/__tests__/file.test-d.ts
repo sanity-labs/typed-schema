@@ -2,7 +2,12 @@ import {describe, expectTypeOf, test} from 'vitest'
 
 import {file} from '../creators/file'
 import {string} from '../creators/string'
-import {type Infer, type REF_SCHEMA, type SanityDocument} from '../defs'
+import {
+  type Infer,
+  type Parsed,
+  type REF_SCHEMA,
+  type SanityDocument,
+} from '../defs'
 import {type FileAssetShape} from '../shapeDefs'
 
 describe('file type', () => {
@@ -15,11 +20,20 @@ describe('file type', () => {
         _type: 'reference'
         _ref: string
         _weak?: boolean
-        [REF_SCHEMA]?: SanityDocument<FileAssetShape>
       }
     }
 
     expectTypeOf<Infer<typeof FileSchema>>().toEqualTypeOf<FileValue>()
+  })
+  test('parsed file values include the asset schema on the reference', () => {
+    const FileSchema = file({})
+
+    expectTypeOf<Parsed<typeof FileSchema>['asset']>().toEqualTypeOf<{
+      _type: 'reference'
+      _ref: string
+      _weak?: boolean
+      [REF_SCHEMA]: SanityDocument<FileAssetShape>
+    }>()
   })
   test('custom file type definition', () => {
     const FileSchema = file({
@@ -32,7 +46,6 @@ describe('file type', () => {
         _type: 'reference'
         _ref: string
         _weak?: boolean
-        [REF_SCHEMA]?: SanityDocument<FileAssetShape>
       }
       caption: string
     }

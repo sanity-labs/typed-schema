@@ -1,7 +1,7 @@
 import {
   type Conceal,
-  type Infer,
   type OutputFromShape,
+  type OutputOf,
   type SanityBoolean,
   type SanityDocument,
   type SanityLiteral,
@@ -75,7 +75,7 @@ export const ReferenceBase: SanityObject<SanityReferenceShape> = dt({
   },
 })
 
-export type ReferenceBase = Infer<typeof ReferenceBase>
+export type ReferenceBase = OutputOf<typeof ReferenceBase>
 
 export type GeopointShape = {
   _type: SanityLiteral<'geopoint'>
@@ -321,7 +321,12 @@ export type SanityDocumentValue = UndefinedOptional<
   OutputFromShape<SanityDocumentShape>
 >
 
+/**
+ * The value of a `reference()` to a document of type `RefType`, for annotating
+ * recursive schemas by hand. `$refSchema` is optional here so that
+ * hand-written values typecheck; `parse` still attaches it.
+ */
 export type SanityReferenceValue<RefType> = Combine<
   ReferenceBase,
-  Conceal<SanityType<RefType>>
+  Partial<Conceal<SanityType<RefType>>>
 >
