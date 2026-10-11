@@ -22,15 +22,44 @@ import {
   isStringSchema,
 } from '../../asserters'
 import {
-  type SanityAny,
   type SanityAsset,
   type SanityBlock,
   type SanityDocument,
   type SanityObjectArray,
   type SanityObjectLike,
+  type SanityObjectShape,
   type SanityObjectUnion,
   type SanityReference,
+  type SanityType,
 } from '../../defs'
+import {getLazySchema} from '../../helpers/getLazySchema'
+
+// Untyped objects are keyed by identity. A `lazy()` that builds a new schema
+// each time it resolves never repeats an identity, so past this depth the
+// cycle is reported instead of overflowing the stack.
+const MAX_DEPTH = 100
+
+interface Context {
+  /**
+   * Recursive object types, emitted as named top-level types after the
+   * document and referred to by their `_type` name
+   */
+  hoisted: Map<
+    string,
+    {schema: SanityObjectLike; definition: classic.SchemaTypeDefinition}
+  >
+  /**
+   * Object types currently being converted, outermost first. Typed objects
+   * are matched by their `_type` name (`name`), other object-like types by
+   * the schema. Identity is not enough for typed objects: `array()` copies
+   * object elements to add `_key`, and `deepPartial` wraps getter fields in a
+   * `lazy()` that builds a new schema on every resolution, so a cycle matched
+   * by identity might never close.
+   */
+  converting: Array<{name: string | undefined; schema: SanityObjectLike}>
+  /** `_type` names of object types found to contain themselves */
+  recursive: Set<string>
+}
 
 export function toClassicSchema<S extends SanityDocument>(
   schema: S,
@@ -45,29 +74,38 @@ export function toClassicSchema<S extends SanityDocument>(
     throw new Error('Expected _type property of schema to be a string literal')
   }
 
-  const hoisted = new Map()
+  const context: Context = {
+    hoisted: new Map(),
+    converting: [],
+    recursive: new Set(),
+  }
+  const document = {
+    type: 'document',
+    name: typeLiteral.value,
+    fields: convertFields(schema.shape, context),
+  }
   return [
-    {
-      type: 'document',
-      name: typeLiteral.value,
-      fields: Object.entries(schema.shape)
-        .filter(([fieldName]) => !fieldName.startsWith('_'))
-        .flatMap(([fieldName, field]) =>
-          convertField(fieldName, field, hoisted),
-        ),
-    },
+    document,
+    ...[...context.hoisted.values()].map(({definition}) => definition),
   ]
 }
 
-function convertItem<S extends SanityAny>(
-  schema: S,
-  hoisted: Map<string, classic.SchemaTypeDefinition[]>,
+function convertFields(shape: SanityObjectShape, context: Context) {
+  return Object.entries(shape)
+    .filter(([fieldName]) => !fieldName.startsWith('_'))
+    .flatMap(([fieldName, field]) => convertField(fieldName, field, context))
+}
+
+function convertItem(
+  lazySchema: SanityType,
+  context: Context,
 ): classic.ArrayOfType | classic.ArrayOfType[] {
+  const schema = getLazySchema(lazySchema)
   if (isAssetSchema(schema)) {
-    return assetToClassicSchema(schema, hoisted) as classic.ArrayOfType
+    return assetToClassicSchema(schema, context) as classic.ArrayOfType
   }
   if (isBlockSchema(schema)) {
-    return blockToClassicSchema(schema, hoisted) as classic.ArrayOfType
+    return blockToClassicSchema(schema, context) as classic.ArrayOfType
   }
   if (isPrimitiveUnionSchema(schema)) {
     // we don't support this currently in v3, so fallback to the first type
@@ -75,13 +113,13 @@ function convertItem<S extends SanityAny>(
     if (!unionType) {
       throw new Error('Expected union schema to have at least one member type')
     }
-    return convertItem(unionType, hoisted)
+    return convertItem(unionType, context)
   }
   if (isReferenceSchema(schema)) {
-    return referenceToClassicSchema(schema, hoisted)
+    return referenceToClassicSchema(schema)
   }
   if (isObjectLikeSchema(schema)) {
-    return objectToClassicSchema(schema, hoisted) as classic.ArrayOfType
+    return objectToClassicSchema(schema, context) as classic.ArrayOfType
   }
   if (isLiteralSchema(schema)) {
     return {
@@ -107,25 +145,26 @@ function convertItem<S extends SanityAny>(
     return []
   }
   if (isObjectUnionSchema(schema)) {
-    return schema.union.flatMap(unionType => convertItem(unionType, hoisted))
+    return schema.union.flatMap(unionType => convertItem(unionType, context))
   }
   if (isPrimitiveUnionSchema(schema)) {
-    return schema.union.flatMap(unionType => convertItem(unionType, hoisted))
+    return schema.union.flatMap(unionType => convertItem(unionType, context))
   }
   throw new Error(`Unsupported schema type ${schema.typeName}}`)
 }
 
-function convertField<S extends SanityAny>(
+function convertField(
   fieldName: string,
-  schema: S,
-  hoisted: Map<string, classic.SchemaTypeDefinition[]>,
+  lazySchema: SanityType,
+  context: Context,
 ): classic.FieldDefinition | classic.FieldDefinition[] {
+  const schema = getLazySchema(lazySchema)
   if (isOptionalSchema(schema)) {
-    return convertField(fieldName, schema.type, hoisted)
+    return convertField(fieldName, schema.type, context)
   }
 
   if (isObjectSchema(schema)) {
-    return [{...objectToClassicSchema(schema, hoisted), name: fieldName}]
+    return [{...objectToClassicSchema(schema, context), name: fieldName}]
   }
   if (isLiteralSchema(schema)) {
     return [
@@ -139,10 +178,10 @@ function convertField<S extends SanityAny>(
     ]
   }
   if (isReferenceSchema(schema)) {
-    return {...referenceToClassicSchema(schema, hoisted), name: fieldName}
+    return {...referenceToClassicSchema(schema), name: fieldName}
   }
   if (isAssetSchema(schema)) {
-    return {...assetToClassicSchema(schema, hoisted), name: fieldName}
+    return {...assetToClassicSchema(schema, context), name: fieldName}
   }
   if (isDateTimeSchema(schema)) {
     return {name: fieldName, type: 'datetime'}
@@ -164,9 +203,7 @@ function convertField<S extends SanityAny>(
     return {
       name: fieldName,
       type: 'array',
-      of: isObjectUnionSchema(schema.element)
-        ? schema.element.union.flatMap(u => convertItem(u, hoisted))
-        : [convertItem(schema.element, hoisted)].flat(),
+      of: [convertItem(schema.element, context)].flat(),
     } as classic.FieldDefinition<'array'>
   }
   if (isEnumSchema(schema)) {
@@ -197,46 +234,131 @@ function convertField<S extends SanityAny>(
   return []
 }
 
+/**
+ * Converts an object-like schema to an inline classic definition, or, for a
+ * typed object that contains itself, to `{type: <_type name>}` with the
+ * definition hoisted to the top level. `shape` lets assets leave out their
+ * system fields while keeping the schema's identity.
+ */
 function objectToClassicSchema<S extends SanityObjectLike>(
   schema: S,
-  hoisted: Map<string, classic.SchemaTypeDefinition[]>,
+  context: Context,
+  shape: SanityObjectShape = schema.shape,
 ) {
   const typeLiteral = schema.shape._type
 
   const typeName =
     typeLiteral && isLiteralSchema(typeLiteral) ? typeLiteral.value : undefined
 
-  return {
-    type: schema.typeName,
-    name: typeName,
-    fields: Object.entries(schema.shape)
-      .filter(([fieldName]) => !fieldName.startsWith('_'))
-      .flatMap(([fieldName, field]) => convertField(fieldName, field, hoisted)),
-  }
-}
-function referenceToClassicSchema(
-  schema: SanityReference,
-  hoisted: Map<string, classic.SchemaTypeDefinition[]>,
-) {
-  if (!isDocumentSchema(schema.referenceType)) {
-    throw new Error('References can only reference documents, not other types')
-  }
-  const referenceType = schema.referenceType.shape._type
-  if (!isLiteralSchema(referenceType)) {
-    throw new Error('References can only reference named document types')
-  }
-  const refTypeName = referenceType.value
-  let existing = hoisted.get(refTypeName)
-  if (!existing) {
-    existing = toClassicSchema(schema.referenceType)
-    hoisted.set(refTypeName, existing)
+  // Only plain objects can become named top-level types: `image` and `file`
+  // have the built-in type name as their `_type`
+  const hoistableName =
+    isObjectSchema(schema) && typeof typeName === 'string'
+      ? typeName
+      : undefined
+
+  if (
+    hoistableName !== undefined &&
+    context.hoisted.get(hoistableName)?.schema === schema
+  ) {
+    return {type: hoistableName}
   }
 
-  return {type: 'reference', to: {type: refTypeName}}
+  if (context.converting.length >= MAX_DEPTH) {
+    throw new Error(
+      `Cannot convert schema: objects are nested more than ${MAX_DEPTH} levels deep. A recursive object type needs a \`_type\` literal to become a named type`,
+    )
+  }
+  if (hoistableName === undefined) {
+    // An untyped object can't be referred to by name. Converting it again is
+    // fine as long as the cycle passes through a typed object, which closes
+    // it further in
+    const previous = context.converting.findLastIndex(
+      entry => entry.schema === schema,
+    )
+    if (
+      previous !== -1 &&
+      !context.converting
+        .slice(previous)
+        .some(entry => entry.name !== undefined)
+    ) {
+      throw new Error(
+        `Cannot convert recursive ${schema.typeName} schema: it needs a \`_type\` literal to become a named type`,
+      )
+    }
+  } else {
+    const cycleStart = context.converting.findIndex(
+      entry => entry.name === hoistableName,
+    )
+    if (cycleStart !== -1) {
+      // Copies of one type have the same fields; a different type that
+      // shares the name is not recursion
+      if (
+        fieldNames(context.converting[cycleStart]!.schema) !==
+        fieldNames(schema)
+      ) {
+        throw new Error(
+          `Cannot convert schema: two different object types have the \`_type\` "${hoistableName}"`,
+        )
+      }
+      for (const entry of context.converting.slice(cycleStart)) {
+        if (entry.name !== undefined) {
+          context.recursive.add(entry.name)
+        }
+      }
+      return {type: hoistableName}
+    }
+  }
+
+  context.converting.push({name: hoistableName, schema})
+  const definition = {
+    type: schema.typeName,
+    name: typeName,
+    fields: convertFields(shape, context),
+  }
+  context.converting.pop()
+
+  if (hoistableName !== undefined && context.recursive.has(hoistableName)) {
+    const existing = context.hoisted.get(hoistableName)
+    // `array()` and `deepPartial` produce several schema objects for the
+    // same type; they are the same type if they convert the same
+    if (
+      existing &&
+      JSON.stringify(existing.definition) !== JSON.stringify(definition)
+    ) {
+      throw new Error(
+        `Cannot convert schema: two different recursive object types have the \`_type\` "${hoistableName}"`,
+      )
+    }
+    context.hoisted.set(hoistableName, {
+      schema,
+      definition: definition as classic.SchemaTypeDefinition,
+    })
+    return {type: hoistableName}
+  }
+  return definition
+}
+function fieldNames(schema: SanityObjectLike) {
+  return Object.keys(schema.shape)
+    .filter(fieldName => !fieldName.startsWith('_'))
+    .sort()
+    .join()
+}
+
+function referenceToClassicSchema(schema: SanityReference) {
+  const referenceType = getLazySchema(schema.referenceType)
+  if (!isDocumentSchema(referenceType)) {
+    throw new Error('References can only reference documents, not other types')
+  }
+  const typeLiteral = referenceType.shape._type
+  if (!isLiteralSchema(typeLiteral)) {
+    throw new Error('References can only reference named document types')
+  }
+  return {type: 'reference', to: {type: typeLiteral.value}}
 }
 function blockToClassicSchema<S extends SanityBlock>(
   schema: S,
-  hoisted: Map<string, classic.SchemaTypeDefinition[]>,
+  context: Context,
 ) {
   const typeLiteral = schema.shape._type
 
@@ -249,25 +371,23 @@ function blockToClassicSchema<S extends SanityBlock>(
     name: typeName,
     of: (
       (children as SanityObjectArray).element as SanityObjectUnion
-    ).union.flatMap(u => convertItem(u, hoisted)),
+    ).union.flatMap(u => convertItem(u, context)),
   }
 }
 
 function assetToClassicSchema<S extends SanityAsset>(
   schema: S,
-  hoisted: Map<string, classic.SchemaTypeDefinition[]>,
+  context: Context,
 ) {
   const systemFieldNames = ['asset']
 
   return objectToClassicSchema(
-    {
-      ...schema,
-      shape: Object.fromEntries(
-        Object.entries(schema.shape).filter(
-          ([fieldName]) => !systemFieldNames.includes(fieldName),
-        ),
+    schema,
+    context,
+    Object.fromEntries(
+      Object.entries(schema.shape).filter(
+        ([fieldName]) => !systemFieldNames.includes(fieldName),
       ),
-    },
-    hoisted,
+    ),
   )
 }

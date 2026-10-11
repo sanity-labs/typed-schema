@@ -485,7 +485,7 @@ const Post = strictMode(
 
 ### Using a typed schema in Sanity Studio
 
-`toClassicSchema(documentSchema)` converts a document schema to the array of schema type definitions a Studio config expects. It is a proof of concept: it does not emit referenced document types, required-ness, or Portable Text styles and decorators, and it leaves out fields declared with `lazy()` or a getter (recursive fields) without a warning. Treat the result as a starting point. `examples/compat-studio` runs a Studio on it.
+`toClassicSchema(documentSchema)` converts a document schema to the array of schema type definitions a Studio config expects. It is a proof of concept: it does not emit referenced document types, required-ness, or Portable Text styles and decorators. Recursive object types become named top-level types, referred to by their `_type`. `toClassicSchema()` throws on a recursive object type without a `_type` literal. Treat the result as a starting point. `examples/compat-studio` runs a Studio on it.
 
 ```ts
 import {
