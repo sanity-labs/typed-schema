@@ -8,7 +8,6 @@ import {
   isPrimitiveArraySchema,
   isPrimitiveUnionSchema,
 } from '../asserters'
-import {getUnkeyedSchema} from '../creators/array'
 import {
   type ObjectUnionSchema,
   type PrimitiveUnionSchema,
@@ -16,6 +15,7 @@ import {
 } from '../defs'
 import {formatPath, type ParseIssue, parse} from '../parse'
 import {getLazySchema} from './getLazySchema'
+import {getUnkeyedSchema} from './keyedSchema'
 
 // A `lazy()` that builds a new schema each time it resolves never repeats a
 // node, so past this depth the walk stops: every annotation such a schema

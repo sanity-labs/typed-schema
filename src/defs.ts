@@ -486,34 +486,42 @@ export interface ObjectArraySchema<
 
 /**
  * The `element` of an object array: the given element schema with a `_key`
- * string field added (to each member, for a union), as `array()` copies it.
- * {@link ObjectArraySchema}'s type parameter stays the schema it was given.
+ * string field added (to each member, for a union), as `array()` copies it,
+ * and `unkeyed`, the schema it was copied from. {@link ObjectArraySchema}'s
+ * type parameter stays the schema it was given.
  */
 export type KeyedElement<T extends Schema> = T extends {typeName: 'never'}
   ? T
-  : T extends {typeName: 'union'; union: (infer Member extends Schema)[]}
-    ? Flatten<
-        Omit<T, 'union' | 'output' | '~standard'> & {
-          union: KeyedElement<Member>[]
-          output: AddArrayKey<OutputOf<T>>
-          readonly '~standard': StandardProps<AddArrayKey<OutputOf<T>>>
-        }
-      >
-    : T extends {shape: infer Shape}
+  : // Already a keyed copy, which `array()` uses as is
+    T extends {readonly unkeyed: Schema}
+    ? T
+    : T extends {typeName: 'union'; union: (infer Member extends Schema)[]}
       ? Flatten<
-          Omit<T, 'shape' | 'output' | '~standard'> & {
-            // Not `Omit`, which drops the known keys of a shape that also has
-            // an index signature, like the default `DocumentSchema` shape
-            shape: Flatten<
-              {
-                [K in keyof Shape as K extends '_key' ? never : K]: Shape[K]
-              } & {_key: StringSchema}
-            >
+          Omit<T, 'union' | 'output' | '~standard'> & {
+            union: KeyedElement<Member>[]
             output: AddArrayKey<OutputOf<T>>
             readonly '~standard': StandardProps<AddArrayKey<OutputOf<T>>>
+            /** The schema this element was copied from, without `_key` */
+            readonly unkeyed: T
           }
         >
-      : T
+      : T extends {shape: infer Shape}
+        ? Flatten<
+            Omit<T, 'shape' | 'output' | '~standard'> & {
+              // Not `Omit`, which drops the known keys of a shape that also has
+              // an index signature, like the default `DocumentSchema` shape
+              shape: Flatten<
+                {
+                  [K in keyof Shape as K extends '_key' ? never : K]: Shape[K]
+                } & {_key: StringSchema}
+              >
+              output: AddArrayKey<OutputOf<T>>
+              readonly '~standard': StandardProps<AddArrayKey<OutputOf<T>>>
+              /** The schema this element was copied from, without `_key` */
+              readonly unkeyed: T
+            }
+          >
+        : T
 
 export interface PrimitiveArraySchema<
   ElementType extends

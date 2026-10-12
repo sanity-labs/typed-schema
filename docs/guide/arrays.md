@@ -51,6 +51,39 @@ s.parse(Address, {city: 'Oslo'})
 s.parse(Addresses, [{city: 'Oslo'}])
 ```
 
+## Element schemas
+
+An array schema's `element` is the element schema with `_key` added. Use it to parse or type one array item:
+
+```ts twoslash
+import * as s from '@sanity-labs/typed-schema'
+
+const Address = s.object({city: s.string()})
+const Addresses = s.array(Address)
+
+type AddressItem = s.Infer<typeof Addresses.element>
+//   ^?
+
+// {ok: true, value: {city: 'Oslo', _key: 'a1'}}
+s.parse(Addresses.element, {city: 'Oslo', _key: 'a1'})
+```
+
+The other way round, `element.unkeyed` is the schema given to `array()`, without `_key`. This is useful when the array is declared inline, as a field of another schema:
+
+```ts twoslash
+import * as s from '@sanity-labs/typed-schema'
+
+const Recipe = s.document({
+  _type: s.literal('recipe'),
+  ingredients: s.array(s.object({name: s.string(), grams: s.number()})),
+})
+
+const Ingredient = Recipe.shape.ingredients.element.unkeyed
+
+type Ingredient = s.Infer<typeof Ingredient>
+//   ^?
+```
+
 ## Restrictions
 
 Sanity does not allow arrays that mix primitives and objects, or arrays of arrays. Both are type errors:

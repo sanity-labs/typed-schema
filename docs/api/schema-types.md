@@ -61,7 +61,7 @@ type Photo = s.Infer<typeof Recipe>['photo']
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `array(element)`                                  | Object-like elements (objects, references, images, files, blocks and unions of these) get a required `_key`; primitive elements don't. Arrays of arrays are a type error |
 | `objectArray(element)`, `primitiveArray(element)` | `array()` for one kind of element. `array()` picks between them from the element schema                                                                                  |
-| `getUnkeyedSchema(element)`                       | The element schema as given to `array()`, without the `_key` field that `array()` adds                                                                                   |
+| `array(x).element.unkeyed`                        | The element schema as given to `array()`, without the `_key` field that `array()` adds. On a union element, each member has one too                                      |
 
 An `array()` element can't be `optional()`, and it can't be a `union()` of documents. For references to several document types, use `array(reference(union([...])))`.
 
