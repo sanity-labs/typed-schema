@@ -1,5 +1,109 @@
 # Changelog
 
+## 0.7.0
+
+### Minor Changes
+
+- [#64](https://github.com/sanity-labs/typed-schema/pull/64) [`1a47b44`](https://github.com/sanity-labs/typed-schema/commit/1a47b44ba299882b40d971181364cb4dbe65f5b2) Thanks [@bjoerge](https://github.com/bjoerge)! - Schemas accept annotations as their last argument: `title`, `description`, `guidelines`, `examples`, `deprecated` and `readOnly`.
+  
+  ```ts
+  const Pet = document(
+    {
+      _type: literal('pet'),
+      name: string({description: 'Display name shown on the adoption card'}),
+    },
+    {title: 'Pet'},
+  )
+  ```
+  
+  Read them back with `getAnnotations()`, and check `examples` against the schema with `validateExamples()`. `toClassicSchema()` passes them on to the Studio schema.
+
+- [#63](https://github.com/sanity-labs/typed-schema/pull/63) [`d64dc3e`](https://github.com/sanity-labs/typed-schema/commit/d64dc3e8a9422995c8df3d347c21719ec99a80f2) Thanks [@bjoerge](https://github.com/bjoerge)! - Type names no longer start with `Sanity`:
+  
+  - Schema types end in `Schema` instead: `SanityString` is now `StringSchema`, `SanityDocument` is `DocumentSchema`, and so on. `SanityType<Output>` is now `Schema<Output>`, and `SanityAny` is removed in favor of `Schema`.
+  - Shape and value types drop the prefix: `SanityObjectShape` is now `ObjectShape`, `SanityDocumentValue` is `DocumentValue`, and so on.
+  - To type a schema by its value, use `ObjectSchemaOf<Value>` or `DocumentSchemaOf<Value>` (previously `SanityObjectType` and `SanityDocumentType`). `ObjectSchema`, `DocumentSchema`, `ImageSchema`, `FileSchema` and `BlockSchema` no longer take an `Output` type parameter.
+  - `SANITY_ASSET`, `SANITY_OBJECT_LIKE` and `SANITY_EXTENDABLE_OBJECT` are now `ASSET_TYPE_NAMES`, `OBJECT_LIKE_TYPE_NAMES` and `EXTENDABLE_OBJECT_TYPE_NAMES`.
+
+- [#64](https://github.com/sanity-labs/typed-schema/pull/64) [`1a47b44`](https://github.com/sanity-labs/typed-schema/commit/1a47b44ba299882b40d971181364cb4dbe65f5b2) Thanks [@bjoerge](https://github.com/bjoerge)! - Document lifecycle helpers are renamed:
+  
+  - `stored()` is now `committed()`, and `Stored<T>` is now `Committed<T>`.
+  - `draft()` is replaced by `partial()`, and `Draft<T>` by `DeepPartial<T>`.
+  - `StoredDocument<T>` is removed. Use `Infer<Committed<typeof Doc>>`.
+  
+  The document and reference loaders now reject results that lack `_id`, `_rev`, `_createdAt` or `_updatedAt`.
+
+- [#64](https://github.com/sanity-labs/typed-schema/pull/64) [`1a47b44`](https://github.com/sanity-labs/typed-schema/commit/1a47b44ba299882b40d971181364cb4dbe65f5b2) Thanks [@bjoerge](https://github.com/bjoerge)! - New schema types and options:
+  
+  - `enums()` for a fixed set of values: `enums(['draft', 'published'])`.
+  - `number()` takes `min`, `max`, `gt`, `lt` and `step` constraints, and `safeint()`, `int32()`, `uint32()`, `float32()` and `float64()` are added.
+  - `image()` and `file()` can be called without arguments.
+
+- [#64](https://github.com/sanity-labs/typed-schema/pull/64) [`1a47b44`](https://github.com/sanity-labs/typed-schema/commit/1a47b44ba299882b40d971181364cb4dbe65f5b2) Thanks [@bjoerge](https://github.com/bjoerge)! - The package is renamed from `@sanity/sanitype` to `@sanity-labs/typed-schema`. Update your imports.
+  
+  It is now published as ESM only and requires Node 22.18 or later. Use `import` instead of `require()`.
+
+- [#64](https://github.com/sanity-labs/typed-schema/pull/64) [`1a47b44`](https://github.com/sanity-labs/typed-schema/commit/1a47b44ba299882b40d971181364cb4dbe65f5b2) Thanks [@bjoerge](https://github.com/bjoerge)! - `parse()` now returns a result instead of throwing. Use `parseOrThrow()` if you want the old behavior.
+  
+  - `parse(schema, input)` returns `{ok: true, value}` or `{ok: false, error}`. `safeParse()` is removed.
+  - `ParseError.errors` is renamed to `ParseError.issues`, and `ParseError.message` lists every issue.
+  - New `formatIssues()` and `formatPath()` print issues and paths the way Sanity writes them, such as `body[_key=="abc"].children[0].text`.
+  - Pass `{reportInput: true}` to include the rejected value in each issue. It is off by default to avoid leaking input into logs.
+
+- [#32](https://github.com/sanity-labs/typed-schema/pull/32) [`3221916`](https://github.com/sanity-labs/typed-schema/commit/3221916de39be864dfc39cb90cd7c6f2c884aa91) Thanks [@bjoerge](https://github.com/bjoerge)! - `Infer<>` now describes the data as stored, and the new `Parsed<>` describes what `parse()` returns. Parsed references include the referenced schema as `$refSchema` (previously `__schema__`). If you read the schema off a reference, type the value with `Parsed<>` instead of `Infer<>`.
+
+- [#64](https://github.com/sanity-labs/typed-schema/pull/64) [`1a47b44`](https://github.com/sanity-labs/typed-schema/commit/1a47b44ba299882b40d971181364cb4dbe65f5b2) Thanks [@bjoerge](https://github.com/bjoerge)! - Portable Text improvements:
+  
+  - `block()` values can now be parsed, and the block type matches what Sanity stores. `listType` is renamed to `listItem`, and `style`, `listItem`, `level` and `markDefs` are optional.
+  - Images, files and references can be used directly as inline objects, annotations and `portableText()` elements, without wrapping them in an object.
+  - Arrays of references, images, files and blocks are keyed arrays: `_key` is required and kept when parsing.
+  - `block()` takes a single type parameter, the type of its options, so a block's type is now `BlockSchema<BlockObjectShape<{style: ...}>>`. `BlockObjectShape` takes the same options type. Replace `BlockObjectShape<Style, List, Inline, Decorator, Annotation, TypeName>` with `BlockObjectShape<{style: Style, list: List}>`, and leave out any option you passed as `NeverSchema`. `BlockOptions` is no longer generic.
+
+- [#64](https://github.com/sanity-labs/typed-schema/pull/64) [`1a47b44`](https://github.com/sanity-labs/typed-schema/commit/1a47b44ba299882b40d971181364cb4dbe65f5b2) Thanks [@bjoerge](https://github.com/bjoerge)! - The public API is cleaned up:
+  
+  - Now exported: `portableText`, `never`, `rename`, `required`, `deepRequired`, `shallowPartial`, `shallowRequired`, `createLoader`, `verifyUniqueTypeNames` and `DuplicateTypeNameError`.
+  - No longer exported: the stub `loadDocument`/`loadReference` (use `createLoader()`), the experimental form API, `pickDeep`, the `parseXxx` sub-parsers and internal helper types.
+  - `RequiredShape` is split into `ShallowRequiredShape` and `DeepRequiredShape`.
+
+- [#64](https://github.com/sanity-labs/typed-schema/pull/64) [`1a47b44`](https://github.com/sanity-labs/typed-schema/commit/1a47b44ba299882b40d971181364cb4dbe65f5b2) Thanks [@bjoerge](https://github.com/bjoerge)! - Recursive schemas can be declared with a getter, and their type is inferred without annotations:
+  
+  ```ts
+  const Category = object({
+    _type: literal('category'),
+    name: string(),
+    get subcategories() {
+      return array(Category)
+    },
+  })
+  ```
+  
+  `toClassicSchema()` now converts recursive fields instead of dropping them.
+
+- [#64](https://github.com/sanity-labs/typed-schema/pull/64) [`1a47b44`](https://github.com/sanity-labs/typed-schema/commit/1a47b44ba299882b40d971181364cb4dbe65f5b2) Thanks [@bjoerge](https://github.com/bjoerge)! - A reference can point to several document types: `reference(union([Author, Book]))`. `loadReference()` parses the loaded document against the matching type, and the result can be narrowed on `_type`.
+  
+  `union([reference(Author), reference(Book)])` now means the same thing. Previously, every reference value was parsed against the first reference in the union.
+
+- [#50](https://github.com/sanity-labs/typed-schema/pull/50) [`57e13b7`](https://github.com/sanity-labs/typed-schema/commit/57e13b70ed756a0892f4a7f77f6ed819209cbbe1) Thanks [@bjoerge](https://github.com/bjoerge)! - Every schema implements [Standard Schema](https://standardschema.dev), so it works with any library that accepts one.
+
+- [#64](https://github.com/sanity-labs/typed-schema/pull/64) [`1a47b44`](https://github.com/sanity-labs/typed-schema/commit/1a47b44ba299882b40d971181364cb4dbe65f5b2) Thanks [@bjoerge](https://github.com/bjoerge)! - Invalid schemas are caught earlier, and type errors now say what is wrong, for example `SchemaError<"Field name 'e-mail' can only contain letters A-Z, digits and underscores">`.
+  
+  - Field names can no longer contain hyphens, matching Sanity. Rename fields like `'e-mail'` to `email`.
+  - Every field must be a schema. A plain value such as `foo: 'bar'` is a type error and throws at runtime.
+  - `reference()` accepts only document schemas.
+
+- [#66](https://github.com/sanity-labs/typed-schema/pull/66) [`834cd27`](https://github.com/sanity-labs/typed-schema/commit/834cd27c40bf64276cfde9a33830a905c71b8d80) Thanks [@bjoerge](https://github.com/bjoerge)! - An object array's `element` has an `unkeyed` property: the schema given to `array()`, without the `_key` field. Use it to get the element schema of an array declared inline, for example `Recipe.shape.ingredients.element.unkeyed`. Each member of a union element has one too.
+
+### Patch Changes
+
+- [#64](https://github.com/sanity-labs/typed-schema/pull/64) [`1a47b44`](https://github.com/sanity-labs/typed-schema/commit/1a47b44ba299882b40d971181364cb4dbe65f5b2) Thanks [@bjoerge](https://github.com/bjoerge)! - Bug fixes:
+  
+  - `date()` validates the month, and `dateTime()` accepts any ISO 8601 date-time with a time zone.
+  - `number()` rejects `NaN` and `Infinity`.
+  - `parse()` on an array of invalid primitives returns an error instead of throwing.
+  - `deepPartial()`, `deepRequired()`, `shallowPartial()` and `shallowRequired()` work on documents, and `shallowPartial()` makes fields optional instead of required.
+  - The document and reference loaders pass the document's field names to your fetch function.
+  - An object that fails to match a union member reports only that member's issues.
+
 ## [0.6.2](https://github.com/sanity-labs/typed-schema/compare/sanitype-v0.6.1...sanitype-v0.6.2) (2024-11-17)
 
 
