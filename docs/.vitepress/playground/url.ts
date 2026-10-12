@@ -7,10 +7,11 @@ import {formatLifecycle, type Lifecycle, parseLifecycle} from './lifecycle'
 
 /**
  * What a playground link holds:
- * `/playground?example=event&tab=validate&lifecycle=committed-partial#code=…&input=…`
+ * `/playground?example=event&tab=validate&lifecycle=committed-partial&refSchema=show#code=…&input=…`
  *
- * The example, tab and lifecycle are query parameters; a complete,
- * uncommitted document is the default and is left out. Edited code and input go in the
+ * The example, tab, lifecycle and whether the inferred type shows
+ * `$refSchema` are query parameters; defaults (the inferred type tab, a
+ * complete, uncommitted document, no `$refSchema`) are left out. Edited code and input go in the
  * hash, compressed with lz-string like the TypeScript playground does, so
  * they are never sent to the server. Unedited code and input are left out,
  * which keeps links to plain examples short.
@@ -19,6 +20,7 @@ export interface PlaygroundState {
   example: string | null
   tab: 'type' | 'input'
   lifecycle: Lifecycle
+  refSchema: boolean
   code: string | null
   input: string | null
 }
@@ -39,6 +41,7 @@ export function readUrl(
     example: params.get('example'),
     tab: params.get('tab') === 'validate' ? 'input' : 'type',
     lifecycle: parseLifecycle(params.get('lifecycle')),
+    refSchema: params.get('refSchema') === 'show',
     code,
     input,
     unreadable:
@@ -65,6 +68,8 @@ export function buildUrl(state: PlaygroundState, current: string): URL {
   const lifecycle = formatLifecycle(state.lifecycle)
   if (lifecycle) url.searchParams.set('lifecycle', lifecycle)
   else url.searchParams.delete('lifecycle')
+  if (state.refSchema) url.searchParams.set('refSchema', 'show')
+  else url.searchParams.delete('refSchema')
 
   const hash = [
     state.code === null

@@ -77,6 +77,10 @@ const lifecycleNote = computed(() => ({
 function setLifecycle(change: Partial<Lifecycle>) {
   lifecycle.value = {...lifecycle.value, ...change}
 }
+// Inferred type tab: Parsed<> (with $refSchema) instead of Infer<>; only
+// offered when the schema has references
+const refSchema = ref(initial.refSchema)
+const hasRefSchema = ref(false)
 const shareLabel = ref('Share')
 const result = shallowRef<RunResult | null>(null)
 // Infer<typeof default export>, expanded
@@ -108,6 +112,7 @@ function syncUrl() {
     example: preset.id,
     tab: tab.value,
     lifecycle: lifecycle.value,
+    refSchema: refSchema.value,
     code: code === preset.code ? null : code,
     input: input === preset.json ? null : input,
   })
@@ -168,10 +173,15 @@ function scheduleInfer(delay = INFER_DELAY_MS) {
   inferTimer = setTimeout(async () => {
     if (!worker) return
     const id = ++inferId
-    const next = await worker.inferredType(PATH, lifecycle.value)
+    const next = await worker.inferredType(
+      PATH,
+      lifecycle.value,
+      refSchema.value,
+    )
     if (id !== inferId) return
     inferredType.value = next.type
     isDocument.value = next.isDocument
+    hasRefSchema.value = next.hasRefSchema
   }, delay)
 }
 
@@ -388,6 +398,11 @@ watch(lifecycle, () => {
   syncUrl()
 })
 
+watch(refSchema, () => {
+  scheduleInfer(0)
+  syncUrl()
+})
+
 onBeforeUnmount(() => {
   clearTimeout(runTimer)
   clearTimeout(inferTimer)
@@ -507,6 +522,14 @@ onBeforeUnmount(() => {
             (<code>committed()</code>, system fields required).
           </p>
           <p>
+            For a schema with references, <strong>Show $refSchema</strong>
+            switches the inferred type to
+            <code>Parsed&lt;typeof schema&gt;</code>, the type
+            <code>parse</code> returns. Its reference values have a
+            <code>$refSchema</code> key with the schema of the referenced
+            document, which <code>Infer</code> leaves out.
+          </p>
+          <p>
             <strong>Share</strong> copies a link to the playground. Your code
             and input are saved in the link, so whoever opens it sees what you
             see.
@@ -606,7 +629,7 @@ onBeforeUnmount(() => {
             </button>
           </div>
           <p class="lifecycle-note">
-            <code>{{ lifecycleNote.code }}</code>
+            <code class="code-badge">{{ lifecycleNote.code }}</code>
             {{ lifecycleNote.description }}
           </p>
         </div>
@@ -618,6 +641,13 @@ onBeforeUnmount(() => {
           role="tabpanel"
           aria-labelledby="playground-tab-type"
         >
+          <label v-if="hasRefSchema" class="ref-schema-toggle">
+            <input v-model="refSchema" type="checkbox" />
+            Show <code>$refSchema</code>
+            <code class="code-badge ref-schema-type"
+              >{{ refSchema ? 'Parsed' : 'Infer' }}&lt;typeof schema&gt;</code
+            >
+          </label>
           <pre
             v-if="inferredType"
             ref="inferredContainer"
@@ -966,6 +996,35 @@ onBeforeUnmount(() => {
   flex: 1;
   flex-direction: column;
   min-height: 0;
+}
+
+.ref-schema-toggle {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--vp-c-divider);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.ref-schema-type {
+  margin-left: auto;
+}
+
+/* a schema expression shown next to a description */
+.code-badge {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 4px;
+  background: var(--vp-c-default-soft);
+  color: var(--vp-c-text-1);
+  font-family: var(--vp-font-family-mono);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .empty {
