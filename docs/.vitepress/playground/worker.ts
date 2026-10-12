@@ -44,43 +44,39 @@ const worker = {
   /**
    * The expanded inferred type of a playground file's default export, with
    * partial() and/or committed() applied. These only apply to document
-   * schemas; for anything else the schema's own type is returned. `type` is null when the
-   * file has no default export.
+   * schemas; for anything else the schema's own type is returned. `type` is
+   * null when the file has no default export.
+   *
+   * With `refSchema`, the type is `Parsed<>` instead of `Infer<>`, which
+   * includes the `$refSchema` key that `parse` adds to reference values.
+   * `hasRefSchema` reports whether the type has any, so the toggle is only
+   * offered when it changes something.
    */
   inferredType(
     path: string,
     lifecycle: Lifecycle,
-  ): {type: string | null; isDocument: boolean} {
+    refSchema: boolean,
+  ): {type: string | null; isDocument: boolean; hasRefSchema: boolean} {
     const env = base.getEnv()
     const header = [
       `import type schema from '.${path.replace(/\.ts$/, '')}'`,
-      `import {committed, type Infer, partial} from '@sanity-labs/typed-schema'`,
+      `import {committed, type Infer, type Parsed, partial} from '@sanity-labs/typed-schema'`,
       `declare const X: typeof schema`,
     ]
     const isDocument = !hasErrors(env, IS_DOCUMENT_PATH, [
       ...header,
       'partial(X)',
     ])
-    const code = [
-      ...header,
-      `const value = ${isDocument ? lifecycleCode(lifecycle, 'X') : 'X'}`,
-      `type ${INFERRED_NAME} = Infer<typeof value>`,
-      '',
-    ].join('\n')
-    if (hasErrors(env, INFERRED_PATH, code.split('\n'))) {
-      return {type: null, isDocument}
-    }
-    const info = env.languageService.getQuickInfoAtPosition(
-      INFERRED_PATH,
-      code.lastIndexOf(INFERRED_NAME),
-    )
-    const text = ts.displayPartsToString(info?.displayParts)
-    const prefix = `type ${INFERRED_NAME} = `
+    const value = isDocument ? lifecycleCode(lifecycle, 'X') : 'X'
+    const parsed = printType(env, header, value, 'Parsed')
+    const hasRefSchema = parsed?.includes(REF_SCHEMA_MEMBER) ?? false
     return {
-      type: text.startsWith(prefix)
-        ? sortSystemFields(text.slice(prefix.length))
-        : null,
+      type:
+        refSchema || !hasRefSchema
+          ? parsed
+          : printType(env, header, value, 'Infer'),
       isDocument,
+      hasRefSchema,
     }
   },
   /**
@@ -96,6 +92,44 @@ const worker = {
       },
     }).outputText
   },
+}
+
+// How a $refSchema member starts in a printed type
+const REF_SCHEMA_MEMBER = '$refSchema:'
+// Names from the package are not in scope in the helper module, so
+// TypeScript qualifies them with an import type
+const PACKAGE_QUALIFIER = 'import("@sanity-labs/typed-schema").'
+
+/**
+ * The expanded `wrapper<typeof value>` type, where `value` is an expression
+ * over the header's names. Null when the module has type errors, for example
+ * when the playground file has no default export.
+ */
+function printType(
+  env: ReturnType<typeof base.getEnv>,
+  header: string[],
+  value: string,
+  wrapper: 'Infer' | 'Parsed',
+): string | null {
+  const lines = [
+    ...header,
+    `const value = ${value}`,
+    `type ${INFERRED_NAME} = ${wrapper}<typeof value>`,
+    '',
+  ]
+  if (hasErrors(env, INFERRED_PATH, lines)) return null
+  const code = lines.join('\n')
+  const info = env.languageService.getQuickInfoAtPosition(
+    INFERRED_PATH,
+    code.lastIndexOf(INFERRED_NAME),
+  )
+  const text = ts.displayPartsToString(info?.displayParts)
+  const prefix = `type ${INFERRED_NAME} = `
+  return text.startsWith(prefix)
+    ? sortSystemFields(
+        text.slice(prefix.length).replaceAll(PACKAGE_QUALIFIER, ''),
+      )
+    : null
 }
 
 /** Writes a helper module and reports whether it has type errors */

@@ -5,17 +5,18 @@ import {buildUrl, type PlaygroundState, readUrl} from './url'
 const BASE = 'https://example.com/typed-schema/playground'
 
 describe('playground links', () => {
-  test('round-trip the example, tab, lifecycle, code and input', () => {
+  test('round-trip the example, tab, lifecycle, refSchema, code and input', () => {
     const state: PlaygroundState = {
       example: 'event',
       tab: 'input',
       lifecycle: {partial: true, committed: true},
+      refSchema: true,
       code: "import * as s from '@sanity-labs/typed-schema'\n// a + b",
       input: '{"title": "Café"}',
     }
     const url = buildUrl(state, BASE)
     expect(url.search).toBe(
-      '?example=event&tab=validate&lifecycle=committed-partial',
+      '?example=event&tab=validate&lifecycle=committed-partial&refSchema=show',
     )
     expect(readUrl(url)).toEqual({...state, unreadable: false})
   })
@@ -26,10 +27,11 @@ describe('playground links', () => {
         example: 'event',
         tab: 'type',
         lifecycle: {partial: false, committed: false},
+        refSchema: false,
         code: null,
         input: null,
       },
-      `${BASE}?tab=validate#code=abc`,
+      `${BASE}?tab=validate&refSchema=show#code=abc`,
     )
     expect(url.href).toBe(`${BASE}?example=event`)
   })
