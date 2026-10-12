@@ -63,7 +63,7 @@ Requires TypeScript 6.0 or later with `strict: true`. The package is published a
 The [documentation](https://sanity-labs.github.io/typed-schema/) covers:
 
 - [why typed schemas](https://sanity-labs.github.io/typed-schema/guide/why) and how they compare to Zod,
-- a [guide](https://sanity-labs.github.io/typed-schema/guide/declaring-a-document) to documents, parsing and Standard Schema, arrays, Portable Text, composition, custom creators, lifecycles, recursive schemas, annotations, loaders, GraphQL compatibility and Studio compatibility,
+- a [guide](https://sanity-labs.github.io/typed-schema/guide/declaring-a-document) to documents, parsing, [Standard Schema](https://sanity-labs.github.io/typed-schema/guide/standard-schema), arrays, Portable Text, composition, custom creators, lifecycles, recursive schemas, annotations, loaders, GraphQL compatibility and Studio compatibility,
 - the [API reference](https://sanity-labs.github.io/typed-schema/api/schema-types).
 
 ## Development

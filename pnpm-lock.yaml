@@ -263,6 +263,9 @@ importers:
       '@codemirror/view':
         specifier: ^6.38.1
         version: 6.43.14
+      '@hono/standard-validator':
+        specifier: ^0.4.0
+        version: 0.4.0(@standard-schema/spec@1.1.0)(hono@4.13.13)
       '@lezer/highlight':
         specifier: ^1.2.2
         version: 1.2.5
@@ -278,6 +281,9 @@ importers:
       '@shopify/lang-jsonc':
         specifier: ^1.0.1
         version: 1.0.1
+      '@standard-schema/spec':
+        specifier: ^1.1.0
+        version: 1.1.0
       '@typescript/vfs':
         specifier: ^1.6.5
         version: 1.6.5(supports-color@8.1.1)(typescript@6.0.3)
@@ -290,6 +296,9 @@ importers:
       comlink:
         specifier: ^4.4.2
         version: 4.4.2
+      hono:
+        specifier: ^4.13.13
+        version: 4.13.13
       jsonc-parser:
         specifier: ^3.3.1
         version: 3.3.1
@@ -1393,6 +1402,12 @@ packages:
 
   '@henrygd/queue@1.2.0':
     resolution: {integrity: sha512-jW/BLSTpcvExDhqJGxtIPgGr2O0IFF8XUNDwEbfCfhrXT8a4xztQ9Lv6U/vbYzYC0xVWn+3zv6YnLUh3bEFUKA==}
+
+  '@hono/standard-validator@0.4.0':
+    resolution: {integrity: sha512-MxOm1asDh9j7c1D0KiWwppSbFgAQxTRO4YEhjMrJn3lF1BIcXenPdgjSGKDRfQmZdaTaMA8slQLETgVOKyJxFw==}
+    peerDependencies:
+      '@standard-schema/spec': ^1.0.0
+      hono: '>=4.11.2'
 
   '@iconify-json/simple-icons@1.2.99':
     resolution: {integrity: sha512-kouZhqvUoNdxEe+lZksbJJZMCZv4b4Ob62O1GW3fcpz/I0mVPzM+9/Qf/DUuv5ns8l6c46D8M/ubhJjjbLp9HQ==}
@@ -3104,6 +3119,9 @@ packages:
     resolution: {integrity: sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ==}
     engines: {node: '>=18'}
 
+  '@standard-schema/spec@1.1.0':
+    resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
+
   '@tanstack/react-virtual@3.14.13':
     resolution: {integrity: sha512-JbDTAwtzZ99aOeCrAfW5EsE5KSq5RWh6Af2dtFwyLIIk48Ja7vm6n4axu/43T3vfjFnEGJalxJ1wyYjSQD6bSg==}
     peerDependencies:
@@ -4789,6 +4807,10 @@ packages:
 
   hls.js@1.7.3:
     resolution: {integrity: sha512-MsPlx6yVW4Qv4C7mEVou4/gk/5cN2dVxOTnrNjPSmyH2f0Ln+/UkG10Ax1PE6OvrmTVPKgQYozTtBaPOuCzq7A==}
+
+  hono@4.13.13:
+    resolution: {integrity: sha512-CQ46U0ZkAGmbT/4UxdzzGJpacP2IeKgY4a5/tOI9AABbpOMfK739wfDXmv1usCk+3RkKj1hQy4/fjhiwa2xlrA==}
+    engines: {node: '>=16.9.0'}
 
   hookable@5.5.3:
     resolution: {integrity: sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==}
@@ -8426,6 +8448,11 @@ snapshots:
 
   '@henrygd/queue@1.2.0': {}
 
+  '@hono/standard-validator@0.4.0(@standard-schema/spec@1.1.0)(hono@4.13.13)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      hono: 4.13.13
+
   '@iconify-json/simple-icons@1.2.99':
     dependencies:
       '@iconify/types': 2.0.0
@@ -10416,6 +10443,8 @@ snapshots:
 
   '@sindresorhus/merge-streams@4.0.0': {}
 
+  '@standard-schema/spec@1.1.0': {}
+
   '@tanstack/react-virtual@3.14.13(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
       '@tanstack/virtual-core': 3.17.11
@@ -11926,6 +11955,8 @@ snapshots:
       '@babel/runtime': 7.29.10
 
   hls.js@1.7.3: {}
+
+  hono@4.13.13: {}
 
   hookable@5.5.3: {}
 

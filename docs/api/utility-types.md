@@ -16,6 +16,6 @@
 | `PrimitiveUnionSchema`    | Any `union()` of primitives                                                                                                         |
 | `ObjectLikeSchema`        | Any object, document, reference, block, image or file schema                                                                        |
 | `ArraySchema<T>`          | The schema type `array()` returns for an element schema of type `T`                                                                 |
-| `StandardSchemaV1`        | The [Standard Schema](/guide/parsing#standard-schema) interface, the same as in `@standard-schema/spec`                             |
+| `StandardSchemaV1`        | The [Standard Schema](/guide/standard-schema) interface, the same as in `@standard-schema/spec`                                     |
 
 The type guards (`isObjectSchema`, `isDocumentSchema`, `isOptionalSchema`, ...) are exported for code that walks schemas, along with `getInstanceName(schema)`, which returns the `_type` literal of an object or document schema, or `undefined` if it has none.

@@ -176,6 +176,7 @@ export default defineConfig({
         items: [
           {text: 'Declaring a document', link: '/guide/declaring-a-document'},
           {text: 'Parsing and errors', link: '/guide/parsing'},
+          {text: 'Standard Schema', link: '/guide/standard-schema'},
           {text: 'Arrays and _key', link: '/guide/arrays'},
           {text: 'Portable Text', link: '/guide/portable-text'},
           {text: 'Composing schemas', link: '/guide/composing'},

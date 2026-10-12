@@ -13,7 +13,7 @@
 | `formatIssues(issues)`                      | Writes issues as a report, one per line; the same text as `ParseError.message`. Also takes the `issues` of any Standard Schema `validate` result |
 | `IssueLike`                                 | What `formatIssues` accepts: `{message, path?, input?}`, which both `ParseIssue` and a Standard Schema issue satisfy                             |
 | `PathSegmentLike`                           | What `formatPath` accepts in a path: a field name, index, symbol, `{_key, index}` or Standard Schema `{key}` segment                             |
-| `schema['~standard']`                       | The [Standard Schema](/guide/parsing#standard-schema) properties; `validate` runs `parse`                                                        |
+| `schema['~standard']`                       | The [Standard Schema](/guide/standard-schema) properties; `validate` runs `parse`                                                                |
 | `ErrorCode`                                 | One of the codes below                                                                                                                           |
 
 | Error code                       | Raised when                                           |
