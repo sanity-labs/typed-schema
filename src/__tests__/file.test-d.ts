@@ -3,16 +3,16 @@ import {describe, expectTypeOf, test} from 'vitest'
 import {file} from '../creators/file'
 import {string} from '../creators/string'
 import {
+  type DocumentSchema,
   type Infer,
   type Parsed,
   type REF_SCHEMA,
-  type SanityDocument,
 } from '../defs'
 import {type FileAssetShape} from '../shapeDefs'
 
 describe('file type', () => {
   test('plain file type definition', () => {
-    const FileSchema = file()
+    const schema = file()
 
     type FileValue = {
       _type: 'file'
@@ -23,15 +23,15 @@ describe('file type', () => {
       }
     }
 
-    expectTypeOf<Infer<typeof FileSchema>>().toEqualTypeOf<FileValue>()
+    expectTypeOf<Infer<typeof schema>>().toEqualTypeOf<FileValue>()
   })
   test('without a shape, the output has no extra keys', () => {
-    const FileSchema = file()
+    const schema = file()
 
-    expectTypeOf<keyof Infer<typeof FileSchema>>().toEqualTypeOf<
+    expectTypeOf<keyof Infer<typeof schema>>().toEqualTypeOf<
       '_type' | 'asset'
     >()
-    expectTypeOf<Infer<typeof FileSchema>>().toEqualTypeOf<
+    expectTypeOf<Infer<typeof schema>>().toEqualTypeOf<
       Infer<ReturnType<typeof file<{}>>>
     >()
   })
@@ -40,17 +40,17 @@ describe('file type', () => {
     file({caption: 'foo'})
   })
   test('parsed file values include the asset schema on the reference', () => {
-    const FileSchema = file()
+    const schema = file()
 
-    expectTypeOf<Parsed<typeof FileSchema>['asset']>().toEqualTypeOf<{
+    expectTypeOf<Parsed<typeof schema>['asset']>().toEqualTypeOf<{
       _type: 'reference'
       _ref: string
       _weak?: boolean
-      [REF_SCHEMA]: SanityDocument<FileAssetShape>
+      [REF_SCHEMA]: DocumentSchema<FileAssetShape>
     }>()
   })
   test('custom file type definition', () => {
-    const FileSchema = file({
+    const schema = file({
       caption: string(),
     })
 
@@ -64,6 +64,6 @@ describe('file type', () => {
       caption: string
     }
 
-    expectTypeOf<Infer<typeof FileSchema>>().toEqualTypeOf<FileValue>()
+    expectTypeOf<Infer<typeof schema>>().toEqualTypeOf<FileValue>()
   })
 })

@@ -1,10 +1,10 @@
 import {
+  type DocumentSchema,
+  type DocumentSchemaOf,
+  type ObjectSchema,
+  type ObjectSchemaOf,
+  type ObjectShape,
   type OutputFromShape,
-  type SanityDocument,
-  type SanityDocumentType,
-  type SanityObject,
-  type SanityObjectShape,
-  type SanityObjectType,
 } from '../defs'
 import {withoutExamples} from '../helpers/annotations'
 import {deferGetters} from '../helpers/deferGetters'
@@ -22,31 +22,31 @@ type ExtendShape<Shape, Augmentation> = Flatten<
 >
 
 export type Extends<
-  Obj extends SanityObject | SanityDocument,
+  Obj extends ObjectSchema | DocumentSchema,
   Augmentation extends {[key: string]: any},
 > =
-  Obj extends SanityObject<infer Shape>
-    ? SanityObjectShape extends Shape
-      ? SanityObjectType<Combine<Obj['output'], OutputFromShape<Augmentation>>>
-      : SanityObject<ExtendShape<Shape, Augmentation>>
-    : Obj extends SanityDocument<infer Shape>
-      ? SanityObjectShape extends Shape
-        ? SanityDocumentType<
+  Obj extends ObjectSchema<infer Shape>
+    ? ObjectShape extends Shape
+      ? ObjectSchemaOf<Combine<Obj['output'], OutputFromShape<Augmentation>>>
+      : ObjectSchema<ExtendShape<Shape, Augmentation>>
+    : Obj extends DocumentSchema<infer Shape>
+      ? ObjectShape extends Shape
+        ? DocumentSchemaOf<
             Combine<Obj['output'], OutputFromShape<Augmentation>>
           >
-        : SanityDocument<ExtendShape<Shape, Augmentation>>
+        : DocumentSchema<ExtendShape<Shape, Augmentation>>
       : never
 
 export function extend<
-  Obj extends SanityObject | SanityDocument,
-  // Not `SanityObjectShape`: checking the field types would read fields
+  Obj extends ObjectSchema | DocumentSchema,
+  // Not `ObjectShape`: checking the field types would read fields
   // declared with getters and break recursive extensions
   Shape extends {[key: string]: any},
 >(
   source: Obj,
   shape: Shape &
     NoInfer<
-      FieldErrors<Shape, Obj extends SanityDocument ? '_id' | '_type' : '_type'>
+      FieldErrors<Shape, Obj extends DocumentSchema ? '_id' | '_type' : '_type'>
     >,
 ): Extends<Obj, Shape> {
   const {annotations: _annotations, ...rest} = source

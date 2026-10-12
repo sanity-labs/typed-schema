@@ -1,15 +1,15 @@
 import {isLazySchema, isOptionalSchema} from '../asserters'
 import {lazy} from '../creators/lazy'
-import {type SanityLazy, type SanityOptional, type SanityType} from '../defs'
+import {type LazySchema, type OptionalSchema, type Schema} from '../defs'
 import {getLazySchema} from '../helpers/getLazySchema'
 
-export type SanityRequired<S extends SanityType> =
-  S extends SanityOptional<infer T>
-    ? SanityRequired<T>
-    : S extends SanityLazy<infer T>
-      ? SanityLazy<SanityRequired<T>>
+export type RequiredSchema<S extends Schema> =
+  S extends OptionalSchema<infer T>
+    ? RequiredSchema<T>
+    : S extends LazySchema<infer T>
+      ? LazySchema<RequiredSchema<T>>
       : S
-export function required<S extends SanityType>(schema: S): SanityRequired<S> {
+export function required<S extends Schema>(schema: S): RequiredSchema<S> {
   if (isOptionalSchema(schema)) {
     return required(schema.type)
   }

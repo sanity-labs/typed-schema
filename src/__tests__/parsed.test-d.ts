@@ -10,17 +10,17 @@ import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {
+  type DocumentSchemaOf,
   type Infer,
   type Parsed,
-  type SanityDocumentType,
-  type SanityType,
+  type Schema,
 } from '../defs'
 import {type Format} from '../helpers/utilTypes'
 import {parse, parseOrThrow, type ParseError} from '../parse'
 import {
-  type SanityArrayValue,
-  type SanityDocumentValue,
-  type SanityReferenceValue,
+  type ArrayValue,
+  type DocumentValue,
+  type ReferenceValue,
 } from '../shapeDefs'
 
 const Person = document({_type: literal('person'), name: string()})
@@ -84,12 +84,12 @@ describe('Infer strips $refSchema, Parsed keeps it', () => {
     expectTypeOf<Parsed<typeof Pet>['owner']>().toEqualTypeOf<ParsedPersonRef>()
   })
 
-  test('circular schema annotated with SanityReferenceValue', () => {
-    interface TreeNode extends SanityDocumentValue {
-      parent?: SanityReferenceValue<TreeNode>
-      children: SanityArrayValue<SanityReferenceValue<TreeNode>>
+  test('circular schema annotated with ReferenceValue', () => {
+    interface TreeNode extends DocumentValue {
+      parent?: ReferenceValue<TreeNode>
+      children: ArrayValue<ReferenceValue<TreeNode>>
     }
-    const TreeNode: SanityDocumentType<TreeNode> = document({
+    const TreeNode: DocumentSchemaOf<TreeNode> = document({
       _type: literal('node'),
       parent: optional(lazy(() => reference(TreeNode))),
       children: lazy(() => array(reference(TreeNode))),
@@ -101,12 +101,12 @@ describe('Infer strips $refSchema, Parsed keeps it', () => {
       Format<PersonRef & {_key: string}>
     >()
 
-    // SanityReferenceValue keeps $refSchema optional so hand-written values
+    // ReferenceValue keeps $refSchema optional so hand-written values
     // of the annotated type still typecheck
     type ParsedTreeNode = Parsed<typeof TreeNode>
     expectTypeOf<
       NonNullable<ParsedTreeNode['parent']>['$refSchema']
-    >().toEqualTypeOf<SanityType<TreeNode> | undefined>()
+    >().toEqualTypeOf<Schema<TreeNode> | undefined>()
 
     const root: TreeNode = {
       _type: 'node',

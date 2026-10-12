@@ -12,7 +12,7 @@ import {portableText} from '../../../creators/portableText'
 import {reference} from '../../../creators/reference'
 import {string} from '../../../creators/string'
 import {union} from '../../../creators/union'
-import {type SanityAny, type SanityObjectType} from '../../../defs'
+import {type ObjectSchemaOf, type Schema} from '../../../defs'
 import {deepPartial} from '../../../utils/deepPartial'
 import {toClassicSchema} from '../toClassicSchema'
 
@@ -177,7 +177,7 @@ describe('recursive schemas', () => {
       get address() {
         return Address
       },
-      tags: lazy((): SanityAny => array(string())),
+      tags: lazy((): Schema => array(string())),
     })
 
     expect(toClassicSchema(Place)).toEqual([
@@ -202,7 +202,7 @@ describe('recursive schemas', () => {
       label: string
       children: Node[]
     }
-    const Node: SanityObjectType<Node> = object({
+    const Node: ObjectSchemaOf<Node> = object({
       _type: literal('node'),
       label: string(),
       children: lazy(() => array(Node)),

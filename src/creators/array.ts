@@ -5,21 +5,21 @@ import {
   isObjectUnionSchema,
 } from '../asserters'
 import {
+  type ArraySchema,
+  type LiteralSchema,
+  type NeverSchema,
+  type ObjectArraySchema,
+  type ObjectLikeKind,
+  type ObjectLikeSchema,
+  type ObjectUnionKind,
+  type ObjectUnionSchema,
   type OutputOf,
-  type SanityArray,
-  type SanityKind,
-  type SanityLiteral,
-  type SanityNever,
-  type SanityObjectArray,
-  type SanityObjectLike,
-  type SanityObjectLikeKind,
-  type SanityObjectUnion,
-  type SanityObjectUnionKind,
-  type SanityPrimitive,
-  type SanityPrimitiveArray,
-  type SanityPrimitiveUnion,
-  type SanityType,
+  type PrimitiveArraySchema,
+  type PrimitiveSchema,
+  type PrimitiveUnionSchema,
+  type Schema,
   type SchemaAnnotations,
+  type SchemaKind,
 } from '../defs'
 import {withoutExamples} from '../helpers/annotations'
 import {defineType} from '../helpers/defineType'
@@ -36,20 +36,20 @@ import {string} from './string'
 // maps each copy back to the schema it was made from, kept off-object like the
 // `getLazySchema` cache, so schema walkers can tell one schema reused in
 // several places from two declarations of the same type
-const keyedFrom = new WeakMap<SanityType, SanityType>()
+const keyedFrom = new WeakMap<Schema, Schema>()
 
 /**
  * Returns the schema an object array element was copied from, or the schema
  * itself if it is not an array element
  */
-export function getUnkeyedSchema(schema: SanityType): SanityType {
+export function getUnkeyedSchema(schema: Schema): Schema {
   return keyedFrom.get(schema) ?? schema
 }
 
-function addKeyProperty<T extends SanityObjectLikeKind | SanityObjectUnionKind>(
+function addKeyProperty<T extends ObjectLikeKind | ObjectUnionKind>(
   target: T,
 ): T {
-  const schema = target as SanityType as SanityObjectUnion | SanityObjectLike
+  const schema = target as Schema as ObjectUnionSchema | ObjectLikeSchema
   // The copy keeps the annotations, except `examples`: those are values of
   // the schema without `_key`, which `validateExamples` checks through
   // `getUnkeyedSchema`. Built through `defineType`, since a spread drops the
@@ -67,27 +67,27 @@ function addKeyProperty<T extends SanityObjectLikeKind | SanityObjectUnionKind>(
     withoutExamples(schema.annotations),
   )
   keyedFrom.set(withKey, getUnkeyedSchema(schema))
-  return withKey as SanityType as T
+  return withKey as Schema as T
 }
 
 export function objectArray<
-  ElementType extends SanityObjectLikeKind | SanityObjectUnionKind,
+  ElementType extends ObjectLikeKind | ObjectUnionKind,
 >(
   elementSchema: ElementType,
   annotations?: NoInfer<
-    SchemaAnnotations<OutputOf<SanityObjectArray<ElementType>>>
+    SchemaAnnotations<OutputOf<ObjectArraySchema<ElementType>>>
   >,
-): SanityObjectArray<ElementType>
+): ObjectArraySchema<ElementType>
 // Matches only what the overload above rejects, see `array()`
-export function objectArray<ElementType extends SanityKind>(
+export function objectArray<ElementType extends SchemaKind>(
   elementSchema: ElementType &
     SchemaError<ObjectArrayElementError<ElementType>>,
   annotations?: AnnotationsError<'objectArray'>,
 ): never
 export function objectArray(
-  elementSchema: SanityObjectLikeKind | SanityObjectUnionKind,
+  elementSchema: ObjectLikeKind | ObjectUnionKind,
   annotations?: any,
-): SanityType {
+): Schema {
   return defineType(
     {
       typeName: 'objectArray',
@@ -99,75 +99,75 @@ export function objectArray(
 
 export function primitiveArray<
   ElementType extends
-    | SanityPrimitive
-    | SanityLiteral
-    | SanityPrimitiveUnion
-    | SanityNever,
+    | PrimitiveSchema
+    | LiteralSchema
+    | PrimitiveUnionSchema
+    | NeverSchema,
 >(
   elementSchema: ElementType,
   annotations?: NoInfer<
-    SchemaAnnotations<OutputOf<SanityPrimitiveArray<ElementType>>>
+    SchemaAnnotations<OutputOf<PrimitiveArraySchema<ElementType>>>
   >,
-): SanityPrimitiveArray<ElementType>
+): PrimitiveArraySchema<ElementType>
 // Matches only what the overload above rejects, see `array()`
-export function primitiveArray<ElementType extends SanityKind>(
+export function primitiveArray<ElementType extends SchemaKind>(
   elementSchema: ElementType &
     SchemaError<PrimitiveArrayElementError<ElementType>>,
   annotations?: AnnotationsError<'primitiveArray'>,
 ): never
 export function primitiveArray(
   elementSchema:
-    | SanityPrimitive
-    | SanityLiteral
-    | SanityPrimitiveUnion
-    | SanityNever,
+    | PrimitiveSchema
+    | LiteralSchema
+    | PrimitiveUnionSchema
+    | NeverSchema,
   annotations?: any,
-): SanityType {
+): Schema {
   return defineType(
     {typeName: 'primitiveArray', element: elementSchema},
     annotations,
   )
 }
 
-export function array<Def extends SanityObjectLikeKind | SanityObjectUnionKind>(
+export function array<Def extends ObjectLikeKind | ObjectUnionKind>(
   elementSchema: Def,
-  annotations?: NoInfer<SchemaAnnotations<OutputOf<SanityObjectArray<Def>>>>,
-): SanityObjectArray<Def>
-export function array<Def extends SanityPrimitive | SanityPrimitiveUnion>(
+  annotations?: NoInfer<SchemaAnnotations<OutputOf<ObjectArraySchema<Def>>>>,
+): ObjectArraySchema<Def>
+export function array<Def extends PrimitiveSchema | PrimitiveUnionSchema>(
   elementSchema: Def,
-  annotations?: NoInfer<SchemaAnnotations<OutputOf<SanityPrimitiveArray<Def>>>>,
-): SanityPrimitiveArray<Def>
-export function array<Def extends SanityNever>(
+  annotations?: NoInfer<SchemaAnnotations<OutputOf<PrimitiveArraySchema<Def>>>>,
+): PrimitiveArraySchema<Def>
+export function array<Def extends NeverSchema>(
   elementSchema: Def,
-  annotations?: NoInfer<SchemaAnnotations<OutputOf<SanityPrimitiveArray<Def>>>>,
-): SanityPrimitiveArray<Def>
+  annotations?: NoInfer<SchemaAnnotations<OutputOf<PrimitiveArraySchema<Def>>>>,
+): PrimitiveArraySchema<Def>
 // For generic code whose element type may be either object-like or primitive.
 // Last, so concrete calls resolve to the specific overloads above
 export function array<
   Def extends
-    | SanityObjectLikeKind
-    | SanityObjectUnionKind
-    | SanityPrimitive
-    | SanityPrimitiveUnion,
+    | ObjectLikeKind
+    | ObjectUnionKind
+    | PrimitiveSchema
+    | PrimitiveUnionSchema,
 >(
   elementSchema: Def,
-  annotations?: NoInfer<SchemaAnnotations<OutputOf<SanityArray<Def>>>>,
-): SanityArray<Def>
+  annotations?: NoInfer<SchemaAnnotations<OutputOf<ArraySchema<Def>>>>,
+): ArraySchema<Def>
 // Matches only what the overloads above reject, and its parameter can never be
 // satisfied. TypeScript 7 reports only the last overload's error, which says
 // what is wrong with the element schema. TypeScript 6 lists every overload's
 // error, ending with this one.
-export function array<Def extends SanityKind>(
+export function array<Def extends SchemaKind>(
   elementSchema: Def & SchemaError<ArrayElementError<Def>>,
   annotations?: AnnotationsError<'array'>,
 ): never
 export function array(
   elementSchema:
-    | SanityObjectLike
-    | SanityObjectUnion
-    | SanityPrimitive
-    | SanityNever
-    | SanityPrimitiveUnion,
+    | ObjectLikeSchema
+    | ObjectUnionSchema
+    | PrimitiveSchema
+    | NeverSchema
+    | PrimitiveUnionSchema,
   annotations?: any,
 ) {
   if (isDocumentUnionSchema(elementSchema)) {

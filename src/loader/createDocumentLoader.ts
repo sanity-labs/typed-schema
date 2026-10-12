@@ -1,21 +1,21 @@
 import {
+  type DocumentSchemaOf,
+  type LazySchema,
   type Parsed,
-  type SanityDocumentType,
-  type SanityLazy,
-  type SanityType,
+  type Schema,
 } from '../defs'
 import {getLazySchema} from '../helpers/getLazySchema'
 import {type Committed, committed} from '../lifecycle'
 import {type ParseResult, parse} from '../parse'
-import {type SanityDocumentValue} from '../shapeDefs'
+import {type DocumentValue} from '../shapeDefs'
 
-export type MaybeLazy<T extends SanityType> = T | SanityLazy<T>
+export type MaybeLazy<T extends Schema> = T | LazySchema<T>
 
 export function createLoadDocumentResult(
   fetch: (id: string, fieldSelection: string[]) => Promise<unknown>,
 ) {
   return function loadDocumentResult<
-    DocumentSchema extends SanityDocumentType<SanityDocumentValue>,
+    DocumentSchema extends DocumentSchemaOf<DocumentValue>,
   >(schema: MaybeLazy<DocumentSchema>, id: string) {
     const nonlazySchema = getLazySchema(schema) as DocumentSchema
     const fields = Object.keys(nonlazySchema.shape)
@@ -31,7 +31,7 @@ export function createDocumentLoader(
   const loadDocumentResult = createLoadDocumentResult(fetch)
 
   return function fetchDocument<
-    DocumentSchema extends SanityDocumentType<SanityDocumentValue>,
+    DocumentSchema extends DocumentSchemaOf<DocumentValue>,
   >(
     schema: MaybeLazy<DocumentSchema>,
     id: string,

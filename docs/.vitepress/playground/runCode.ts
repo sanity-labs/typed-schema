@@ -67,12 +67,12 @@ export function runCode(
 }
 
 function isDocumentSchema(
-  value: typedSchema.SanityType,
-): value is typedSchema.SanityDocument {
+  value: typedSchema.Schema,
+): value is typedSchema.DocumentSchema {
   return value.typeName === 'document'
 }
 
-function isSchema(value: unknown): value is typedSchema.SanityType {
+function isSchema(value: unknown): value is typedSchema.Schema {
   return typeof value === 'object' && value !== null && 'typeName' in value
 }
 

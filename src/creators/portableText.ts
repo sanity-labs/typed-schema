@@ -1,10 +1,10 @@
 import {
+  type BlockSchema,
+  type NeverSchema,
+  type ObjectArraySchema,
+  type ObjectUnionSchema,
   type OutputOf,
-  type SanityBlock,
-  type SanityNever,
-  type SanityObjectArray,
-  type SanityObjectUnion,
-  type SanityPortableTextMember,
+  type PortableTextMemberKind,
   type SchemaAnnotations,
 } from '../defs'
 import {
@@ -15,21 +15,21 @@ import {array} from './array'
 import {type FlattenUnionTypes, union} from './union'
 
 type PortableText<
-  BlockType extends SanityBlock,
+  BlockType extends BlockSchema,
   ElementType extends
-    | SanityPortableTextMember
-    | SanityObjectUnion<SanityPortableTextMember>
-    | SanityNever,
-> = SanityObjectArray<
-  SanityObjectUnion<FlattenUnionTypes<BlockType | ElementType>>
+    | PortableTextMemberKind
+    | ObjectUnionSchema<PortableTextMemberKind>
+    | NeverSchema,
+> = ObjectArraySchema<
+  ObjectUnionSchema<FlattenUnionTypes<BlockType | ElementType>>
 >
 
 export function portableText<
-  const BlockType extends SanityBlock,
+  const BlockType extends BlockSchema,
   const ElementType extends
-    | SanityPortableTextMember
-    | SanityObjectUnion<SanityPortableTextMember>
-    | SanityNever,
+    | PortableTextMemberKind
+    | ObjectUnionSchema<PortableTextMemberKind>
+    | NeverSchema,
 >(
   options: {
     block: BlockType
@@ -49,11 +49,11 @@ export function portableText<Options extends object>(
 ): never
 export function portableText(
   options: {
-    block: SanityBlock
+    block: BlockSchema
     element:
-      | SanityPortableTextMember
-      | SanityObjectUnion<SanityPortableTextMember>
-      | SanityNever
+      | PortableTextMemberKind
+      | ObjectUnionSchema<PortableTextMemberKind>
+      | NeverSchema
   },
   annotations?: any,
 ): unknown {

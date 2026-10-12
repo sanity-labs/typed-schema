@@ -1,95 +1,93 @@
 import {
-  SANITY_ASSET,
-  SANITY_EXTENDABLE_OBJECT,
-  SANITY_OBJECT_LIKE,
-  type SanityAsset,
-  type SanityBlock,
-  type SanityBoolean,
-  type SanityDate,
-  type SanityDateTime,
-  type SanityDocument,
-  type SanityDocumentUnion,
-  type SanityEnum,
-  type SanityExtendableObject,
-  type SanityFile,
-  type SanityImage,
-  type SanityLazy,
-  type SanityLiteral,
-  type SanityNever,
-  type SanityNumber,
-  type SanityObject,
-  type SanityObjectArray,
-  type SanityObjectLike,
-  type SanityObjectUnion,
-  type SanityOptional,
-  type SanityPrimitive,
-  type SanityPrimitiveArray,
-  type SanityPrimitiveUnion,
-  type SanityReference,
-  type SanityString,
-  type SanityType,
-  type SanityTypedObject,
+  ASSET_TYPE_NAMES,
+  type AssetSchema,
+  type BlockSchema,
+  type BooleanSchema,
+  type DateSchema,
+  type DateTimeSchema,
+  type DocumentSchema,
+  type DocumentUnionSchema,
+  type EnumSchema,
+  EXTENDABLE_OBJECT_TYPE_NAMES,
+  type ExtendableObjectSchema,
+  type FileSchema,
+  type ImageSchema,
+  type LazySchema,
+  type LiteralSchema,
+  type NeverSchema,
+  type NumberSchema,
+  OBJECT_LIKE_TYPE_NAMES,
+  type ObjectArraySchema,
+  type ObjectLikeSchema,
+  type ObjectSchema,
+  type ObjectUnionSchema,
+  type OptionalSchema,
+  type PrimitiveArraySchema,
+  type PrimitiveSchema,
+  type PrimitiveUnionSchema,
+  type ReferenceSchema,
+  type Schema,
+  type StringSchema,
+  type TypedObjectSchema,
 } from './defs'
 
-export function isNeverSchema(schema: SanityType): schema is SanityNever {
+export function isNeverSchema(schema: Schema): schema is NeverSchema {
   return schema.typeName === 'never'
 }
 export function isObjectUnionSchema(
-  schema: SanityType,
-): schema is SanityObjectUnion {
+  schema: Schema,
+): schema is ObjectUnionSchema {
   return schema.typeName === 'union'
 }
 export function isDocumentUnionSchema(
-  schema: SanityType,
-): schema is SanityDocumentUnion {
+  schema: Schema,
+): schema is DocumentUnionSchema {
   return schema.typeName === 'documentUnion'
 }
 export function isPrimitiveUnionSchema(
-  schema: SanityType,
-): schema is SanityPrimitiveUnion {
+  schema: Schema,
+): schema is PrimitiveUnionSchema {
   return schema.typeName === 'primitiveUnion'
 }
-export function isEnumSchema(schema: SanityType): schema is SanityEnum {
+export function isEnumSchema(schema: Schema): schema is EnumSchema {
   return schema.typeName === 'enum'
 }
-export function isObjectSchema(schema: SanityType): schema is SanityObject {
+export function isObjectSchema(schema: Schema): schema is ObjectSchema {
   return schema.typeName === 'object'
 }
-export function isObjectLikeSchema(
-  schema: SanityType,
-): schema is SanityObjectLike {
-  return (SANITY_OBJECT_LIKE as any).includes(schema.typeName)
+export function isObjectLikeSchema(schema: Schema): schema is ObjectLikeSchema {
+  return (OBJECT_LIKE_TYPE_NAMES as any).includes(schema.typeName)
 }
 export function isExtendableObjectSchema(
-  schema: SanityType,
-): schema is SanityExtendableObject {
-  return (SANITY_EXTENDABLE_OBJECT as any).includes(schema.typeName)
+  schema: Schema,
+): schema is ExtendableObjectSchema {
+  return (EXTENDABLE_OBJECT_TYPE_NAMES as any).includes(schema.typeName)
 }
-export function isImageSchema(schema: SanityType): schema is SanityImage {
+export function isImageSchema(schema: Schema): schema is ImageSchema {
   return schema.typeName === 'image'
 }
-export function isFileSchema(schema: SanityType): schema is SanityFile {
+export function isFileSchema(schema: Schema): schema is FileSchema {
   return schema.typeName === 'file'
 }
-export function isBlockSchema(schema: SanityType): schema is SanityBlock {
+export function isBlockSchema(schema: Schema): schema is BlockSchema {
   return schema.typeName === 'block'
 }
 
-export function isAssetSchema(schema: SanityType): schema is SanityAsset {
-  return (SANITY_ASSET as any).includes(schema.typeName)
+export function isAssetSchema(schema: Schema): schema is AssetSchema {
+  return (ASSET_TYPE_NAMES as any).includes(schema.typeName)
 }
-export function isDocumentSchema(schema: SanityType): schema is SanityDocument {
+export function isDocumentSchema(schema: Schema): schema is DocumentSchema {
   return schema.typeName === 'document'
 }
 export function isReferenceSchema(
-  schema: SanityType,
-): schema is SanityReference<any> {
+  schema: Schema,
+): schema is ReferenceSchema<any> {
   return schema.typeName === 'reference'
 }
-export function isLazySchema(schema: SanityType): schema is SanityLazy<any> {
+export function isLazySchema(schema: Schema): schema is LazySchema<any> {
   return schema.typeName === 'lazy'
 }
-export function isLiteralSchema(schema: SanityType): schema is SanityLiteral {
+export function isLiteralSchema(schema: Schema): schema is LiteralSchema {
   return schema.typeName === 'literal'
 }
 /**
@@ -98,8 +96,8 @@ export function isLiteralSchema(schema: SanityType): schema is SanityLiteral {
  * which case array items are keyed objects (`_key`)
  */
 export function isItemObjectArrayCompatible(
-  elementSchema: SanityType,
-): elementSchema is SanityObjectLike | SanityObjectUnion {
+  elementSchema: Schema,
+): elementSchema is ObjectLikeSchema | ObjectUnionSchema {
   return (
     isObjectLikeSchema(elementSchema) ||
     (isObjectUnionSchema(elementSchema) &&
@@ -109,34 +107,32 @@ export function isItemObjectArrayCompatible(
   )
 }
 
-export function isStringSchema(schema: SanityType): schema is SanityString {
+export function isStringSchema(schema: Schema): schema is StringSchema {
   return schema.typeName === 'string'
 }
-export function isDateSchema(schema: SanityType): schema is SanityDate {
+export function isDateSchema(schema: Schema): schema is DateSchema {
   return schema.typeName === 'date'
 }
-export function isDateTimeSchema(schema: SanityType): schema is SanityDateTime {
+export function isDateTimeSchema(schema: Schema): schema is DateTimeSchema {
   return schema.typeName === 'dateTime'
 }
-export function isNumberSchema(schema: SanityType): schema is SanityNumber {
+export function isNumberSchema(schema: Schema): schema is NumberSchema {
   return schema.typeName === 'number'
 }
-export function isBooleanSchema(schema: SanityType): schema is SanityBoolean {
+export function isBooleanSchema(schema: Schema): schema is BooleanSchema {
   return schema.typeName === 'boolean'
 }
 export function isOptionalSchema(
-  schema: SanityType,
-): schema is SanityOptional<any> {
+  schema: Schema,
+): schema is OptionalSchema<any> {
   return schema.typeName === 'optional'
 }
 export function isObjectArraySchema(
-  schema: SanityType,
-): schema is SanityObjectArray {
+  schema: Schema,
+): schema is ObjectArraySchema {
   return schema.typeName === 'objectArray'
 }
-export function isPrimitiveSchema(
-  schema: SanityType,
-): schema is SanityPrimitive {
+export function isPrimitiveSchema(schema: Schema): schema is PrimitiveSchema {
   return (
     isStringSchema(schema) ||
     isBooleanSchema(schema) ||
@@ -147,8 +143,8 @@ export function isPrimitiveSchema(
 }
 
 export function isTypedObjectSchema(
-  schema: SanityType,
-): schema is SanityTypedObject {
+  schema: Schema,
+): schema is TypedObjectSchema {
   return (
     isObjectLikeSchema(schema) &&
     schema.shape._type &&
@@ -157,7 +153,7 @@ export function isTypedObjectSchema(
   )
 }
 export function isPrimitiveArraySchema(
-  schema: SanityType,
-): schema is SanityPrimitiveArray {
+  schema: Schema,
+): schema is PrimitiveArraySchema {
   return schema.typeName === 'primitiveArray'
 }

@@ -1,26 +1,26 @@
 import {
+  type ImageSchema,
+  type ObjectShape,
   type OutputOf,
-  type SanityImage,
-  type SanityObjectShape,
   type SchemaAnnotations,
 } from '../defs'
 import {deferGetters} from '../helpers/deferGetters'
 import {defineType} from '../helpers/defineType'
 import {type FieldErrors} from '../helpers/schemaErrors'
-import {ImageBase, type SanityImageShape} from '../shapeDefs'
+import {ImageBase, type ImageShape} from '../shapeDefs'
 
 // TODO: add hotspot + crop
-export function image(): SanityImage<SanityImageShape>
-export function image<Shape extends {[key: string]: any} = SanityObjectShape>(
+export function image(): ImageSchema<ImageShape>
+export function image<Shape extends {[key: string]: any} = ObjectShape>(
   shape: Shape & NoInfer<FieldErrors<Shape>>,
   annotations?: NoInfer<
-    SchemaAnnotations<OutputOf<SanityImage<Shape & SanityImageShape>>>
+    SchemaAnnotations<OutputOf<ImageSchema<Shape & ImageShape>>>
   >,
-): SanityImage<Shape & SanityImageShape>
+): ImageSchema<Shape & ImageShape>
 export function image(
-  shape: SanityObjectShape = {},
+  shape: ObjectShape = {},
   annotations?: SchemaAnnotations<any>,
-): SanityImage {
+): ImageSchema {
   return defineType(
     {
       typeName: 'image',

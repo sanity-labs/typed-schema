@@ -65,6 +65,6 @@ if (subject._type === 'book') {
 
 `union([reference(Author), reference(Book)])` is the same as `reference(union([Author, Book]))`. Every reference value has `_type: 'reference'`, so parsing can't tell several reference members apart, and `union()` combines them into one. It throws if one of those references, or a nested `union()` that contains one, has annotations. Put the annotations on a single `reference(union([...]))` instead.
 
-A document that references itself can be a member through a getter, and you can wrap it in `lazy()`: `reference(union([lazy(() => Person), Book]))`. A document typed by its value must be typed as `SanityDocumentType<Value>` to be a member, since a `SanityType<Value>` could be an object at runtime.
+A document that references itself can be a member through a getter, and you can wrap it in `lazy()`: `reference(union([lazy(() => Person), Book]))`. A document typed by its value must be typed as `DocumentSchemaOf<Value>` to be a member, since a `Schema<Value>` could be an object at runtime.
 
 You can also use a `union()` of documents on its own to parse a value that can be one of several documents, such as a query result: `parse(union([Author, Book]), doc)`. It can't include other object types or be an `array()` element. `toClassicSchema` throws for a union of documents that isn't a reference target, since Studio can't store a document inside another document.

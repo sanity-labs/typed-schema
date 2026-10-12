@@ -8,19 +8,19 @@ import {optional} from '../creators/optional'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {
-  type SanityObjectLikeKind,
-  type SanityObjectUnionKind,
-  type SanityPrimitive,
-  type SanityPrimitiveUnion,
+  type ObjectLikeKind,
+  type ObjectUnionKind,
+  type PrimitiveSchema,
+  type PrimitiveUnionSchema,
 } from '../defs'
 import {parse} from '../parse'
 
 function table<
   CellType extends
-    | SanityObjectLikeKind
-    | SanityObjectUnionKind
-    | SanityPrimitive
-    | SanityPrimitiveUnion,
+    | ObjectLikeKind
+    | ObjectUnionKind
+    | PrimitiveSchema
+    | PrimitiveUnionSchema,
 >(cell: CellType) {
   return object({
     _type: literal('table'),

@@ -102,7 +102,7 @@ const tuple = [s.reference(Author), Link] as const
 s.union(tuple)
 ```
 
-A union of documents is the target of a reference to several document types. It can also parse a value that can be one of several documents, such as a query result: `parse(union([Author, Book]), doc)`. A document typed by its value must be typed as `SanityDocumentType<Value>` to be a member.
+A union of documents is the target of a reference to several document types. It can also parse a value that can be one of several documents, such as a query result: `parse(union([Author, Book]), doc)`. A document typed by its value must be typed as `DocumentSchemaOf<Value>` to be a member.
 
 ```ts twoslash
 import * as s from '@sanity-labs/typed-schema'

@@ -1,24 +1,23 @@
 import {
-  type SanityAny,
-  type SanityArray,
-  type SanityAsset,
-  type SanityBlock,
-  type SanityBoolean,
-  type SanityDocument,
-  type SanityLiteral,
-  type SanityNever,
-  type SanityObject,
-  type SanityObjectArray,
-  type SanityObjectLike,
-  type SanityObjectUnion,
-  type SanityOptional,
-  type SanityPrimitive,
-  type SanityPrimitiveArray,
-  type SanityPrimitiveUnion,
-  type SanityReference,
-  type SanityString,
-  type SanityType,
-  type SanityTypedObject,
+  type ArraySchema,
+  type AssetSchema,
+  type BlockSchema,
+  type BooleanSchema,
+  type DocumentSchema,
+  type LiteralSchema,
+  type NeverSchema,
+  type ObjectArraySchema,
+  type ObjectLikeSchema,
+  type ObjectSchema,
+  type ObjectUnionSchema,
+  type OptionalSchema,
+  type PrimitiveArraySchema,
+  type PrimitiveSchema,
+  type PrimitiveUnionSchema,
+  type ReferenceSchema,
+  type Schema,
+  type StringSchema,
+  type TypedObjectSchema,
 } from '../../src/defs'
 
 export type CommonFormOptions = {
@@ -28,37 +27,37 @@ export type CommonFormOptions = {
 
 export type FieldsetsDef = Todo
 
-export type OptionalFieldOptions<T extends SanityOptional<any>> =
-  T extends SanityOptional<infer FieldType> ? FieldDef<FieldType> : never
+export type OptionalFieldOptions<T extends OptionalSchema<any>> =
+  T extends OptionalSchema<infer FieldType> ? FieldDef<FieldType> : never
 
-export type FieldDef<T extends SanityType> = CommonFormOptions &
-  (T extends SanityObject
+export type FieldDef<T extends Schema> = CommonFormOptions &
+  (T extends ObjectSchema
     ? ObjectFormDef<T>
-    : T extends SanityArray<any>
+    : T extends ArraySchema<any>
       ? ArrayFormDef<T>
-      : T extends SanityString
+      : T extends StringSchema
         ? StringFormDef<T>
-        : T extends SanityLiteral
+        : T extends LiteralSchema
           ? CommonFormOptions
-          : T extends SanityBoolean
+          : T extends BooleanSchema
             ? CommonFormOptions
-            : T extends SanityObjectUnion<
+            : T extends ObjectUnionSchema<
                   infer UnionTypes extends ObjectUnionMember
                 >
               ? ObjectUnionFormDef<UnionTypes>
-              : T extends SanityPrimitiveUnion<infer UnionTypes>
+              : T extends PrimitiveUnionSchema<infer UnionTypes>
                 ? PrimitiveUnionFormDef<UnionTypes>
-                : T extends SanityOptional<any>
+                : T extends OptionalSchema<any>
                   ? OptionalFieldOptions<T>
-                  : SanityAny extends T
+                  : Schema extends T
                     ? CommonFormOptions
                     : ['TODO', T])
 
-export type ItemOptions<T extends SanityType> = T extends SanityObject
+export type ItemOptions<T extends Schema> = T extends ObjectSchema
   ? ObjectFormDef<T>
-  : T extends SanityArray<any>
+  : T extends ArraySchema<any>
     ? ArrayFormDef<T>
-    : T extends SanityString
+    : T extends StringSchema
       ? StringFormDef<T>
       : unknown
 
@@ -71,131 +70,131 @@ export type SystemFields =
   | '_key'
 
 export type FindTypeByName<
-  Type extends SanityObjectLike | SanityObjectUnion,
+  Type extends ObjectLikeSchema | ObjectUnionSchema,
   SearchName extends string,
 > =
-  Type extends SanityObjectUnion<infer S>
-    ? S extends SanityObjectLike
+  Type extends ObjectUnionSchema<infer S>
+    ? S extends ObjectLikeSchema
       ? FindTypeByName<S, SearchName>
       : unknown
-    : Type extends SanityObject<{_type: SanityLiteral<infer TName>}>
+    : Type extends ObjectSchema<{_type: LiteralSchema<infer TName>}>
       ? SearchName extends TName
         ? Type
         : never
       : Type
 
-export type UnpackShapes<Type extends SanityObjectLike | SanityObjectUnion> =
-  Type extends SanityObjectUnion<infer O>
-    ? O extends SanityObject
+export type UnpackShapes<Type extends ObjectLikeSchema | ObjectUnionSchema> =
+  Type extends ObjectUnionSchema<infer O>
+    ? O extends ObjectSchema
       ? UnpackShapes<O>
       : unknown
-    : Type extends SanityObject<infer Shape>
+    : Type extends ObjectSchema<infer Shape>
       ? Shape
       : never
 
-export type Union = SanityObjectUnion<
-  | SanityObject<{_type: SanityLiteral<'foo'>}>
-  | SanityObject<{_type: SanityLiteral<'bar'>}>
-  | SanityObject<{_type: SanityLiteral<'object'>; anonymous: SanityBoolean}>
+export type Union = ObjectUnionSchema<
+  | ObjectSchema<{_type: LiteralSchema<'foo'>}>
+  | ObjectSchema<{_type: LiteralSchema<'bar'>}>
+  | ObjectSchema<{_type: LiteralSchema<'object'>; anonymous: BooleanSchema}>
 >
-export type UnionArray = SanityObjectArray<Union>
+export type UnionArray = ObjectArraySchema<Union>
 
-export type ExtractArrayItemTypeNames<T extends SanityObjectArray> =
+export type ExtractArrayItemTypeNames<T extends ObjectArraySchema> =
   UnpackShapes<T['element']>
 
 export type Pluck<T, K extends keyof any> = K extends keyof T ? T[K] : never
 export type GetType<T> =
-  T extends SanityLiteral<infer Name>
+  T extends LiteralSchema<infer Name>
     ? Name extends string
       ? Name
       : never
     : never
 
-export type NamedTypeMap<T extends SanityObjectArray> =
-  T extends SanityObjectArray<infer ItemType>
-    ? ItemType extends SanityObjectLike | SanityObjectUnion
+export type NamedTypeMap<T extends ObjectArraySchema> =
+  T extends ObjectArraySchema<infer ItemType>
+    ? ItemType extends ObjectLikeSchema | ObjectUnionSchema
       ? ItemType
       : never
     : never
 
-export type Simple = SanityObjectArray<
-  SanityObject<{_type: SanityLiteral<'foo'>; fooProp: SanityString}>
+export type Simple = ObjectArraySchema<
+  ObjectSchema<{_type: LiteralSchema<'foo'>; fooProp: StringSchema}>
 >
 
-export type ArrayItemTypeNames<T extends SanityObjectArray<any>> = GetType<
+export type ArrayItemTypeNames<T extends ObjectArraySchema<any>> = GetType<
   Pluck<ExtractArrayItemTypeNames<T>, '_type'>
 >
 
-export type ArrayTypeMap<T extends SanityObjectArray> = {
+export type ArrayTypeMap<T extends ObjectArraySchema> = {
   [Name in ArrayItemTypeNames<T>]: FindTypeByName<T['element'], Name>
 }
 
-export type TypeNames<T extends SanityTypedObject> = GetType<Pluck<T, '_type'>>
+export type TypeNames<T extends TypedObjectSchema> = GetType<Pluck<T, '_type'>>
 
 export type ObjectArrayFormDef<TMap extends ArrayTypeMap<any>> =
   CommonFormOptions & {
     draggable?: boolean
     items: {
-      [TypeName in keyof TMap]: TMap[TypeName] extends SanityType
+      [TypeName in keyof TMap]: TMap[TypeName] extends Schema
         ? ItemOptions<TMap[TypeName]>
         : never
     }
   }
 
-export type UnionTypeOptions<T extends SanityType> = T extends SanityObject
+export type UnionTypeOptions<T extends Schema> = T extends ObjectSchema
   ? ObjectFormDef<T>
   : unknown
 
-export type PrimitiveUnionTypeOptions<T extends SanityLiteral> =
-  CommonFormOptions & T extends SanityLiteral ? FieldDef<T> : unknown
+export type PrimitiveUnionTypeOptions<T extends LiteralSchema> =
+  CommonFormOptions & T extends LiteralSchema ? FieldDef<T> : unknown
 
 type ObjectUnionMember =
-  | SanityTypedObject
-  | SanityReference
-  | SanityBlock
-  | SanityAsset
-  | SanityNever
+  | TypedObjectSchema
+  | ReferenceSchema
+  | BlockSchema
+  | AssetSchema
+  | NeverSchema
 
 export type ObjectUnionFormDef<T extends ObjectUnionMember> =
   CommonFormOptions & {
     types: {
       [
-        Name in GetType<Exclude<T, SanityNever>['shape']['_type']>
-      ]: UnionTypeOptions<FindTypeByName<Exclude<T, SanityNever>, Name>>
+        Name in GetType<Exclude<T, NeverSchema>['shape']['_type']>
+      ]: UnionTypeOptions<FindTypeByName<Exclude<T, NeverSchema>, Name>>
     }
   }
 
 export type PrimitiveUnionFormDef<
-  T extends SanityPrimitive | SanityLiteral | SanityNever,
-> = CommonFormOptions & T extends SanityLiteral
+  T extends PrimitiveSchema | LiteralSchema | NeverSchema,
+> = CommonFormOptions & T extends LiteralSchema
   ? {
       types: {
-        [Name in GetType<T>]: PrimitiveUnionTypeOptions<SanityLiteral<Name>>
+        [Name in GetType<T>]: PrimitiveUnionTypeOptions<LiteralSchema<Name>>
       }
     }
   : {
       types: ['TODO']
     }
 
-export type PrimitiveArrayFormDef<_T extends SanityPrimitiveArray> =
+export type PrimitiveArrayFormDef<_T extends PrimitiveArraySchema> =
   CommonFormOptions & {
     draggable?: boolean
   }
 
-export type StringFormDef<_T extends SanityString> = CommonFormOptions & {
+export type StringFormDef<_T extends StringSchema> = CommonFormOptions & {
   multiline?: boolean
 }
 
-export type ArrayFormDef<T extends SanityArray<any>> =
-  T extends SanityObjectArray
+export type ArrayFormDef<T extends ArraySchema<any>> =
+  T extends ObjectArraySchema
     ? ObjectArrayFormDef<ArrayTypeMap<T>>
-    : T extends SanityPrimitiveArray
+    : T extends PrimitiveArraySchema
       ? PrimitiveArrayFormDef<T>
       : never
 
 export type Todo = unknown
 
-export type ObjectFormDef<T extends SanityObject> = CommonFormOptions & {
+export type ObjectFormDef<T extends ObjectSchema> = CommonFormOptions & {
   title?: string
   fieldsets?: FieldsetsDef
   fields: Omit<
@@ -204,22 +203,22 @@ export type ObjectFormDef<T extends SanityObject> = CommonFormOptions & {
   >
 }
 
-export type DocumentFormDef<T extends SanityDocument> = CommonFormOptions & {
+export type DocumentFormDef<T extends DocumentSchema> = CommonFormOptions & {
   liveEdit?: boolean
   fieldsets?: FieldsetsDef
   fields: Omit<{[k in keyof T['shape']]: FieldDef<T['shape'][k]>}, SystemFields>
 }
 
-export type SanityFormDef<T extends SanityType> = T extends SanityDocument
+export type FormDef<T extends Schema> = T extends DocumentSchema
   ? DocumentFormDef<T>
-  : T extends SanityObject
+  : T extends ObjectSchema
     ? ObjectFormDef<T>
-    : T extends SanityObjectArray
+    : T extends ObjectArraySchema
       ? ObjectArrayFormDef<ArrayTypeMap<T>>
-      : T extends SanityPrimitiveArray
+      : T extends PrimitiveArraySchema
         ? PrimitiveArrayFormDef<T>
-        : T extends SanityString
+        : T extends StringSchema
           ? StringFormDef<T>
-          : T extends SanityObjectUnion<infer U extends ObjectUnionMember>
+          : T extends ObjectUnionSchema<infer U extends ObjectUnionMember>
             ? ObjectUnionFormDef<U>
             : {title?: string}

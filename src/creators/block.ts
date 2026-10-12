@@ -1,17 +1,17 @@
 import {
   type OutputOf,
-  type SanityBlock,
-  type SanityLiteral,
-  type SanityNever,
-  type SanityNumber,
-  type SanityObject,
-  type SanityObjectArray,
-  type SanityObjectUnion,
-  type SanityOptional,
-  type SanityPrimitiveArray,
-  type SanityPortableTextMember,
-  type SanityPrimitiveUnion,
-  type SanityString,
+  type BlockSchema,
+  type LiteralSchema,
+  type NeverSchema,
+  type NumberSchema,
+  type ObjectSchema,
+  type ObjectArraySchema,
+  type ObjectUnionSchema,
+  type OptionalSchema,
+  type PrimitiveArraySchema,
+  type PortableTextMemberKind,
+  type PrimitiveUnionSchema,
+  type StringSchema,
   type SchemaAnnotations,
 } from '../defs'
 import {defineType} from '../helpers/defineType'
@@ -32,7 +32,7 @@ import {
   union,
 } from './union'
 
-type Configured<T, Fallback> = [T] extends [SanityNever] ? Fallback : T
+type Configured<T, Fallback> = [T] extends [NeverSchema] ? Fallback : T
 
 /**
  * The schema of a Portable Text span. `marks` holds decorator names and the
@@ -40,19 +40,19 @@ type Configured<T, Fallback> = [T] extends [SanityNever] ? Fallback : T
  */
 export type SpanObjectShape<
   DecoratorType extends
-    | SanityNever
-    | SanityLiteral<string>
-    | SanityPrimitiveUnion<SanityLiteral<string>>,
+    | NeverSchema
+    | LiteralSchema<string>
+    | PrimitiveUnionSchema<LiteralSchema<string>>,
 > = {
-  _type: SanityLiteral<'span'>
-  marks: SanityPrimitiveArray<
-    [DecoratorType] extends [SanityNever]
-      ? SanityString
-      : SanityPrimitiveUnion<
-          FlattenPrimitiveUnionTypes<DecoratorType> | SanityString
+  _type: LiteralSchema<'span'>
+  marks: PrimitiveArraySchema<
+    [DecoratorType] extends [NeverSchema]
+      ? StringSchema
+      : PrimitiveUnionSchema<
+          FlattenPrimitiveUnionTypes<DecoratorType> | StringSchema
         >
   >
-  text: SanityString
+  text: StringSchema
 }
 
 /**
@@ -62,66 +62,66 @@ export type SpanObjectShape<
  */
 export type BlockObjectShape<
   StyleType extends
-    | SanityNever
-    | SanityLiteral<string>
-    | SanityPrimitiveUnion<SanityLiteral<string>>,
+    | NeverSchema
+    | LiteralSchema<string>
+    | PrimitiveUnionSchema<LiteralSchema<string>>,
   ListType extends
-    | SanityNever
-    | SanityLiteral<string>
-    | SanityPrimitiveUnion<SanityLiteral<string>>,
+    | NeverSchema
+    | LiteralSchema<string>
+    | PrimitiveUnionSchema<LiteralSchema<string>>,
   InlineType extends
-    | SanityNever
-    | SanityPortableTextMember
-    | SanityObjectUnion<SanityPortableTextMember>,
+    | NeverSchema
+    | PortableTextMemberKind
+    | ObjectUnionSchema<PortableTextMemberKind>,
   DecoratorType extends
-    | SanityNever
-    | SanityLiteral<string>
-    | SanityPrimitiveUnion<SanityLiteral<string>>,
+    | NeverSchema
+    | LiteralSchema<string>
+    | PrimitiveUnionSchema<LiteralSchema<string>>,
   AnnotationType extends
-    | SanityNever
-    | SanityPortableTextMember
-    | SanityObjectUnion<SanityPortableTextMember>,
-  TypeName extends SanityLiteral<string> = SanityLiteral<'block'>,
+    | NeverSchema
+    | PortableTextMemberKind
+    | ObjectUnionSchema<PortableTextMemberKind>,
+  TypeName extends LiteralSchema<string> = LiteralSchema<'block'>,
 > = {
   _type: TypeName
-  style: SanityOptional<Configured<StyleType, SanityString>>
-  listItem: SanityOptional<Configured<ListType, SanityString>>
-  level: SanityOptional<SanityNumber>
-  children: SanityObjectArray<
-    SanityObjectUnion<
+  style: OptionalSchema<Configured<StyleType, StringSchema>>
+  listItem: OptionalSchema<Configured<ListType, StringSchema>>
+  level: OptionalSchema<NumberSchema>
+  children: ObjectArraySchema<
+    ObjectUnionSchema<
       | FlattenUnionTypes<InlineType>
-      | SanityObject<SpanObjectShape<DecoratorType>>
+      | ObjectSchema<SpanObjectShape<DecoratorType>>
     >
   >
-  markDefs: SanityOptional<
-    [AnnotationType] extends [SanityNever]
-      ? SanityPrimitiveArray<SanityNever>
-      : SanityObjectArray<Exclude<AnnotationType, SanityNever>>
+  markDefs: OptionalSchema<
+    [AnnotationType] extends [NeverSchema]
+      ? PrimitiveArraySchema<NeverSchema>
+      : ObjectArraySchema<Exclude<AnnotationType, NeverSchema>>
   >
 }
 
 export type BlockOptions<
   StyleType extends
     | void
-    | SanityLiteral<string>
-    | SanityPrimitiveUnion<SanityLiteral<string>> = never,
+    | LiteralSchema<string>
+    | PrimitiveUnionSchema<LiteralSchema<string>> = never,
   ListType extends
     | void
-    | SanityLiteral<string>
-    | SanityPrimitiveUnion<SanityLiteral<string>> = never,
+    | LiteralSchema<string>
+    | PrimitiveUnionSchema<LiteralSchema<string>> = never,
   InlineType extends
     | void
-    | SanityPortableTextMember
-    | SanityObjectUnion<SanityPortableTextMember> = never,
+    | PortableTextMemberKind
+    | ObjectUnionSchema<PortableTextMemberKind> = never,
   DecoratorType extends
     | void
-    | SanityLiteral<string>
-    | SanityPrimitiveUnion<SanityLiteral<string>> = never,
+    | LiteralSchema<string>
+    | PrimitiveUnionSchema<LiteralSchema<string>> = never,
   AnnotationType extends
     | void
-    | SanityPortableTextMember
-    | SanityObjectUnion<SanityPortableTextMember> = never,
-  TypeName extends SanityLiteral<string> = SanityLiteral<'block'>,
+    | PortableTextMemberKind
+    | ObjectUnionSchema<PortableTextMemberKind> = never,
+  TypeName extends LiteralSchema<string> = LiteralSchema<'block'>,
 > = {
   _type?: TypeName
   /** Allowed block styles, e.g. `union([literal('normal'), literal('h1')])`. Any string if omitted. */
@@ -142,32 +142,32 @@ export type BlockOptions<
   annotation?: AnnotationType
 }
 
-export type VoidNever<T> = void extends T ? SanityNever : Exclude<T, void>
+export type VoidNever<T> = void extends T ? NeverSchema : Exclude<T, void>
 
 /** The schema `block()` returns for the given options */
 type BlockType<
   StyleType extends
     | void
-    | SanityLiteral<string>
-    | SanityPrimitiveUnion<SanityLiteral<string>>,
+    | LiteralSchema<string>
+    | PrimitiveUnionSchema<LiteralSchema<string>>,
   ListType extends
     | void
-    | SanityLiteral<string>
-    | SanityPrimitiveUnion<SanityLiteral<string>>,
+    | LiteralSchema<string>
+    | PrimitiveUnionSchema<LiteralSchema<string>>,
   InlineType extends
     | void
-    | SanityPortableTextMember
-    | SanityObjectUnion<SanityPortableTextMember>,
+    | PortableTextMemberKind
+    | ObjectUnionSchema<PortableTextMemberKind>,
   DecoratorType extends
     | void
-    | SanityLiteral<string>
-    | SanityPrimitiveUnion<SanityLiteral<string>>,
+    | LiteralSchema<string>
+    | PrimitiveUnionSchema<LiteralSchema<string>>,
   AnnotationType extends
     | void
-    | SanityPortableTextMember
-    | SanityObjectUnion<SanityPortableTextMember>,
-  TypeName extends SanityLiteral<string>,
-> = SanityBlock<
+    | PortableTextMemberKind
+    | ObjectUnionSchema<PortableTextMemberKind>,
+  TypeName extends LiteralSchema<string>,
+> = BlockSchema<
   BlockObjectShape<
     VoidNever<StyleType>,
     VoidNever<ListType>,
@@ -185,25 +185,25 @@ type BlockType<
 export function block<
   StyleType extends
     | void
-    | SanityLiteral<string>
-    | SanityPrimitiveUnion<SanityLiteral<string>>,
+    | LiteralSchema<string>
+    | PrimitiveUnionSchema<LiteralSchema<string>>,
   ListType extends
     | void
-    | SanityLiteral<string>
-    | SanityPrimitiveUnion<SanityLiteral<string>>,
+    | LiteralSchema<string>
+    | PrimitiveUnionSchema<LiteralSchema<string>>,
   InlineType extends
     | void
-    | SanityPortableTextMember
-    | SanityObjectUnion<SanityPortableTextMember>,
+    | PortableTextMemberKind
+    | ObjectUnionSchema<PortableTextMemberKind>,
   DecoratorType extends
     | void
-    | SanityLiteral<string>
-    | SanityPrimitiveUnion<SanityLiteral<string>>,
+    | LiteralSchema<string>
+    | PrimitiveUnionSchema<LiteralSchema<string>>,
   AnnotationType extends
     | void
-    | SanityPortableTextMember
-    | SanityObjectUnion<SanityPortableTextMember>,
-  TypeName extends SanityLiteral<string> = SanityLiteral<'block'>,
+    | PortableTextMemberKind
+    | ObjectUnionSchema<PortableTextMemberKind>,
+  TypeName extends LiteralSchema<string> = LiteralSchema<'block'>,
 >(
   options: BlockOptions<
     StyleType,
@@ -246,7 +246,7 @@ export function block<Options extends object>(
 export function block(
   options: BlockOptions<any, any, any, any, any, any>,
   annotations?: any,
-): SanityBlock {
+): BlockSchema {
   const Marks = options.decorator
     ? array(union([options.decorator, string()]))
     : array(string())

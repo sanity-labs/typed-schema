@@ -9,10 +9,10 @@ import {object} from '../creators/object'
 import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {
+  type DocumentSchemaOf,
   type Infer,
   type Parsed,
-  type SanityDocumentType,
-  type SanityType,
+  type Schema,
   type StandardProps,
 } from '../defs'
 import {type StandardSchemaV1} from '../standardSchema'
@@ -31,17 +31,17 @@ describe('Standard Schema', () => {
     expectTypeOf(Pet).toMatchTypeOf<StandardSchemaV1>()
     expectTypeOf(string()).toMatchTypeOf<StandardSchemaV1>()
     expectTypeOf(lazy(() => Pet)).toMatchTypeOf<StandardSchemaV1>()
-    expectTypeOf<SanityType>().toMatchTypeOf<StandardSchemaV1>()
+    expectTypeOf<Schema>().toMatchTypeOf<StandardSchemaV1>()
   })
 
   test('annotated schema types', () => {
-    expectTypeOf<SanityType<string>['~standard']>().toEqualTypeOf<
+    expectTypeOf<Schema<string>['~standard']>().toEqualTypeOf<
       StandardProps<string>
     >()
-    expectTypeOf<SanityType['~standard']>().toBeAny()
+    expectTypeOf<Schema['~standard']>().toBeAny()
     type Person = Infer<typeof Person>
     expectTypeOf<
-      StandardSchemaV1.InferOutput<SanityDocumentType<Person>>
+      StandardSchemaV1.InferOutput<DocumentSchemaOf<Person>>
     >().toEqualTypeOf<Person>()
   })
 

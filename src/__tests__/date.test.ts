@@ -5,8 +5,8 @@ import {parse} from '../parse'
 
 describe('date type', () => {
   test('date type definition', () => {
-    const DateSchema = date()
-    expect(parse(DateSchema, '2023-01-22')).toMatchInlineSnapshot(`
+    const schema = date()
+    expect(parse(schema, '2023-01-22')).toMatchInlineSnapshot(`
       {
         "ok": true,
         "value": "2023-01-22",
@@ -14,14 +14,14 @@ describe('date type', () => {
     `)
   })
   test('errors', () => {
-    const DateSchema = date()
-    expect(parse(DateSchema, '2023-12-06')).toMatchInlineSnapshot(`
+    const schema = date()
+    expect(parse(schema, '2023-12-06')).toMatchInlineSnapshot(`
       {
         "ok": true,
         "value": "2023-12-06",
       }
     `)
-    expect(parse(DateSchema, '2023-12-06')).toMatchInlineSnapshot(`
+    expect(parse(schema, '2023-12-06')).toMatchInlineSnapshot(`
       {
         "ok": true,
         "value": "2023-12-06",
@@ -30,7 +30,7 @@ describe('date type', () => {
 
     expect(
       parse(
-        DateSchema,
+        schema,
         '2023-12-06 ', // note the trailing whitespace
       ),
     ).toMatchInlineSnapshot(`
@@ -48,7 +48,7 @@ describe('date type', () => {
         "ok": false,
       }
     `)
-    expect(parse(DateSchema, '2023-1-6')).toMatchInlineSnapshot(`
+    expect(parse(schema, '2023-1-6')).toMatchInlineSnapshot(`
       {
         "error": ParseError {
           "issues": [
@@ -63,7 +63,7 @@ describe('date type', () => {
         "ok": false,
       }
     `)
-    expect(parse(DateSchema, 'xyz')).toMatchInlineSnapshot(`
+    expect(parse(schema, 'xyz')).toMatchInlineSnapshot(`
       {
         "error": ParseError {
           "issues": [
@@ -78,7 +78,7 @@ describe('date type', () => {
         "ok": false,
       }
     `)
-    expect(parse(DateSchema, undefined)).toMatchInlineSnapshot(`
+    expect(parse(schema, undefined)).toMatchInlineSnapshot(`
       {
         "error": ParseError {
           "issues": [
@@ -93,7 +93,7 @@ describe('date type', () => {
         "ok": false,
       }
     `)
-    expect(parse(DateSchema, {})).toMatchInlineSnapshot(`
+    expect(parse(schema, {})).toMatchInlineSnapshot(`
       {
         "error": ParseError {
           "issues": [
@@ -112,21 +112,21 @@ describe('date type', () => {
 })
 
 describe('date validation', () => {
-  const DateSchema = date()
+  const schema = date()
   test('accepts valid calendar dates', () => {
-    expect(parse(DateSchema, '2024-02-29').ok).toBe(true) // leap day
-    expect(parse(DateSchema, '2023-01-31').ok).toBe(true)
-    expect(parse(DateSchema, '2023-12-31').ok).toBe(true)
+    expect(parse(schema, '2024-02-29').ok).toBe(true) // leap day
+    expect(parse(schema, '2023-01-31').ok).toBe(true)
+    expect(parse(schema, '2023-12-31').ok).toBe(true)
   })
   test('rejects invalid months and days', () => {
-    expect(parse(DateSchema, '2023-45-10').ok).toBe(false)
-    expect(parse(DateSchema, '2023-00-10').ok).toBe(false)
-    expect(parse(DateSchema, '2023-02-31').ok).toBe(false)
-    expect(parse(DateSchema, '2023-02-29').ok).toBe(false) // not a leap year
-    expect(parse(DateSchema, '2023-04-31').ok).toBe(false)
-    expect(parse(DateSchema, '2023-12-00').ok).toBe(false)
+    expect(parse(schema, '2023-45-10').ok).toBe(false)
+    expect(parse(schema, '2023-00-10').ok).toBe(false)
+    expect(parse(schema, '2023-02-31').ok).toBe(false)
+    expect(parse(schema, '2023-02-29').ok).toBe(false) // not a leap year
+    expect(parse(schema, '2023-04-31').ok).toBe(false)
+    expect(parse(schema, '2023-12-00').ok).toBe(false)
   })
   test('rejects date-times', () => {
-    expect(parse(DateSchema, '2023-12-06T19:01:07Z').ok).toBe(false)
+    expect(parse(schema, '2023-12-06T19:01:07Z').ok).toBe(false)
   })
 })

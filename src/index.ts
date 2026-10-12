@@ -26,24 +26,24 @@ export * from './creators/union'
 export * from './asserters'
 export * from './defs'
 export type {
+  ArrayValue,
   AssetBaseShape,
   AssetSourceSpecShape,
+  DocumentShape,
+  DocumentValue,
   FileAssetShape,
+  FileShape,
   GeopointShape,
   ImageAssetShape,
   ImageDimensionsShape,
   ImageMetadataShape,
   ImagePaletteName,
   ImagePaletteShape,
+  ImageShape,
   ImageSwatchShape,
   ReferenceBase,
-  SanityArrayValue,
-  SanityDocumentShape,
-  SanityDocumentValue,
-  SanityFileShape,
-  SanityImageShape,
-  SanityReferenceShape,
-  SanityReferenceValue,
+  ReferenceShape,
+  ReferenceValue,
 } from './shapeDefs'
 export type {
   Combine,

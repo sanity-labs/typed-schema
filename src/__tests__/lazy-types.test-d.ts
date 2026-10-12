@@ -1,16 +1,16 @@
 import {assertType, test} from 'vitest'
 
 import {
+  type LazySchema,
+  type LiteralSchema,
+  type ObjectArraySchema,
+  type ObjectSchema,
   type OutputOf,
-  type SanityLazy,
-  type SanityLiteral,
-  type SanityObject,
-  type SanityObjectArray,
-  type SanityString,
+  type StringSchema,
 } from '../defs'
 
 test('lazy string type', () => {
-  type Lazy = SanityLazy<SanityString>
+  type Lazy = LazySchema<StringSchema>
 
   assertType<OutputOf<Lazy>>('foo')
   //@ts-expect-error - not compatible with number
@@ -18,10 +18,10 @@ test('lazy string type', () => {
 })
 
 test('lazy object type', () => {
-  type Lazy = SanityLazy<
-    SanityObject<{
-      foo: SanityString
-      lazy: SanityLazy<SanityLiteral<'literally this'>>
+  type Lazy = LazySchema<
+    ObjectSchema<{
+      foo: StringSchema
+      lazy: LazySchema<LiteralSchema<'literally this'>>
     }>
   >
 
@@ -32,9 +32,9 @@ test('lazy object type', () => {
 })
 
 test('lazy array type', () => {
-  type Lazy = SanityLazy<
-    SanityObjectArray<
-      SanityObject<{_key: SanityString; foo: SanityLazy<SanityString>}>
+  type Lazy = LazySchema<
+    ObjectArraySchema<
+      ObjectSchema<{_key: StringSchema; foo: LazySchema<StringSchema>}>
     >
   >
 

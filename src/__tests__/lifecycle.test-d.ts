@@ -7,13 +7,13 @@ import {object} from '../creators/object'
 import {optional} from '../creators/optional'
 import {string} from '../creators/string'
 import {
+  type DocumentSchemaOf,
   type Infer,
-  type SanityDocumentType,
-  type SanityLazy,
-  type SanityType,
+  type LazySchema,
+  type Schema,
 } from '../defs'
 import {type Committed, committed, partial} from '../lifecycle'
-import {type DocumentBase, type SanityDocumentValue} from '../shapeDefs'
+import {type DocumentBase, type DocumentValue} from '../shapeDefs'
 import {type DeepPartial, deepPartial} from '../utils/deepPartial'
 
 const Pet = document({
@@ -144,9 +144,9 @@ test('committed(partial(Pet)): partial and committed', () => {
 })
 
 test('Committed applies to value-annotated document schemas', () => {
-  type PetValue = {_type: 'pet'; name: string} & SanityDocumentValue
-  type CommittedAnnotated = Committed<SanityDocumentType<PetValue>>
-  expectTypeOf<CommittedAnnotated>().toMatchTypeOf<SanityDocumentType<any>>()
+  type PetValue = {_type: 'pet'; name: string} & DocumentValue
+  type CommittedAnnotated = Committed<DocumentSchemaOf<PetValue>>
+  expectTypeOf<CommittedAnnotated>().toMatchTypeOf<DocumentSchemaOf<any>>()
   expectTypeOf<Infer<CommittedAnnotated>>().toEqualTypeOf<{
     _type: 'pet'
     _id: string
@@ -160,7 +160,7 @@ test('Committed applies to value-annotated document schemas', () => {
 test('Committed transforms the target of a lazy schema', () => {
   const LazyPet = lazy(() => Pet)
   expectTypeOf<Committed<typeof LazyPet>>().toEqualTypeOf<
-    SanityLazy<Committed<typeof Pet>>
+    LazySchema<Committed<typeof Pet>>
   >()
   expectTypeOf<Infer<Committed<typeof LazyPet>>>().toEqualTypeOf<CommittedPet>()
 })
@@ -177,5 +177,5 @@ test('Committed applies to the base document schema', () => {
 
 test('Committed rejects non-document schemas', () => {
   // @ts-expect-error a string schema has no system fields to require
-  type _Invalid = Committed<SanityType<string>>
+  type _Invalid = Committed<Schema<string>>
 })

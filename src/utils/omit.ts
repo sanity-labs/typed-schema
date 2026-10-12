@@ -1,32 +1,32 @@
 import {document} from '../creators/document'
 import {object} from '../creators/object'
 import {
+  type DocumentSchema,
+  type DocumentSchemaOf,
+  type ObjectSchema,
+  type ObjectSchemaOf,
+  type ObjectShape,
   type OutputOf,
-  type SanityDocument,
-  type SanityDocumentType,
-  type SanityObject,
-  type SanityObjectShape,
-  type SanityObjectType,
 } from '../defs'
 import {inheritAnnotations} from '../helpers/annotations'
 import {type ElementType, type Format} from '../helpers/utilTypes'
 
 export type OmitObjectLike<
-  T extends SanityObject | SanityDocument,
+  T extends ObjectSchema | DocumentSchema,
   K extends Array<keyof OutputOf<T>>,
 > =
-  T extends SanityObject<infer Shape extends SanityObjectShape>
-    ? SanityObjectShape extends Shape
-      ? SanityObjectType<Format<Omit<OutputOf<T>, ElementType<K>>>>
-      : SanityObject<Format<Omit<Shape, ElementType<K>>>>
-    : T extends SanityDocument<infer Shape extends SanityObjectShape>
-      ? SanityObjectShape extends Shape
-        ? SanityDocumentType<Format<Omit<OutputOf<T>, ElementType<K>>>>
-        : SanityDocument<Format<Omit<Shape, ElementType<K>>>>
+  T extends ObjectSchema<infer Shape extends ObjectShape>
+    ? ObjectShape extends Shape
+      ? ObjectSchemaOf<Format<Omit<OutputOf<T>, ElementType<K>>>>
+      : ObjectSchema<Format<Omit<Shape, ElementType<K>>>>
+    : T extends DocumentSchema<infer Shape extends ObjectShape>
+      ? ObjectShape extends Shape
+        ? DocumentSchemaOf<Format<Omit<OutputOf<T>, ElementType<K>>>>
+        : DocumentSchema<Format<Omit<Shape, ElementType<K>>>>
       : never
 
 export function omit<
-  T extends SanityObject | SanityDocument,
+  T extends ObjectSchema | DocumentSchema,
   K extends Array<keyof OutputOf<T>>,
 >(type: T, keys: K): OmitObjectLike<T, K> {
   const shape = Object.fromEntries(

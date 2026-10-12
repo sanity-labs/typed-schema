@@ -9,17 +9,17 @@ import {string} from '../../creators/string'
 import {union} from '../../creators/union'
 import {
   type Infer,
-  type SanityBoolean,
-  type SanityDocument,
-  type SanityLiteral,
-  type SanityNumber,
-  type SanityObject,
-  type SanityObjectArray,
-  type SanityObjectType,
-  type SanityObjectUnion,
-  type SanityOptional,
-  type SanityString,
-  type SanityDocumentUnion,
+  type BooleanSchema,
+  type DocumentSchema,
+  type LiteralSchema,
+  type NumberSchema,
+  type ObjectSchema,
+  type ObjectArraySchema,
+  type ObjectSchemaOf,
+  type ObjectUnionSchema,
+  type OptionalSchema,
+  type StringSchema,
+  type DocumentUnionSchema,
 } from '../../defs'
 import {parse} from '../../parse'
 import {type DeepRequired, deepRequired} from '../deepRequired'
@@ -27,116 +27,116 @@ import {extend} from '../extend'
 import {omit} from '../omit'
 
 test('deep required on primitive types', () => {
-  expectTypeOf<DeepRequired<SanityString>>().toEqualTypeOf<SanityString>()
-  expectTypeOf<DeepRequired<SanityBoolean>>().toEqualTypeOf<SanityBoolean>()
-  expectTypeOf<DeepRequired<SanityNumber>>().toEqualTypeOf<SanityNumber>()
+  expectTypeOf<DeepRequired<StringSchema>>().toEqualTypeOf<StringSchema>()
+  expectTypeOf<DeepRequired<BooleanSchema>>().toEqualTypeOf<BooleanSchema>()
+  expectTypeOf<DeepRequired<NumberSchema>>().toEqualTypeOf<NumberSchema>()
 })
 
 test('deep required on shallow object type', () => {
-  type Obj = SanityObject<{foo: SanityOptional<SanityString>}>
+  type Obj = ObjectSchema<{foo: OptionalSchema<StringSchema>}>
   expectTypeOf<DeepRequired<Obj>>().toEqualTypeOf<
-    SanityObject<{foo: SanityString}>
+    ObjectSchema<{foo: StringSchema}>
   >()
 })
 
 test('deep required on shallow document type', () => {
-  type Doc = SanityDocument<{
-    _type: SanityLiteral<'test'> // _type can never be optional
-    _id: SanityOptional<SanityString>
-    _createdAt: SanityOptional<SanityString>
-    _updatedAt: SanityOptional<SanityString>
-    _rev: SanityOptional<SanityString>
-    foo: SanityOptional<SanityString>
+  type Doc = DocumentSchema<{
+    _type: LiteralSchema<'test'> // _type can never be optional
+    _id: OptionalSchema<StringSchema>
+    _createdAt: OptionalSchema<StringSchema>
+    _updatedAt: OptionalSchema<StringSchema>
+    _rev: OptionalSchema<StringSchema>
+    foo: OptionalSchema<StringSchema>
   }>
 
   expectTypeOf<DeepRequired<Doc>>().toEqualTypeOf<
-    SanityDocument<{
-      _type: SanityLiteral<'test'>
-      _id: SanityString
-      _createdAt: SanityString
-      _updatedAt: SanityString
-      _rev: SanityString
-      foo: SanityString
+    DocumentSchema<{
+      _type: LiteralSchema<'test'>
+      _id: StringSchema
+      _createdAt: StringSchema
+      _updatedAt: StringSchema
+      _rev: StringSchema
+      foo: StringSchema
     }>
   >()
 })
 
 test('deep required on union types', () => {
-  type Union = SanityObjectUnion<
-    | SanityObject<{
-        _type: SanityLiteral<'a'>
-        str: SanityOptional<SanityString>
+  type Union = ObjectUnionSchema<
+    | ObjectSchema<{
+        _type: LiteralSchema<'a'>
+        str: OptionalSchema<StringSchema>
       }>
-    | SanityObject<{
-        _type: SanityLiteral<'b'>
-        num: SanityOptional<SanityNumber>
+    | ObjectSchema<{
+        _type: LiteralSchema<'b'>
+        num: OptionalSchema<NumberSchema>
       }>
   >
 
   expectTypeOf<DeepRequired<Union>>().toEqualTypeOf<
-    SanityObjectUnion<
-      | SanityObject<{_type: SanityLiteral<'a'>; str: SanityString}>
-      | SanityObject<{_type: SanityLiteral<'b'>; num: SanityNumber}>
+    ObjectUnionSchema<
+      | ObjectSchema<{_type: LiteralSchema<'a'>; str: StringSchema}>
+      | ObjectSchema<{_type: LiteralSchema<'b'>; num: NumberSchema}>
     >
   >()
 })
 
 test('deep required on literal types', () => {
-  type Obj = SanityObject<{foo: SanityOptional<SanityLiteral<'bar'>>}>
+  type Obj = ObjectSchema<{foo: OptionalSchema<LiteralSchema<'bar'>>}>
   expectTypeOf<DeepRequired<Obj>>().toEqualTypeOf<
-    SanityObject<{foo: SanityLiteral<'bar'>}>
+    ObjectSchema<{foo: LiteralSchema<'bar'>}>
   >()
 })
 
 test('deep required on object array type', () => {
-  type Arr = SanityObjectArray<
-    SanityObject<{str: SanityOptional<SanityString>}>
+  type Arr = ObjectArraySchema<
+    ObjectSchema<{str: OptionalSchema<StringSchema>}>
   >
 
   expectTypeOf<DeepRequired<Arr>>().toEqualTypeOf<
-    SanityObjectArray<SanityObject<{str: SanityString}>>
+    ObjectArraySchema<ObjectSchema<{str: StringSchema}>>
   >()
 })
 test('deep required on object array type with union elements', () => {
-  type Arr = SanityObjectArray<
-    SanityObjectUnion<
-      | SanityObject<{
-          _type: SanityLiteral<'a'>
-          str: SanityOptional<SanityString>
+  type Arr = ObjectArraySchema<
+    ObjectUnionSchema<
+      | ObjectSchema<{
+          _type: LiteralSchema<'a'>
+          str: OptionalSchema<StringSchema>
         }>
-      | SanityObject<{
-          _type: SanityLiteral<'b'>
-          num: SanityOptional<SanityNumber>
+      | ObjectSchema<{
+          _type: LiteralSchema<'b'>
+          num: OptionalSchema<NumberSchema>
         }>
     >
   >
 
   expectTypeOf<DeepRequired<Arr>>().toEqualTypeOf<
-    SanityObjectArray<
-      SanityObjectUnion<
-        | SanityObject<{_type: SanityLiteral<'a'>; str: SanityString}>
-        | SanityObject<{_type: SanityLiteral<'b'>; num: SanityNumber}>
+    ObjectArraySchema<
+      ObjectUnionSchema<
+        | ObjectSchema<{_type: LiteralSchema<'a'>; str: StringSchema}>
+        | ObjectSchema<{_type: LiteralSchema<'b'>; num: NumberSchema}>
       >
     >
   >()
 })
 
 test('deep required on nested type', () => {
-  type Obj = SanityObject<{
-    foo: SanityOptional<SanityString>
-    sub: SanityOptional<
-      SanityObject<{
-        prop: SanityOptional<SanityNumber>
-        array: SanityOptional<
-          SanityObjectArray<
-            SanityObjectUnion<
-              | SanityObject<{
-                  _type: SanityLiteral<'a'>
-                  str: SanityOptional<SanityString>
+  type Obj = ObjectSchema<{
+    foo: OptionalSchema<StringSchema>
+    sub: OptionalSchema<
+      ObjectSchema<{
+        prop: OptionalSchema<NumberSchema>
+        array: OptionalSchema<
+          ObjectArraySchema<
+            ObjectUnionSchema<
+              | ObjectSchema<{
+                  _type: LiteralSchema<'a'>
+                  str: OptionalSchema<StringSchema>
                 }>
-              | SanityObject<{
-                  _type: SanityLiteral<'b'>
-                  num: SanityOptional<SanityNumber>
+              | ObjectSchema<{
+                  _type: LiteralSchema<'b'>
+                  num: OptionalSchema<NumberSchema>
                 }>
             >
           >
@@ -146,14 +146,14 @@ test('deep required on nested type', () => {
   }>
 
   expectTypeOf<DeepRequired<Obj>>().toEqualTypeOf<
-    SanityObject<{
-      foo: SanityString
-      sub: SanityObject<{
-        prop: SanityNumber
-        array: SanityObjectArray<
-          SanityObjectUnion<
-            | SanityObject<{_type: SanityLiteral<'a'>; str: SanityString}>
-            | SanityObject<{_type: SanityLiteral<'b'>; num: SanityNumber}>
+    ObjectSchema<{
+      foo: StringSchema
+      sub: ObjectSchema<{
+        prop: NumberSchema
+        array: ObjectArraySchema<
+          ObjectUnionSchema<
+            | ObjectSchema<{_type: LiteralSchema<'a'>; str: StringSchema}>
+            | ObjectSchema<{_type: LiteralSchema<'b'>; num: NumberSchema}>
           >
         >
       }>
@@ -188,7 +188,7 @@ test('deep required on circular object type', () => {
     }
   }
 
-  const LazyPerson: SanityObjectType<Person> = object({
+  const LazyPerson: ObjectSchemaOf<Person> = object({
     _type: literal('person'),
     name: lazy(() => string()),
     parent: lazy(() =>
@@ -221,6 +221,6 @@ test('DeepRequired of a union of documents is a union of the transformed documen
   const Book = document({_type: literal('book'), title: string()})
   const Docs = union([Author, Book])
   expectTypeOf(deepRequired(Docs)).toEqualTypeOf<
-    SanityDocumentUnion<DeepRequired<typeof Author> | DeepRequired<typeof Book>>
+    DocumentUnionSchema<DeepRequired<typeof Author> | DeepRequired<typeof Book>>
   >()
 })

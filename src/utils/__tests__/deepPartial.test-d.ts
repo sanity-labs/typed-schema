@@ -9,17 +9,17 @@ import {string} from '../../creators/string'
 import {union} from '../../creators/union'
 import {
   type Infer,
-  type SanityBoolean,
-  type SanityDocument,
-  type SanityLiteral,
-  type SanityNumber,
-  type SanityObject,
-  type SanityObjectArray,
-  type SanityObjectType,
-  type SanityObjectUnion,
-  type SanityOptional,
-  type SanityString,
-  type SanityDocumentUnion,
+  type BooleanSchema,
+  type DocumentSchema,
+  type LiteralSchema,
+  type NumberSchema,
+  type ObjectSchema,
+  type ObjectArraySchema,
+  type ObjectSchemaOf,
+  type ObjectUnionSchema,
+  type OptionalSchema,
+  type StringSchema,
+  type DocumentUnionSchema,
 } from '../../defs'
 import {parse} from '../../parse'
 import {type DeepPartial, deepPartial} from '../deepPartial'
@@ -27,91 +27,91 @@ import {extend} from '../extend'
 import {omit} from '../omit'
 
 test('deep partial on primitive types', () => {
-  expectTypeOf<DeepPartial<SanityString>>().toEqualTypeOf<SanityString>()
-  expectTypeOf<DeepPartial<SanityBoolean>>().toEqualTypeOf<SanityBoolean>()
-  expectTypeOf<DeepPartial<SanityNumber>>().toEqualTypeOf<SanityNumber>()
+  expectTypeOf<DeepPartial<StringSchema>>().toEqualTypeOf<StringSchema>()
+  expectTypeOf<DeepPartial<BooleanSchema>>().toEqualTypeOf<BooleanSchema>()
+  expectTypeOf<DeepPartial<NumberSchema>>().toEqualTypeOf<NumberSchema>()
 })
 
 test('deep partial on shallow object type', () => {
-  type Obj = SanityObject<{foo: SanityString}>
+  type Obj = ObjectSchema<{foo: StringSchema}>
   expectTypeOf<DeepPartial<Obj>>().toEqualTypeOf<
-    SanityObject<{foo: SanityOptional<SanityString>}>
+    ObjectSchema<{foo: OptionalSchema<StringSchema>}>
   >()
 })
 
 test('deep partial on shallow document type', () => {
-  type Doc = SanityDocument<{
-    _type: SanityLiteral<'test'> // _type can never be optional
-    _id: SanityOptional<SanityString>
-    _createdAt: SanityOptional<SanityString>
-    _updatedAt: SanityOptional<SanityString>
-    _rev: SanityOptional<SanityString>
-    foo: SanityString
+  type Doc = DocumentSchema<{
+    _type: LiteralSchema<'test'> // _type can never be optional
+    _id: OptionalSchema<StringSchema>
+    _createdAt: OptionalSchema<StringSchema>
+    _updatedAt: OptionalSchema<StringSchema>
+    _rev: OptionalSchema<StringSchema>
+    foo: StringSchema
   }>
   expectTypeOf<DeepPartial<Doc>>().toEqualTypeOf<
-    SanityDocument<{
-      _type: SanityLiteral<'test'> // _type can never be optional
-      _id: SanityOptional<SanityString>
-      _createdAt: SanityOptional<SanityString>
-      _updatedAt: SanityOptional<SanityString>
-      _rev: SanityOptional<SanityString>
-      foo: SanityOptional<SanityString>
+    DocumentSchema<{
+      _type: LiteralSchema<'test'> // _type can never be optional
+      _id: OptionalSchema<StringSchema>
+      _createdAt: OptionalSchema<StringSchema>
+      _updatedAt: OptionalSchema<StringSchema>
+      _rev: OptionalSchema<StringSchema>
+      foo: OptionalSchema<StringSchema>
     }>
   >()
 })
 
 test('deep partial on union types', () => {
-  type Union = SanityObjectUnion<
-    | SanityObject<{_type: SanityLiteral<'a'>; str: SanityString}>
-    | SanityObject<{_type: SanityLiteral<'b'>; num: SanityNumber}>
+  type Union = ObjectUnionSchema<
+    | ObjectSchema<{_type: LiteralSchema<'a'>; str: StringSchema}>
+    | ObjectSchema<{_type: LiteralSchema<'b'>; num: NumberSchema}>
   >
 
   expectTypeOf<DeepPartial<Union>>().toEqualTypeOf<
-    SanityObjectUnion<
-      | SanityObject<{
-          _type: SanityLiteral<'a'>
-          str: SanityOptional<SanityString>
+    ObjectUnionSchema<
+      | ObjectSchema<{
+          _type: LiteralSchema<'a'>
+          str: OptionalSchema<StringSchema>
         }>
-      | SanityObject<{
-          _type: SanityLiteral<'b'>
-          num: SanityOptional<SanityNumber>
+      | ObjectSchema<{
+          _type: LiteralSchema<'b'>
+          num: OptionalSchema<NumberSchema>
         }>
     >
   >()
 })
 
 test('deep partial on literal types', () => {
-  type Obj = SanityObject<{foo: SanityLiteral<'bar'>}>
+  type Obj = ObjectSchema<{foo: LiteralSchema<'bar'>}>
   expectTypeOf<DeepPartial<Obj>>().toEqualTypeOf<
-    SanityObject<{foo: SanityOptional<SanityLiteral<'bar'>>}>
+    ObjectSchema<{foo: OptionalSchema<LiteralSchema<'bar'>>}>
   >()
 })
 
 test('deep partial on object array type', () => {
-  type Arr = SanityObjectArray<SanityObject<{str: SanityString}>>
+  type Arr = ObjectArraySchema<ObjectSchema<{str: StringSchema}>>
 
   expectTypeOf<DeepPartial<Arr>>().toEqualTypeOf<
-    SanityObjectArray<SanityObject<{str: SanityOptional<SanityString>}>>
+    ObjectArraySchema<ObjectSchema<{str: OptionalSchema<StringSchema>}>>
   >()
 })
 test('deep partial on object array type with union elements', () => {
-  type Arr = SanityObjectArray<
-    SanityObjectUnion<
-      | SanityObject<{_type: SanityLiteral<'a'>; str: SanityString}>
-      | SanityObject<{_type: SanityLiteral<'b'>; num: SanityNumber}>
+  type Arr = ObjectArraySchema<
+    ObjectUnionSchema<
+      | ObjectSchema<{_type: LiteralSchema<'a'>; str: StringSchema}>
+      | ObjectSchema<{_type: LiteralSchema<'b'>; num: NumberSchema}>
     >
   >
 
   expectTypeOf<DeepPartial<Arr>>().toEqualTypeOf<
-    SanityObjectArray<
-      SanityObjectUnion<
-        | SanityObject<{
-            _type: SanityLiteral<'a'>
-            str: SanityOptional<SanityString>
+    ObjectArraySchema<
+      ObjectUnionSchema<
+        | ObjectSchema<{
+            _type: LiteralSchema<'a'>
+            str: OptionalSchema<StringSchema>
           }>
-        | SanityObject<{
-            _type: SanityLiteral<'b'>
-            num: SanityOptional<SanityNumber>
+        | ObjectSchema<{
+            _type: LiteralSchema<'b'>
+            num: OptionalSchema<NumberSchema>
           }>
       >
     >
@@ -119,35 +119,35 @@ test('deep partial on object array type with union elements', () => {
 })
 
 test('deep partial on nested type', () => {
-  type Obj = SanityObject<{
-    foo: SanityString
-    sub: SanityObject<{
-      prop: SanityNumber
-      array: SanityObjectArray<
-        SanityObjectUnion<
-          | SanityObject<{_type: SanityLiteral<'a'>; str: SanityString}>
-          | SanityObject<{_type: SanityLiteral<'b'>; num: SanityNumber}>
+  type Obj = ObjectSchema<{
+    foo: StringSchema
+    sub: ObjectSchema<{
+      prop: NumberSchema
+      array: ObjectArraySchema<
+        ObjectUnionSchema<
+          | ObjectSchema<{_type: LiteralSchema<'a'>; str: StringSchema}>
+          | ObjectSchema<{_type: LiteralSchema<'b'>; num: NumberSchema}>
         >
       >
     }>
   }>
 
   expectTypeOf<DeepPartial<Obj>>().toEqualTypeOf<
-    SanityObject<{
-      foo: SanityOptional<SanityString>
-      sub: SanityOptional<
-        SanityObject<{
-          prop: SanityOptional<SanityNumber>
-          array: SanityOptional<
-            SanityObjectArray<
-              SanityObjectUnion<
-                | SanityObject<{
-                    _type: SanityLiteral<'a'>
-                    str: SanityOptional<SanityString>
+    ObjectSchema<{
+      foo: OptionalSchema<StringSchema>
+      sub: OptionalSchema<
+        ObjectSchema<{
+          prop: OptionalSchema<NumberSchema>
+          array: OptionalSchema<
+            ObjectArraySchema<
+              ObjectUnionSchema<
+                | ObjectSchema<{
+                    _type: LiteralSchema<'a'>
+                    str: OptionalSchema<StringSchema>
                   }>
-                | SanityObject<{
-                    _type: SanityLiteral<'b'>
-                    num: SanityOptional<SanityNumber>
+                | ObjectSchema<{
+                    _type: LiteralSchema<'b'>
+                    num: OptionalSchema<NumberSchema>
                   }>
               >
             >
@@ -188,7 +188,7 @@ test('deep partial on circular object type', () => {
     }
   }
 
-  const LazyPerson: SanityObjectType<Person> = object({
+  const LazyPerson: ObjectSchemaOf<Person> = object({
     _type: literal('person'),
     name: lazy(() => string()),
     parent: lazy(() =>
@@ -223,6 +223,6 @@ test('DeepPartial of a union of documents is a union of the transformed document
   const Book = document({_type: literal('book'), title: string()})
   const Docs = union([Author, Book])
   expectTypeOf(deepPartial(Docs)).toEqualTypeOf<
-    SanityDocumentUnion<DeepPartial<typeof Author> | DeepPartial<typeof Book>>
+    DocumentUnionSchema<DeepPartial<typeof Author> | DeepPartial<typeof Book>>
   >()
 })

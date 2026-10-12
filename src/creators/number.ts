@@ -1,6 +1,6 @@
 import {
   type NumberConstraints,
-  type SanityNumber,
+  type NumberSchema,
   type SchemaAnnotations,
 } from '../defs'
 import {splitAnnotations} from '../helpers/annotations'
@@ -8,7 +8,7 @@ import {defineType} from '../helpers/defineType'
 
 export type NumberOptions = NumberConstraints & SchemaAnnotations<number>
 
-export function number(options?: NumberOptions): SanityNumber {
+export function number(options?: NumberOptions): NumberSchema {
   const [annotations, constraints] = splitAnnotations(options)
   return defineType(
     {

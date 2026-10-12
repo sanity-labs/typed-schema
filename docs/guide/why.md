@@ -41,7 +41,7 @@ const Person = s.object({
 Each error names a `SchemaError` that says what to fix. For the `'first name'` field:
 
 ```
-Type 'SanityString' is not assignable to type 'SanityString & SchemaError<"Field name 'first name' can only contain letters A-Z, digits and underscores">'.
+Type 'StringSchema' is not assignable to type 'StringSchema & SchemaError<"Field name 'first name' can only contain letters A-Z, digits and underscores">'.
 ```
 
 The [playground](/playground) shows these errors as you type.

@@ -20,22 +20,22 @@ import {
   REF_SCHEMA,
   type OutputOf,
   type Parsed,
-  type SanityBoolean,
-  type SanityDate,
-  type SanityDateTime,
-  type SanityEnum,
-  type SanityLiteral,
-  type SanityNever,
-  type SanityNumber,
-  type SanityObjectArray,
-  type SanityObjectLike,
-  type SanityObjectUnion,
-  type SanityOptional,
-  type SanityPrimitiveArray,
-  type SanityPrimitiveUnion,
-  type SanityReference,
-  type SanityString,
-  type SanityType,
+  type BooleanSchema,
+  type DateSchema,
+  type DateTimeSchema,
+  type EnumSchema,
+  type LiteralSchema,
+  type NeverSchema,
+  type NumberSchema,
+  type ObjectArraySchema,
+  type ObjectLikeSchema,
+  type ObjectUnionSchema,
+  type OptionalSchema,
+  type PrimitiveArraySchema,
+  type PrimitiveUnionSchema,
+  type ReferenceSchema,
+  type StringSchema,
+  type Schema,
 } from './defs'
 import {defineNonEnumerableGetter} from './helpers/defineNonEnumerableGetter'
 import {getLazySchema} from './helpers/getLazySchema'
@@ -133,7 +133,7 @@ export type ParseResult<T> = ParseOk<T> | ParseFail
  * @param input - the value to validate
  * @param options - see {@link ParseOptions}
  */
-export function parse<T extends SanityType>(
+export function parse<T extends Schema>(
   schema: T,
   input: unknown,
   options: ParseOptions = {},
@@ -154,7 +154,7 @@ export function parse<T extends SanityType>(
  */
 type InternalResult<T> = ParseOk<T> | {ok: false; issues: ParseIssue[]}
 
-function parseInternal<T extends SanityType>(
+function parseInternal<T extends Schema>(
   _schema: T,
   input: unknown,
 ): InternalResult<Parsed<T>> {
@@ -197,7 +197,7 @@ function parseInternal<T extends SanityType>(
     return parsePrimitiveArray(schema, input) as any
   }
   if (isObjectUnionSchema(schema) || isDocumentUnionSchema(schema)) {
-    return parseObjectUnion(schema as SanityObjectUnion, input) as any
+    return parseObjectUnion(schema as ObjectUnionSchema, input) as any
   }
   if (isPrimitiveUnionSchema(schema)) {
     return parsePrimitiveUnion(schema, input) as any
@@ -272,7 +272,7 @@ export class ParseError extends Error {
  * @param input - the value to validate
  * @param options - see {@link ParseOptions}
  */
-export function parseOrThrow<T extends SanityType>(
+export function parseOrThrow<T extends Schema>(
   schema: T,
   input: unknown,
   options?: ParseOptions,
@@ -284,7 +284,7 @@ export function parseOrThrow<T extends SanityType>(
   return result.value
 }
 function parseString(
-  schema: SanityString,
+  schema: StringSchema,
   input: unknown,
 ): InternalResult<string> {
   return typeof input === 'string'
@@ -303,7 +303,7 @@ function parseString(
 }
 
 function parseNumberConstraints(
-  constraints: SanityNumber['constraints'],
+  constraints: NumberSchema['constraints'],
   input: number,
 ): InternalResult<number> {
   if (!constraints) {
@@ -378,7 +378,7 @@ function parseNumberConstraints(
 }
 
 function parseNumber(
-  schema: SanityNumber,
+  schema: NumberSchema,
   input: unknown,
 ): InternalResult<number> {
   return typeof input === 'number' && Number.isFinite(input)
@@ -396,7 +396,7 @@ function parseNumber(
       }
 }
 function parseBoolean(
-  schema: SanityBoolean,
+  schema: BooleanSchema,
   input: unknown,
 ): InternalResult<boolean> {
   return typeof input === 'boolean'
@@ -417,7 +417,7 @@ function parseBoolean(
 // see https://es5.github.io/#x15.9.1.15
 const ISO_DATETIME_FORMAT = 'YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)'
 function parseDateTime(
-  schema: SanityDateTime,
+  schema: DateTimeSchema,
   input: unknown,
 ): InternalResult<string> {
   if (typeof input !== 'string') {
@@ -452,7 +452,7 @@ function parseDateTime(
 // date-fns format (note: `MM` is month, `mm` would be minutes)
 const DATE_FNS_FORMAT = 'yyyy-MM-dd'
 
-function parseDate(schema: SanityDate, input: unknown): InternalResult<string> {
+function parseDate(schema: DateSchema, input: unknown): InternalResult<string> {
   if (typeof input !== 'string') {
     return {
       ok: false,
@@ -482,8 +482,8 @@ function parseDate(schema: SanityDate, input: unknown): InternalResult<string> {
   }
   return {ok: true, value: input}
 }
-function parseOptional<T extends SanityType>(
-  schema: SanityOptional<T>,
+function parseOptional<T extends Schema>(
+  schema: OptionalSchema<T>,
   input: unknown,
 ): InternalResult<T | undefined> {
   return input === undefined
@@ -491,8 +491,8 @@ function parseOptional<T extends SanityType>(
     : parseInternal(schema.type, input)
 }
 
-function parseNever<T extends SanityType>(
-  schema: SanityNever,
+function parseNever<T extends Schema>(
+  schema: NeverSchema,
   input: unknown,
 ): InternalResult<T | undefined> {
   return {
@@ -508,7 +508,7 @@ function parseNever<T extends SanityType>(
   }
 }
 
-function parseLiteral<S extends SanityLiteral<any>>(
+function parseLiteral<S extends LiteralSchema<any>>(
   schema: S,
   input: unknown,
 ): InternalResult<OutputOf<S>> {
@@ -527,7 +527,7 @@ function parseLiteral<S extends SanityLiteral<any>>(
       }
 }
 
-function parseReference<S extends SanityReference<any>>(
+function parseReference<S extends ReferenceSchema<any>>(
   schema: S,
   input: unknown,
 ): InternalResult<OutputOf<S>> {
@@ -547,7 +547,7 @@ function parseReference<S extends SanityReference<any>>(
   }
 }
 
-function parsePrimitiveUnion<S extends SanityPrimitiveUnion>(
+function parsePrimitiveUnion<S extends PrimitiveUnionSchema>(
   schema: S,
   input: unknown,
 ): InternalResult<OutputOf<S>> {
@@ -573,7 +573,7 @@ function parsePrimitiveUnion<S extends SanityPrimitiveUnion>(
   }
 }
 
-function parseEnum<S extends SanityEnum>(
+function parseEnum<S extends EnumSchema>(
   schema: S,
   input: unknown,
 ): InternalResult<OutputOf<S>> {
@@ -605,21 +605,21 @@ function parseEnum<S extends SanityEnum>(
  * have them, for documents that reference themselves).
  */
 function findUnionSchemaForType(
-  unionSchema: SanityObjectUnion,
+  unionSchema: ObjectUnionSchema,
   typeName: string,
-): SanityType | undefined {
-  for (const member of unionSchema.union as SanityType[]) {
+): Schema | undefined {
+  for (const member of unionSchema.union as Schema[]) {
     if (isNeverSchema(member)) continue
     const resolved = getLazySchema(member)
     if (isObjectUnionSchema(resolved) || isDocumentUnionSchema(resolved)) {
       const found = findUnionSchemaForType(
-        resolved as SanityObjectUnion,
+        resolved as ObjectUnionSchema,
         typeName,
       )
       if (found) return found
       continue
     }
-    const typeLiteral = (resolved as SanityObjectLike).shape?._type
+    const typeLiteral = (resolved as ObjectLikeSchema).shape?._type
     if (
       typeLiteral !== undefined &&
       isLiteralSchema(typeLiteral) &&
@@ -634,7 +634,7 @@ function findUnionSchemaForType(
 function hasTypeField(input: any): input is {_type: string} {
   return '_type' in input
 }
-function parseObjectUnion<S extends SanityObjectUnion>(
+function parseObjectUnion<S extends ObjectUnionSchema>(
   schema: S,
   input: unknown,
 ): InternalResult<OutputOf<S>> {
@@ -674,7 +674,7 @@ type PlainObject = {[key: string]: unknown}
 const isPlainObject = (value: unknown): value is {[key: string]: unknown} => {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
-function parseObject<S extends SanityObjectLike>(
+function parseObject<S extends ObjectLikeSchema>(
   schema: S,
   input: unknown,
 ): InternalResult<OutputOf<S>> {
@@ -724,7 +724,7 @@ function isKeyedObject(value: unknown): value is {_key: string} {
   return isPlainObject(value) && typeof value._key === 'string'
 }
 
-function parseObjectArray<S extends SanityObjectArray>(
+function parseObjectArray<S extends ObjectArraySchema>(
   schema: S,
   input: unknown,
 ): InternalResult<OutputOf<S>> {
@@ -772,7 +772,7 @@ function parseObjectArray<S extends SanityObjectArray>(
   return {ok: true, value}
 }
 
-function parsePrimitiveArray<S extends SanityPrimitiveArray>(
+function parsePrimitiveArray<S extends PrimitiveArraySchema>(
   schema: S,
   input: unknown,
 ): InternalResult<OutputOf<S>> {

@@ -8,11 +8,11 @@ import {object} from '../creators/object'
 import {optional} from '../creators/optional'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
-import {type SanityObjectType} from '../defs'
+import {type ObjectSchemaOf} from '../defs'
 import {extend} from '../utils/extend'
 
 describe('circular schemas', () => {
-  test('Circular SanityObjectType', () => {
+  test('Circular ObjectSchemaOf', () => {
     interface Human {
       _type: 'human'
       name: string
@@ -20,7 +20,7 @@ describe('circular schemas', () => {
     }
 
     //@ts-expect-error - should fail because name is not optional in the Human type, so they are not compatible
-    const Human: SanityObjectType<Human> = object({
+    const Human: ObjectSchemaOf<Human> = object({
       _type: literal('human'),
       name: optional(string()),
       age: number(),
@@ -28,7 +28,7 @@ describe('circular schemas', () => {
     })
   })
 
-  test('Circular SanityObjectType type with extended inner type', () => {
+  test('Circular ObjectSchemaOf type with extended inner type', () => {
     interface Human {
       _type: 'human'
       name?: string
@@ -37,7 +37,7 @@ describe('circular schemas', () => {
     }
 
     // @ts-expect-error – the schema declare the extended 'parent.additionalInfo' as optional, but that's not compatible with interface
-    const Human: SanityObjectType<Human> = object({
+    const Human: ObjectSchemaOf<Human> = object({
       _type: literal('human'),
       name: optional(string()),
       age: number(),

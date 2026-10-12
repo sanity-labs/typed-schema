@@ -4,7 +4,7 @@ import {
   isPrimitiveSchema,
 } from '../asserters'
 import {optional} from '../creators/optional'
-import {type OutputOf, type SanityAny} from '../defs'
+import {type OutputOf, type Schema} from '../defs'
 import {isObjectLike} from '../helpers/isObjectLike'
 import {parse} from '../parse'
 import {type DeepPartial} from '../utils/deepPartial'
@@ -14,7 +14,7 @@ import {type DeepPartial} from '../utils/deepPartial'
  * @param schema - the schema to pick values for
  * @param value - the value to pick from
  */
-export function pickDeep<S extends SanityAny>(
+export function pickDeep<S extends Schema>(
   schema: S,
   value: unknown,
 ): OutputOf<DeepPartial<S>> {

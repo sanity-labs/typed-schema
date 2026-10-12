@@ -13,26 +13,26 @@ import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {
   type Infer,
-  type SanityDocument,
-  type SanityDocumentUnion,
-  type SanityLazy,
-  type SanityNever,
-  type SanityNumber,
-  type SanityObject,
-  type SanityObjectUnion,
-  type SanityOptional,
-  type SanityReference,
-  type SanityString,
-  type SanityDocumentType,
-  type SanityType,
-  type SanityTypedObject,
+  type DocumentSchema,
+  type DocumentUnionSchema,
+  type LazySchema,
+  type NeverSchema,
+  type NumberSchema,
+  type ObjectSchema,
+  type ObjectUnionSchema,
+  type OptionalSchema,
+  type ReferenceSchema,
+  type StringSchema,
+  type DocumentSchemaOf,
+  type Schema,
+  type TypedObjectSchema,
 } from '../defs'
 import {
   type ArrayElementError,
   type CheckUnionMembers,
 } from '../helpers/schemaErrors'
 import {type ElementType, type SchemaError} from '../helpers/utilTypes'
-import {type SanityDocumentValue} from '../shapeDefs'
+import {type DocumentValue} from '../shapeDefs'
 
 test('primitive unions', () => {
   union([string(), union([number(), boolean()])])
@@ -55,8 +55,8 @@ test('object union of object union', () => {
 })
 
 test('union type excludes never type', () => {
-  expectTypeOf<ElementType<SanityObjectUnion['union']>>()
-    .extract<SanityNever>()
+  expectTypeOf<ElementType<ObjectUnionSchema['union']>>()
+    .extract<NeverSchema>()
     .toEqualTypeOf<never>()
 })
 
@@ -75,24 +75,24 @@ test('union members that break a rule are rejected', () => {
 })
 
 test('union members that break a rule report why', () => {
-  type Link = SanityObject<{
+  type Link = ObjectSchema<{
     _type: ReturnType<typeof literal<'link'>>
-    href: SanityString
+    href: StringSchema
   }>
-  type Untyped = SanityObject<{href: SanityString}>
+  type Untyped = ObjectSchema<{href: StringSchema}>
 
   expectTypeOf<
-    CheckUnionMembers<[SanityString, Link, SanityNumber, Link]>
+    CheckUnionMembers<[StringSchema, Link, NumberSchema, Link]>
   >().toEqualTypeOf<
     [
-      SanityString,
+      StringSchema,
       Link &
         SchemaError<'union() members cannot mix primitive types and object types'>,
-      SanityNumber,
+      NumberSchema,
       Link,
     ]
   >()
-  expectTypeOf<CheckUnionMembers<(SanityString | Link)[]>>().toEqualTypeOf<
+  expectTypeOf<CheckUnionMembers<(StringSchema | Link)[]>>().toEqualTypeOf<
     SchemaError<'union() members cannot mix primitive types and object types'>
   >()
   expectTypeOf<CheckUnionMembers<[Link, Untyped]>>().toEqualTypeOf<
@@ -102,8 +102,8 @@ test('union members that break a rule report why', () => {
         SchemaError<"union() members that are objects need a _type literal field, e.g. _type: literal('link')">,
     ]
   >()
-  expectTypeOf<CheckUnionMembers<[SanityString, SanityNumber]>>().toEqualTypeOf<
-    [SanityString, SanityNumber]
+  expectTypeOf<CheckUnionMembers<[StringSchema, NumberSchema]>>().toEqualTypeOf<
+    [StringSchema, NumberSchema]
   >()
 })
 
@@ -197,47 +197,47 @@ test('a union of many members compiles', () => {
   expectTypeOf<
     Extract<(typeof Many.union)[number], {typeName: 'reference'}>
   >().toEqualTypeOf<
-    SanityReference<SanityDocumentUnion<typeof Author | typeof Book>>
+    ReferenceSchema<DocumentUnionSchema<typeof Author | typeof Book>>
   >()
 })
 
 test('union members that are not object-like or primitive report why', () => {
-  type Link = SanityObject<{
+  type Link = ObjectSchema<{
     _type: ReturnType<typeof literal<'link'>>
-    href: SanityString
+    href: StringSchema
   }>
   expectTypeOf<
-    CheckUnionMembers<[SanityDocument, SanityDocument]>
-  >().toEqualTypeOf<[SanityDocument, SanityDocument]>()
-  expectTypeOf<CheckUnionMembers<[SanityDocument, Link]>>().toEqualTypeOf<
+    CheckUnionMembers<[DocumentSchema, DocumentSchema]>
+  >().toEqualTypeOf<[DocumentSchema, DocumentSchema]>()
+  expectTypeOf<CheckUnionMembers<[DocumentSchema, Link]>>().toEqualTypeOf<
     [
-      SanityDocument,
+      DocumentSchema,
       Link &
         SchemaError<'union() members cannot mix documents and other object types'>,
     ]
   >()
   expectTypeOf<
-    CheckUnionMembers<[SanityDocument, SanityString]>
+    CheckUnionMembers<[DocumentSchema, StringSchema]>
   >().toEqualTypeOf<
     [
-      SanityDocument,
-      SanityString &
+      DocumentSchema,
+      StringSchema &
         SchemaError<'union() members cannot mix primitive types and object types'>,
     ]
   >()
-  expectTypeOf<CheckUnionMembers<[SanityLazy<Link>]>>().toEqualTypeOf<
+  expectTypeOf<CheckUnionMembers<[LazySchema<Link>]>>().toEqualTypeOf<
     [
-      SanityLazy<Link> &
+      LazySchema<Link> &
         SchemaError<'union() members that are lazy() must be documents'>,
     ]
   >()
-  expectTypeOf<CheckUnionMembers<SanityReference[]>>().toEqualTypeOf<
+  expectTypeOf<CheckUnionMembers<ReferenceSchema[]>>().toEqualTypeOf<
     SchemaError<'union() members that include a reference() must be an array literal, e.g. union([reference(Author), Link]), not a variable typed as an array'>
   >()
-  expectTypeOf<CheckUnionMembers<[Link, SanityOptional<Link>]>>().toEqualTypeOf<
+  expectTypeOf<CheckUnionMembers<[Link, OptionalSchema<Link>]>>().toEqualTypeOf<
     [
       Link,
-      SanityOptional<Link> &
+      OptionalSchema<Link> &
         SchemaError<'union() members must be primitives, literals, typed objects, documents, references, blocks, images or files'>,
     ]
   >()
@@ -248,61 +248,61 @@ test('a union of documents is a document union', () => {
   const Book = document({_type: literal('book'), title: string()})
   const Magazine = document({_type: literal('magazine'), title: string()})
   expectTypeOf(union([Author, Book])).toEqualTypeOf<
-    SanityDocumentUnion<typeof Author | typeof Book>
+    DocumentUnionSchema<typeof Author | typeof Book>
   >()
   // nested document unions are flattened
   expectTypeOf(union([Author, union([Book, Magazine])])).toEqualTypeOf<
-    SanityDocumentUnion<typeof Author | typeof Book | typeof Magazine>
+    DocumentUnionSchema<typeof Author | typeof Book | typeof Magazine>
   >()
 })
 
-test('a union of documents can include documents typed as SanityDocumentType', () => {
-  interface Person extends SanityDocumentValue {
+test('a union of documents can include documents typed as DocumentSchemaOf', () => {
+  interface Person extends DocumentValue {
     name: string
   }
-  const Person: SanityDocumentType<Person> = document({
+  const Person: DocumentSchemaOf<Person> = document({
     _type: literal('person'),
     name: string(),
   })
   const Book = document({_type: literal('book'), title: string()})
   expectTypeOf(union([Person, Book])).toEqualTypeOf<
-    SanityDocumentUnion<typeof Person | typeof Book>
+    DocumentUnionSchema<typeof Person | typeof Book>
   >()
   expectTypeOf(union([lazy(() => Person), Book])).toEqualTypeOf<
-    SanityDocumentUnion<SanityLazy<typeof Person> | typeof Book>
+    DocumentUnionSchema<LazySchema<typeof Person> | typeof Book>
   >()
 })
 
-test('a schema typed as SanityType<Value> cannot be a union member', () => {
-  interface Person extends SanityDocumentValue {
+test('a schema typed as Schema<Value> cannot be a union member', () => {
+  interface Person extends DocumentValue {
     name: string
   }
   // may be an object at runtime: the type does not say
-  const Person: SanityType<Person> = document({
+  const Person: Schema<Person> = document({
     _type: literal('person'),
     name: string(),
   })
   const Book = document({_type: literal('book'), title: string()})
   union([
-    // @ts-expect-error - typed as SanityType<Value>
+    // @ts-expect-error - typed as Schema<Value>
     Person,
     Book,
   ])
   expectTypeOf<CheckUnionMembers<[typeof Person, typeof Book]>>().toEqualTypeOf<
     [
       typeof Person &
-        SchemaError<'union() members typed by their value must be typed as SanityDocumentType<Value> or SanityObjectType<Value>, not SanityType<Value>'>,
+        SchemaError<'union() members typed by their value must be typed as DocumentSchemaOf<Value> or ObjectSchemaOf<Value>, not Schema<Value>'>,
       typeof Book,
     ]
   >()
 })
 
 test('generic code can build a union without references', () => {
-  function unionOf<T extends SanityTypedObject>(members: T[]) {
+  function unionOf<T extends TypedObjectSchema>(members: T[]) {
     return union(members)
   }
   const Link = object({_type: literal('link'), href: string()})
-  expectTypeOf(unionOf([Link])).toEqualTypeOf<SanityObjectUnion<typeof Link>>()
+  expectTypeOf(unionOf([Link])).toEqualTypeOf<ObjectUnionSchema<typeof Link>>()
 })
 
 test('array() rejects a union of documents', () => {
@@ -311,7 +311,7 @@ test('array() rejects a union of documents', () => {
   // @ts-expect-error - use array(reference(union([...]))) for references
   array(union([Author, Book]))
   expectTypeOf<
-    ArrayElementError<SanityDocumentUnion<typeof Author>>
+    ArrayElementError<DocumentUnionSchema<typeof Author>>
   >().toEqualTypeOf<'array() elements cannot be a union() of documents. For references to several document types, use array(reference(union([...])))'>()
 })
 
@@ -333,8 +333,8 @@ test('members that include a reference() must be an array literal', () => {
   union(members)
   const tuple = [reference(Author), reference(Book)] as const
   expectTypeOf(union(tuple)).toEqualTypeOf<
-    SanityObjectUnion<
-      SanityReference<SanityDocumentUnion<typeof Author | typeof Book>>
+    ObjectUnionSchema<
+      ReferenceSchema<DocumentUnionSchema<typeof Author | typeof Book>>
     >
   >()
 })

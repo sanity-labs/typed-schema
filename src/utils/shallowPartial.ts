@@ -3,32 +3,32 @@ import {document} from '../creators/document'
 import {object} from '../creators/object'
 import {optional} from '../creators/optional'
 import {
+  type DocumentSchema,
+  type DocumentSchemaOf,
+  type ObjectSchema,
+  type ObjectSchemaOf,
+  type ObjectShape,
   type OutputOf,
-  type SanityDocument,
-  type SanityDocumentType,
-  type SanityObject,
-  type SanityObjectShape,
-  type SanityObjectType,
 } from '../defs'
 import {inheritAnnotations} from '../helpers/annotations'
 import {type Combine} from '../helpers/utilTypes'
 import {type MaybeOptionalType} from './deepPartial'
 
-export type ShallowPartialShape<S> = S extends SanityObjectShape
+export type ShallowPartialShape<S> = S extends ObjectShape
   ? {
       [K in keyof S]: K extends '_type' ? S[K] : MaybeOptionalType<S[K]>
     }
   : never
 
-export type ShallowPartial<S extends SanityObject | SanityDocument> =
-  S extends SanityObject<infer Shape extends SanityObjectShape>
-    ? SanityObjectShape extends Shape
-      ? SanityObjectType<ShallowPartialPlain<OutputOf<S>>>
-      : SanityObject<ShallowPartialShape<Shape>>
-    : S extends SanityDocument<infer Shape extends SanityObjectShape>
-      ? SanityObjectShape extends Shape
-        ? SanityDocumentType<ShallowPartialPlain<OutputOf<S>>>
-        : SanityDocument<ShallowPartialShape<Shape>>
+export type ShallowPartial<S extends ObjectSchema | DocumentSchema> =
+  S extends ObjectSchema<infer Shape extends ObjectShape>
+    ? ObjectShape extends Shape
+      ? ObjectSchemaOf<ShallowPartialPlain<OutputOf<S>>>
+      : ObjectSchema<ShallowPartialShape<Shape>>
+    : S extends DocumentSchema<infer Shape extends ObjectShape>
+      ? ObjectShape extends Shape
+        ? DocumentSchemaOf<ShallowPartialPlain<OutputOf<S>>>
+        : DocumentSchema<ShallowPartialShape<Shape>>
       : never
 
 export type ShallowPartialPlain<T> = T extends {_type: string}
@@ -40,7 +40,7 @@ export type ShallowPartialPlain<T> = T extends {_type: string}
     >
   : {[P in keyof T]?: T[P] | undefined}
 
-export function shallowPartial<S extends SanityObject | SanityDocument>(
+export function shallowPartial<S extends ObjectSchema | DocumentSchema>(
   schema: S,
 ): ShallowPartial<S> {
   if (!isObjectSchema(schema) && !isDocumentSchema(schema)) {

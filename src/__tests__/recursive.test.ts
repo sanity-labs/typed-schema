@@ -14,7 +14,7 @@ import {portableText} from '../creators/portableText'
 import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
-import {type SanityObjectArray} from '../defs'
+import {type ObjectArraySchema} from '../defs'
 import {getLazySchema} from '../helpers/getLazySchema'
 import {verifyUniqueTypeNames} from '../helpers/verifyUniqueTypeNames'
 import {parse} from '../parse'
@@ -170,7 +170,7 @@ describe('recursive schemas declared with getters', () => {
     expect(deepPartial(Category)).toBe(Partial)
     const subcategories = getLazySchema(Partial.shape.subcategories.type)
     expect(isObjectArraySchema(subcategories)).toBe(true)
-    expect(getUnkeyedSchema((subcategories as SanityObjectArray).element)).toBe(
+    expect(getUnkeyedSchema((subcategories as ObjectArraySchema).element)).toBe(
       Partial,
     )
     expect(deepRequired(Node)).toBe(deepRequired(Node))

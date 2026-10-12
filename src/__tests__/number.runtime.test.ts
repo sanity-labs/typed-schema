@@ -4,9 +4,9 @@ import {int32, number, safeint, uint32} from '../creators/number'
 import {parse} from '../parse'
 
 test('parse a number', () => {
-  const NumberSchema = number()
-  expect(parse(NumberSchema, 1)).toEqual({ok: true, value: 1})
-  expect(parse(NumberSchema, 1.1)).toEqual({ok: true, value: 1.1})
+  const schema = number()
+  expect(parse(schema, 1)).toEqual({ok: true, value: 1})
+  expect(parse(schema, 1.1)).toEqual({ok: true, value: 1.1})
 })
 
 test('min/max constraints', () => {
