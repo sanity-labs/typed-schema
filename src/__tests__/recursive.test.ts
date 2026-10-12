@@ -1,7 +1,7 @@
 import {describe, expect, test} from 'vitest'
 
 import {isObjectArraySchema} from '../asserters'
-import {array, getUnkeyedSchema} from '../creators/array'
+import {array} from '../creators/array'
 import {block} from '../creators/block'
 import {document} from '../creators/document'
 import {file} from '../creators/file'
@@ -170,9 +170,7 @@ describe('recursive schemas declared with getters', () => {
     expect(deepPartial(Category)).toBe(Partial)
     const subcategories = getLazySchema(Partial.shape.subcategories.type)
     expect(isObjectArraySchema(subcategories)).toBe(true)
-    expect(getUnkeyedSchema((subcategories as ObjectArraySchema).element)).toBe(
-      Partial,
-    )
+    expect((subcategories as ObjectArraySchema).element.unkeyed).toBe(Partial)
     expect(deepRequired(Node)).toBe(deepRequired(Node))
   })
 

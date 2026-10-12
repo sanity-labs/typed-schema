@@ -1,9 +1,4 @@
-import {
-  isDocumentUnionSchema,
-  isItemObjectArrayCompatible,
-  isNeverSchema,
-  isObjectUnionSchema,
-} from '../asserters'
+import {isDocumentUnionSchema, isItemObjectArrayCompatible} from '../asserters'
 import {
   type ArraySchema,
   type LiteralSchema,
@@ -21,8 +16,8 @@ import {
   type SchemaAnnotations,
   type SchemaKind,
 } from '../defs'
-import {withoutExamples} from '../helpers/annotations'
 import {defineType} from '../helpers/defineType'
+import {getKeyedSchema} from '../helpers/keyedSchema'
 import {
   type AnnotationsError,
   type ArrayElementError,
@@ -30,45 +25,6 @@ import {
   type PrimitiveArrayElementError,
 } from '../helpers/schemaErrors'
 import {type SchemaError} from '../helpers/utilTypes'
-import {string} from './string'
-
-// Object array elements are copies of the given schema with `_key` added. This
-// maps each copy back to the schema it was made from, kept off-object like the
-// `getLazySchema` cache, so schema walkers can tell one schema reused in
-// several places from two declarations of the same type
-const keyedFrom = new WeakMap<Schema, Schema>()
-
-/**
- * Returns the schema an object array element was copied from, or the schema
- * itself if it is not an array element
- */
-export function getUnkeyedSchema(schema: Schema): Schema {
-  return keyedFrom.get(schema) ?? schema
-}
-
-function addKeyProperty<T extends ObjectLikeKind | ObjectUnionKind>(
-  target: T,
-): T {
-  const schema = target as Schema as ObjectUnionSchema | ObjectLikeSchema
-  // The copy keeps the annotations, except `examples`: those are values of
-  // the schema without `_key`, which `validateExamples` checks through
-  // `getUnkeyedSchema`. Built through `defineType`, since a spread drops the
-  // non-enumerable `output` and `~standard` properties of `schema`
-  const {annotations: _annotations, ...rest} = schema
-  const withKey = defineType(
-    isObjectUnionSchema(schema)
-      ? {
-          ...rest,
-          union: schema.union.map(unionType =>
-            isNeverSchema(unionType) ? unionType : addKeyProperty(unionType),
-          ),
-        }
-      : {...rest, shape: {...schema.shape, _key: string()}},
-    withoutExamples(schema.annotations),
-  )
-  keyedFrom.set(withKey, getUnkeyedSchema(schema))
-  return withKey as Schema as T
-}
 
 export function objectArray<
   ElementType extends ObjectLikeKind | ObjectUnionKind,
@@ -91,7 +47,7 @@ export function objectArray(
   return defineType(
     {
       typeName: 'objectArray',
-      element: addKeyProperty(elementSchema),
+      element: getKeyedSchema(elementSchema),
     },
     annotations,
   )

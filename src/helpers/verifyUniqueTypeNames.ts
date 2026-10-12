@@ -11,10 +11,10 @@ import {
   isOptionalSchema,
 } from '../asserters'
 import {getInstanceName} from '../content-utils/getInstanceName'
-import {getUnkeyedSchema} from '../creators/array'
 import {type ObjectShape, type Schema} from '../defs'
 import {FileBase, ImageBase} from '../shapeDefs'
 import {getLazySchema} from './getLazySchema'
+import {getUnkeyedSchema} from './keyedSchema'
 
 export class DuplicateTypeNameError extends Error {
   constructor(

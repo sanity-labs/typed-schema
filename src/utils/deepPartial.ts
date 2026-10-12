@@ -7,7 +7,7 @@ import {
   isObjectUnionSchema,
   isOptionalSchema,
 } from '../asserters'
-import {getUnkeyedSchema, objectArray} from '../creators/array'
+import {objectArray} from '../creators/array'
 import {document} from '../creators/document'
 import {lazy} from '../creators/lazy'
 import {object} from '../creators/object'
@@ -30,6 +30,7 @@ import {
 } from '../defs'
 import {inheritAnnotations} from '../helpers/annotations'
 import {getLazySchema} from '../helpers/getLazySchema'
+import {getUnkeyedSchema} from '../helpers/keyedSchema'
 import {type Combine, type ExtendsNever} from '../helpers/utilTypes'
 
 export type MaybeOptionalType<T extends Schema> =
