@@ -23,6 +23,8 @@ features:
     details: Arrays of arrays, untyped object unions and reserved field names are type errors in your editor, not runtime errors in the Studio.
   - title: Runtime validation
     details: <code>parse</code> checks incoming data against the same schema and reports every problem with its path.
+  - title: Standard Schema
+    details: Every schema implements <a href="https://standardschema.dev">Standard Schema</a>, so form libraries, routers and RPC frameworks that support it accept typed schemas directly.
   - title: Plain, shareable data
     details: Schemas contain no React or Studio code, so you can publish them to npm and use them in Node, edge runtimes or the browser.
 ---

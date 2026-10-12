@@ -26,8 +26,9 @@ const config: KnipConfig = {
     },
     docs: {
       // knip does not read Markdown: playground.md imports Playground.vue
-      // and Twoslash examples import @sanity/client. The two workers are
-      // loaded with `new URL(...)`, which knip does not follow
+      // and Twoslash examples import @sanity/client and Hono (whose
+      // validator needs @standard-schema/spec). The two workers are loaded
+      // with `new URL(...)`, which knip does not follow
       entry: [
         '.vitepress/playground/worker.ts',
         '.vitepress/playground/runner.ts',
@@ -35,7 +36,12 @@ const config: KnipConfig = {
         '.vitepress/**/*.test.ts',
       ],
       project: ['.vitepress/**/*.{ts,vue}'],
-      ignoreDependencies: ['@sanity/client'],
+      ignoreDependencies: [
+        '@sanity/client',
+        'hono',
+        '@hono/standard-validator',
+        '@standard-schema/spec',
+      ],
     },
   },
 }
