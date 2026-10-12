@@ -32,7 +32,7 @@ import {
   union,
 } from './union'
 
-type Configured<T, Fallback> = [T] extends [NeverSchema] ? Fallback : T
+type Configured<T, Fallback> = [T] extends [never] ? Fallback : T
 
 /**
  * The schema of a Portable Text span. `marks` holds decorator names and the
@@ -55,79 +55,14 @@ export type SpanObjectShape<
   text: StringSchema
 }
 
-/**
- * The shape of a Portable Text block as stored by Sanity: `style`, `listItem`
- * and `level` are optional, `children` always present, `markDefs` optional.
- * Unconfigured `style`/`listItem` accept any string.
- */
-export type BlockObjectShape<
-  StyleType extends
-    | NeverSchema
-    | LiteralSchema<string>
-    | PrimitiveUnionSchema<LiteralSchema<string>>,
-  ListType extends
-    | NeverSchema
-    | LiteralSchema<string>
-    | PrimitiveUnionSchema<LiteralSchema<string>>,
-  InlineType extends
-    | NeverSchema
-    | PortableTextMemberKind
-    | ObjectUnionSchema<PortableTextMemberKind>,
-  DecoratorType extends
-    | NeverSchema
-    | LiteralSchema<string>
-    | PrimitiveUnionSchema<LiteralSchema<string>>,
-  AnnotationType extends
-    | NeverSchema
-    | PortableTextMemberKind
-    | ObjectUnionSchema<PortableTextMemberKind>,
-  TypeName extends LiteralSchema<string> = LiteralSchema<'block'>,
-> = {
-  _type: TypeName
-  style: OptionalSchema<Configured<StyleType, StringSchema>>
-  listItem: OptionalSchema<Configured<ListType, StringSchema>>
-  level: OptionalSchema<NumberSchema>
-  children: ObjectArraySchema<
-    ObjectUnionSchema<
-      | FlattenUnionTypes<InlineType>
-      | ObjectSchema<SpanObjectShape<DecoratorType>>
-    >
-  >
-  markDefs: OptionalSchema<
-    [AnnotationType] extends [NeverSchema]
-      ? PrimitiveArraySchema<NeverSchema>
-      : ObjectArraySchema<Exclude<AnnotationType, NeverSchema>>
-  >
-}
-
-export type BlockOptions<
-  StyleType extends
-    | void
-    | LiteralSchema<string>
-    | PrimitiveUnionSchema<LiteralSchema<string>> = never,
-  ListType extends
-    | void
-    | LiteralSchema<string>
-    | PrimitiveUnionSchema<LiteralSchema<string>> = never,
-  InlineType extends
-    | void
-    | PortableTextMemberKind
-    | ObjectUnionSchema<PortableTextMemberKind> = never,
-  DecoratorType extends
-    | void
-    | LiteralSchema<string>
-    | PrimitiveUnionSchema<LiteralSchema<string>> = never,
-  AnnotationType extends
-    | void
-    | PortableTextMemberKind
-    | ObjectUnionSchema<PortableTextMemberKind> = never,
-  TypeName extends LiteralSchema<string> = LiteralSchema<'block'>,
-> = {
-  _type?: TypeName
+/** The options `block()` accepts */
+export interface BlockOptions {
+  /** The block's `_type`, e.g. `literal('textBlock')`. `'block'` if omitted. */
+  _type?: LiteralSchema<string>
   /** Allowed block styles, e.g. `union([literal('normal'), literal('h1')])`. Any string if omitted. */
-  style?: StyleType
+  style?: LiteralSchema<string> | PrimitiveUnionSchema<LiteralSchema<string>>
   /** Allowed list item types, e.g. `union([literal('bullet'), literal('number')])`. Any string if omitted. */
-  list?: ListType
+  list?: LiteralSchema<string> | PrimitiveUnionSchema<LiteralSchema<string>>
   /**
    * Decorator names for span marks, e.g. `union([literal('strong'), literal('em')])`.
    *
@@ -135,106 +70,61 @@ export type BlockOptions<
    * strings, so the inferred `marks` type is always `string[]` and parsing
    * accepts any string. The option is kept for Studio schema generation.
    */
-  decorator?: DecoratorType
+  decorator?:
+    | LiteralSchema<string>
+    | PrimitiveUnionSchema<LiteralSchema<string>>
   /** Typed objects, references, images or files allowed inline among the spans */
-  inline?: InlineType
+  inline?: PortableTextMemberKind | ObjectUnionSchema<PortableTextMemberKind>
   /** Typed objects, references, images or files allowed in `markDefs` (annotations, which span marks refer to by `_key`) */
-  annotation?: AnnotationType
+  annotation?:
+    | PortableTextMemberKind
+    | ObjectUnionSchema<PortableTextMemberKind>
 }
 
-export type VoidNever<T> = void extends T ? NeverSchema : Exclude<T, void>
+/** The schema given for `Name` in `Options`, or `never` if it is left out */
+type Option<
+  Options extends BlockOptions,
+  Name extends keyof BlockOptions,
+> = Exclude<Options[Name & keyof Options], undefined>
 
-/** The schema `block()` returns for the given options */
-type BlockType<
-  StyleType extends
-    | void
-    | LiteralSchema<string>
-    | PrimitiveUnionSchema<LiteralSchema<string>>,
-  ListType extends
-    | void
-    | LiteralSchema<string>
-    | PrimitiveUnionSchema<LiteralSchema<string>>,
-  InlineType extends
-    | void
-    | PortableTextMemberKind
-    | ObjectUnionSchema<PortableTextMemberKind>,
-  DecoratorType extends
-    | void
-    | LiteralSchema<string>
-    | PrimitiveUnionSchema<LiteralSchema<string>>,
-  AnnotationType extends
-    | void
-    | PortableTextMemberKind
-    | ObjectUnionSchema<PortableTextMemberKind>,
-  TypeName extends LiteralSchema<string>,
-> = BlockSchema<
-  BlockObjectShape<
-    VoidNever<StyleType>,
-    VoidNever<ListType>,
-    VoidNever<InlineType>,
-    VoidNever<DecoratorType>,
-    VoidNever<AnnotationType>,
-    TypeName
+/**
+ * The shape of a Portable Text block as stored by Sanity: `style`, `listItem`
+ * and `level` are optional, `children` always present, `markDefs` optional.
+ * Unconfigured `style`/`listItem` accept any string.
+ */
+export type BlockObjectShape<Options extends BlockOptions = BlockOptions> = {
+  _type: Configured<Option<Options, '_type'>, LiteralSchema<'block'>>
+  style: OptionalSchema<Configured<Option<Options, 'style'>, StringSchema>>
+  listItem: OptionalSchema<Configured<Option<Options, 'list'>, StringSchema>>
+  level: OptionalSchema<NumberSchema>
+  children: ObjectArraySchema<
+    ObjectUnionSchema<
+      | FlattenUnionTypes<Option<Options, 'inline'>>
+      | ObjectSchema<SpanObjectShape<Option<Options, 'decorator'>>>
+    >
   >
->
+  markDefs: OptionalSchema<
+    [Option<Options, 'annotation'>] extends [never]
+      ? PrimitiveArraySchema<NeverSchema>
+      : ObjectArraySchema<Option<Options, 'annotation'>>
+  >
+}
+
+/** The keys of `Options` that are not `block()` options */
+type UnknownOptions<Options> = {
+  [Key in Exclude<keyof Options, keyof BlockOptions>]: never
+}
 
 /**
  * A Portable Text block. Use together with `portableText()` to declare a
  * rich text field.
  */
-export function block<
-  StyleType extends
-    | void
-    | LiteralSchema<string>
-    | PrimitiveUnionSchema<LiteralSchema<string>>,
-  ListType extends
-    | void
-    | LiteralSchema<string>
-    | PrimitiveUnionSchema<LiteralSchema<string>>,
-  InlineType extends
-    | void
-    | PortableTextMemberKind
-    | ObjectUnionSchema<PortableTextMemberKind>,
-  DecoratorType extends
-    | void
-    | LiteralSchema<string>
-    | PrimitiveUnionSchema<LiteralSchema<string>>,
-  AnnotationType extends
-    | void
-    | PortableTextMemberKind
-    | ObjectUnionSchema<PortableTextMemberKind>,
-  TypeName extends LiteralSchema<string> = LiteralSchema<'block'>,
->(
-  options: BlockOptions<
-    StyleType,
-    ListType,
-    InlineType,
-    DecoratorType,
-    AnnotationType,
-    TypeName
-  >,
+export function block<Options extends BlockOptions>(
+  options: Options & UnknownOptions<Options>,
   annotations?: NoInfer<
-    SchemaAnnotations<
-      OutputOf<
-        BlockType<
-          StyleType,
-          ListType,
-          InlineType,
-          DecoratorType,
-          AnnotationType,
-          TypeName
-        >
-      >
-    >
+    SchemaAnnotations<OutputOf<BlockSchema<BlockObjectShape<Options>>>>
   >,
-): BlockType<
-  StyleType,
-  ListType,
-  InlineType,
-  DecoratorType,
-  AnnotationType,
-  TypeName
->
+): BlockSchema<BlockObjectShape<Options>>
 // Matches only what the overload above rejects, and its parameter can never be
 // satisfied. TypeScript 7 reports only the last overload's error, which says
 // what is wrong with the options. TypeScript 6 lists every overload's error,
@@ -243,10 +133,7 @@ export function block<Options extends object>(
   options: Options & NoInfer<BlockOptionErrors<Options>>,
   annotations?: AnnotationsError<'block'>,
 ): never
-export function block(
-  options: BlockOptions<any, any, any, any, any, any>,
-  annotations?: any,
-): BlockSchema {
+export function block(options: BlockOptions, annotations?: any): BlockSchema {
   const Marks = options.decorator
     ? array(union([options.decorator, string()]))
     : array(string())

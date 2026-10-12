@@ -1,6 +1,10 @@
 import {describe, expectTypeOf, test} from 'vitest'
 
-import {block} from '../creators/block'
+import {
+  type BlockObjectShape,
+  type BlockOptions,
+  block,
+} from '../creators/block'
 import {document} from '../creators/document'
 import {image} from '../creators/image'
 import {literal} from '../creators/literal'
@@ -11,8 +15,10 @@ import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {
   type Infer,
+  type BlockSchema,
   type LiteralSchema,
   type ObjectSchema,
+  type PrimitiveUnionSchema,
   type StringSchema,
 } from '../defs'
 import {type BlockOptionErrors} from '../helpers/schemaErrors'
@@ -81,6 +87,40 @@ describe('block type', () => {
     type ActualType = Infer<typeof Block>
 
     expectTypeOf<ActualType>().toEqualTypeOf<ExpectedBlockValue>()
+  })
+
+  test('block() returns BlockSchema<BlockObjectShape<Options>>', () => {
+    const Block = block({style: union([literal('normal'), literal('h1')])})
+    expectTypeOf(Block).toEqualTypeOf<
+      BlockSchema<
+        BlockObjectShape<{
+          style: PrimitiveUnionSchema<
+            LiteralSchema<'normal'> | LiteralSchema<'h1'>
+          >
+        }>
+      >
+    >()
+  })
+
+  test('options typed as BlockOptions', () => {
+    const options: BlockOptions = {}
+    const Block = block(options)
+    expectTypeOf<Infer<typeof Block>['_type']>().toEqualTypeOf<string>()
+    expectTypeOf<Infer<typeof Block>['style']>().toEqualTypeOf<
+      string | undefined
+    >()
+    // Any inline type is allowed, so a child can be any object
+    expectTypeOf<Infer<typeof Block>['children']>().toEqualTypeOf<
+      {[x: string]: any}[]
+    >()
+  })
+
+  test('an option set to undefined is left out', () => {
+    const Block = block({style: undefined, _type: literal('textBlock')})
+    expectTypeOf<Infer<typeof Block>['_type']>().toEqualTypeOf<'textBlock'>()
+    expectTypeOf<Infer<typeof Block>['style']>().toEqualTypeOf<
+      string | undefined
+    >()
   })
 
   test('images and references inline and as annotations', () => {
