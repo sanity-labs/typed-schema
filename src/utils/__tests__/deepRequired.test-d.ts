@@ -1,10 +1,12 @@
 import {assert, assertType, expectTypeOf, test} from 'vitest'
 
+import {document} from '../../creators/document'
 import {lazy} from '../../creators/lazy'
 import {literal} from '../../creators/literal'
 import {object} from '../../creators/object'
 import {optional} from '../../creators/optional'
 import {string} from '../../creators/string'
+import {union} from '../../creators/union'
 import {
   type Infer,
   type SanityBoolean,
@@ -17,6 +19,7 @@ import {
   type SanityObjectUnion,
   type SanityOptional,
   type SanityString,
+  type SanityDocumentUnion,
 } from '../../defs'
 import {parse} from '../../parse'
 import {type DeepRequired, deepRequired} from '../deepRequired'
@@ -211,4 +214,13 @@ test('deep required on circular object type', () => {
       parent: {_type: 'person'; name: string}
     }
   }>()
+})
+
+test('DeepRequired of a union of documents is a union of the transformed documents', () => {
+  const Author = document({_type: literal('author'), name: string()})
+  const Book = document({_type: literal('book'), title: string()})
+  const Docs = union([Author, Book])
+  expectTypeOf(deepRequired(Docs)).toEqualTypeOf<
+    SanityDocumentUnion<DeepRequired<typeof Author> | DeepRequired<typeof Book>>
+  >()
 })

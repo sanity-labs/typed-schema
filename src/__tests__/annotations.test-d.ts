@@ -151,7 +151,7 @@ test('invalid annotations report why', () => {
   >().toEqualTypeOf<'primitiveArray() elements must be primitives, literals or unions of these'>()
   expectTypeOf<
     ReferenceTargetError<SanityObject>
-  >().toEqualTypeOf<'reference() target must be a document schema'>()
+  >().toEqualTypeOf<'reference() target must be a document schema or a union() of document schemas'>()
   expectTypeOf<
     InvalidAnnotations<'union'>
   >().toEqualTypeOf<'union() annotations are invalid: examples must be values of the schema and keys must be title, description, guidelines, examples, deprecated or readOnly'>()

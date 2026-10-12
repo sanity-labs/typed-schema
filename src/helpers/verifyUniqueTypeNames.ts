@@ -1,6 +1,7 @@
 import {
   isBlockSchema,
   isDocumentSchema,
+  isDocumentUnionSchema,
   isFileSchema,
   isImageSchema,
   isNeverSchema,
@@ -108,8 +109,8 @@ function walk(schema: SanityType): Map<string, FoundTypeName> {
       visit(current.type, path)
     } else if (isObjectArraySchema(current)) {
       visit(current.element, path)
-    } else if (isObjectUnionSchema(current)) {
-      for (const member of current.union) {
+    } else if (isObjectUnionSchema(current) || isDocumentUnionSchema(current)) {
+      for (const member of current.union as SanityType[]) {
         visitUnionMember(member, path)
       }
     } else if (isObjectSchema(current) || isDocumentSchema(current)) {

@@ -2,6 +2,7 @@ import {
   isBooleanSchema,
   isDateSchema,
   isDateTimeSchema,
+  isDocumentUnionSchema,
   isEnumSchema,
   isLiteralSchema,
   isNeverSchema,
@@ -19,8 +20,6 @@ import {
   REF_SCHEMA,
   type OutputOf,
   type Parsed,
-  type SanityAsset,
-  type SanityBlock,
   type SanityBoolean,
   type SanityDate,
   type SanityDateTime,
@@ -37,7 +36,6 @@ import {
   type SanityReference,
   type SanityString,
   type SanityType,
-  type SanityTypedObject,
 } from './defs'
 import {defineNonEnumerableGetter} from './helpers/defineNonEnumerableGetter'
 import {getLazySchema} from './helpers/getLazySchema'
@@ -198,8 +196,8 @@ function parseInternal<T extends SanityType>(
   if (isPrimitiveArraySchema(schema)) {
     return parsePrimitiveArray(schema, input) as any
   }
-  if (isObjectUnionSchema(schema)) {
-    return parseObjectUnion(schema, input) as any
+  if (isObjectUnionSchema(schema) || isDocumentUnionSchema(schema)) {
+    return parseObjectUnion(schema as SanityObjectUnion, input) as any
   }
   if (isPrimitiveUnionSchema(schema)) {
     return parsePrimitiveUnion(schema, input) as any
@@ -601,22 +599,32 @@ function parseEnum<S extends SanityEnum>(
 }
 
 /**
- * The member of an object union whose `_type` literal is `typeName`, looked up
- * through nested unions so the result is never itself a union.
+ * The member of an object union, or a union of documents, whose `_type`
+ * literal is `typeName`. Looked up through nested unions, so the result is
+ * never itself a union, and through lazy members (a union of documents can
+ * have them, for documents that reference themselves).
  */
 function findUnionSchemaForType(
   unionSchema: SanityObjectUnion,
   typeName: string,
-): SanityTypedObject | SanityReference | SanityBlock | SanityAsset | undefined {
-  for (const member of unionSchema.union) {
+): SanityType | undefined {
+  for (const member of unionSchema.union as SanityType[]) {
     if (isNeverSchema(member)) continue
-    if (isObjectUnionSchema(member)) {
-      const found = findUnionSchemaForType(member, typeName)
+    const resolved = getLazySchema(member)
+    if (isObjectUnionSchema(resolved) || isDocumentUnionSchema(resolved)) {
+      const found = findUnionSchemaForType(
+        resolved as SanityObjectUnion,
+        typeName,
+      )
       if (found) return found
       continue
     }
-    const typeLiteral = member.shape._type
-    if (isLiteralSchema(typeLiteral) && typeLiteral.value === typeName) {
+    const typeLiteral = (resolved as SanityObjectLike).shape?._type
+    if (
+      typeLiteral !== undefined &&
+      isLiteralSchema(typeLiteral) &&
+      typeLiteral.value === typeName
+    ) {
       return member
     }
   }

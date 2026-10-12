@@ -1,14 +1,20 @@
+import {isPrimitiveUnionSchema} from '../asserters'
 import {
   type OutputOf,
   type SanityDocumentKind,
   type SanityLazy,
   type SanityKind,
   type SanityReference,
-  type SanityReferenceTarget,
+  type SanityReferenceTargets,
   type SanityType,
   type SchemaAnnotations,
 } from '../defs'
 import {defineType} from '../helpers/defineType'
+import {
+  assertDistinctTargetTypes,
+  assertDocumentTargets,
+  listReferenceTargets,
+} from '../helpers/referenceTargets'
 import {
   type AnnotationsError,
   type ReferenceTargetError,
@@ -39,7 +45,19 @@ export function reference<RefType extends SanityLazy<SanityDocumentKind>>(
   to: RefType,
   annotations?: NoInfer<SchemaAnnotations<OutputOf<SanityReference<RefType>>>>,
 ): SanityReference<RefType>
-// A schema annotated by its value (`const Person: SanityType<Person> = ...`)
+// A union of documents. A reference value does not say which type of
+// document it points to, so `loadReference` picks the union member whose
+// `_type` matches the loaded document. This overload matches on `typeName`
+// alone and comes before the next one, because comparing a union's output
+// would read the getters of a member that references itself while TypeScript
+// is still inferring it, which fails as a circularity error.
+export function reference<
+  RefType extends SanityType & {typeName: 'documentUnion'},
+>(
+  to: RefType,
+  annotations?: NoInfer<SchemaAnnotations<OutputOf<SanityReference<RefType>>>>,
+): SanityReference<RefType>
+// A schema typed by its value (`const Person: SanityType<Person> = ...`)
 // has `typeName: string`. Requiring that, directly or inside `lazy()`, keeps
 // out object schemas, whose output is also assignable to `SanityDocumentValue`
 // when they have a `_type`.
@@ -56,9 +74,18 @@ export function reference<RefType extends SanityKind>(
   annotations?: AnnotationsError<'reference'>,
 ): never
 export function reference(
-  to: SanityReferenceTarget,
+  to: SanityReferenceTargets,
   annotations?: any,
-): SanityReference<SanityReferenceTarget> {
+): SanityReference {
+  // `union([])` is a primitive union at runtime, since it has no members
+  if (isPrimitiveUnionSchema(to) && to.union.length === 0) {
+    throw new Error(
+      'reference() needs a union() with at least one document schema',
+    )
+  }
+  const targets = listReferenceTargets(to)
+  assertDocumentTargets(targets)
+  assertDistinctTargetTypes(targets)
   return defineType(
     {
       typeName: 'reference',

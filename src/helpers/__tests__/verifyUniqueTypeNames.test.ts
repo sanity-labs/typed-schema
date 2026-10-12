@@ -360,3 +360,13 @@ test('finds duplicates inside recursive schemas', () => {
   `,
   )
 })
+
+test('checks the documents in a union of documents', () => {
+  const Author = document({_type: literal('author'), name: string()})
+  const OtherAuthor = document({_type: literal('author'), fullName: string()})
+  expect(() =>
+    verifyUniqueTypeNames(
+      object({subjects: union([Author, lazy(() => OtherAuthor)])}),
+    ),
+  ).toThrow(DuplicateTypeNameError)
+})

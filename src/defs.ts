@@ -244,6 +244,19 @@ export interface SanityObjectUnion<
   output: OutputOf<Def>
   readonly '~standard': StandardProps<OutputOf<Def>>
 }
+/**
+ * A `union()` of documents: the target of a reference to several document
+ * types, or the schema of a value that is one of several documents, such as
+ * a query result. Members are documents or `lazy()` documents.
+ */
+export interface SanityDocumentUnion<
+  Def extends SanityDocumentUnionMemberKind = SanityDocumentUnionMemberKind,
+> extends SanityType {
+  typeName: 'documentUnion'
+  union: Def[]
+  output: OutputOf<Def>
+  readonly '~standard': StandardProps<OutputOf<Def>>
+}
 export interface SanityPrimitiveUnion<
   Def extends SanityPrimitive | SanityLiteral | SanityNever =
     | SanityPrimitive
@@ -310,9 +323,13 @@ export interface SanityLazy<T extends SanityType> extends SanityType {
 }
 
 export interface SanityReference<
-  RefType extends SanityReferenceTarget = SanityReferenceTarget,
+  RefType extends SanityReferenceTargets = SanityReferenceTargets,
 > extends SanityType<WithRefTypeDef<RefType>> {
   typeName: 'reference'
+  /**
+   * The schema of the referenced document, or, for a reference to several
+   * document types, a `union()` of their schemas
+   */
   referenceType: RefType
 
   shape: SanityReferenceShape
@@ -400,6 +417,11 @@ export type SanityObjectUnionKind = SanityType & {
   typeName: 'union'
   union: SanityObjectUnionMemberKind[]
 }
+/** Constraint matching schemas by `typeName` only, see the top of this file */
+export type SanityDocumentUnionKind = SanityType & {
+  typeName: 'documentUnion'
+  union: SanityDocumentUnionMemberKind[]
+}
 /** Constraint matching any schema by `typeName` only, see the top of this file */
 export type SanityKind = {typeName: string}
 /** Constraint matching schemas by `typeName` only, see the top of this file */
@@ -413,6 +435,22 @@ export type SanityDocumentKind = SanityType & {typeName: 'document'}
 export type SanityReferenceTarget =
   | SanityDocumentKind
   | SanityType<SanityDocumentValue>
+
+/**
+ * What `reference()` accepts: one {@link SanityReferenceTarget}, or a
+ * `union()` of documents for a reference to several document types
+ */
+export type SanityReferenceTargets =
+  | SanityReferenceTarget
+  | SanityDocumentUnionKind
+
+/**
+ * Constraint for the members of a {@link SanityDocumentUnion}. Matches by
+ * `typeName`, never by output; see the top of this file.
+ */
+export type SanityDocumentUnionMemberKind =
+  | SanityDocumentKind
+  | SanityLazy<SanityDocumentKind>
 
 /**
  * Constraint for what Portable Text allows besides blocks and spans: the
@@ -534,11 +572,11 @@ export type WithDocumentShape<Shape> = Flatten<
 export const REF_SCHEMA = '$refSchema' as const
 
 export interface Conceal<T> {
-  /** The schema of the referenced document. Only values returned by `parse` have it; see {@link REF_SCHEMA}. */
+  /** The schema of the referenced document, or a `union()` of the documents it may point to. Only values returned by `parse` have it; see {@link REF_SCHEMA}. */
   [REF_SCHEMA]: T
 }
 
-export type WithRefTypeDef<RefType extends SanityReferenceTarget> = Flatten<
+export type WithRefTypeDef<RefType extends SanityReferenceTargets> = Flatten<
   ReferenceBase & Conceal<RefType>
 >
 

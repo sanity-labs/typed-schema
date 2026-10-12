@@ -7,6 +7,7 @@ import {
   isDateSchema,
   isDateTimeSchema,
   isDocumentSchema,
+  isDocumentUnionSchema,
   isEnumSchema,
   isLiteralSchema,
   isNeverSchema,
@@ -37,6 +38,7 @@ import {
   getAnnotations,
 } from '../../helpers/annotations'
 import {getLazySchema} from '../../helpers/getLazySchema'
+import {listReferenceTargets} from '../../helpers/referenceTargets'
 
 export type ToClassicSchemaOptions = GetAnnotationsOptions
 
@@ -147,6 +149,11 @@ function convertItemType(
   context: Context,
 ): classic.ArrayOfType | classic.ArrayOfType[] {
   const schema = getLazySchema(lazySchema)
+  if (isDocumentUnionSchema(schema)) {
+    throw new Error(
+      'A union() of documents can only be a reference() target in a classic schema, e.g. reference(union([Author, Book]))',
+    )
+  }
   if (isAssetSchema(schema)) {
     return assetToClassicSchema(schema, context) as classic.ArrayOfType
   }
@@ -221,6 +228,11 @@ function convertFieldType(
   const schema = getLazySchema(lazySchema)
   if (isOptionalSchema(schema)) {
     return convertFieldType(fieldName, schema.type, context)
+  }
+  if (isDocumentUnionSchema(schema)) {
+    throw new Error(
+      'A union() of documents can only be a reference() target in a classic schema, e.g. reference(union([Author, Book]))',
+    )
   }
 
   if (isObjectSchema(schema)) {
@@ -409,15 +421,21 @@ function fieldNames(schema: SanityObjectLike) {
 }
 
 function referenceToClassicSchema(schema: SanityReference) {
-  const referenceType = getLazySchema(schema.referenceType)
-  if (!isDocumentSchema(referenceType)) {
-    throw new Error('References can only reference documents, not other types')
-  }
-  const typeLiteral = referenceType.shape._type
-  if (!isLiteralSchema(typeLiteral)) {
-    throw new Error('References can only reference named document types')
-  }
-  return {type: 'reference', to: {type: typeLiteral.value}}
+  const to = listReferenceTargets(schema.referenceType).map(target => {
+    const referenceType = getLazySchema(target)
+    if (!isDocumentSchema(referenceType)) {
+      throw new Error(
+        'References can only reference documents, not other types',
+      )
+    }
+    const typeLiteral = referenceType.shape._type
+    if (!isLiteralSchema(typeLiteral)) {
+      throw new Error('References can only reference named document types')
+    }
+    return typeLiteral.value
+  })
+  const types = Array.from(new Set(to), type => ({type}))
+  return {type: 'reference', to: types.length === 1 ? types[0] : types}
 }
 function blockToClassicSchema<S extends SanityBlock>(
   schema: S,

@@ -1,4 +1,5 @@
 import {
+  isDocumentUnionSchema,
   isItemObjectArrayCompatible,
   isNeverSchema,
   isObjectUnionSchema,
@@ -169,6 +170,11 @@ export function array(
     | SanityPrimitiveUnion,
   annotations?: any,
 ) {
+  if (isDocumentUnionSchema(elementSchema)) {
+    throw new Error(
+      'array() elements cannot be a union() of documents. For references to several document types, use array(reference(union([...])))',
+    )
+  }
   return isItemObjectArrayCompatible(elementSchema)
     ? objectArray(elementSchema, annotations)
     : primitiveArray(elementSchema, annotations)
