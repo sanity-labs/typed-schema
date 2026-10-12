@@ -9,10 +9,10 @@ import {object} from '../creators/object'
 import {optional} from '../creators/optional'
 import {string} from '../creators/string'
 import {
-  type SanityAny,
-  type SanityLiteral,
-  type SanityNumber,
-  type SanityString,
+  type LiteralSchema,
+  type NumberSchema,
+  type Schema,
+  type StringSchema,
 } from '../defs'
 import {
   type FieldErrors,
@@ -63,13 +63,13 @@ test('a non-schema value next to a getter field is rejected', () => {
 })
 
 test('optional fields of a typed shape are checked', () => {
-  const invalid: {_type: SanityLiteral<'x'>; foo?: string} = {
+  const invalid: {_type: LiteralSchema<'x'>; foo?: string} = {
     _type: literal('x'),
   }
   // @ts-expect-error - foo is not a schema
   object(invalid)
 
-  const valid: {_type: SanityLiteral<'x'>; foo?: SanityString} = {
+  const valid: {_type: LiteralSchema<'x'>; foo?: StringSchema} = {
     _type: literal('x'),
   }
   object(valid)
@@ -151,9 +151,9 @@ test('invalid field names map to a SchemaError with the message', () => {
   expectTypeOf<
     InvalidFieldNames<
       {
-        _type: SanityLiteral<'x'>
-        name: SanityString
-        'e-mail': SanityString
+        _type: LiteralSchema<'x'>
+        name: StringSchema
+        'e-mail': StringSchema
       },
       '_type'
     >
@@ -164,11 +164,11 @@ test('invalid field names map to a SchemaError with the message', () => {
 
 test('fields that are not schemas map to a SchemaError with the message', () => {
   type Errors = FieldErrors<
-    {_type: SanityLiteral<'x'>; name: SanityString; foo: string},
+    {_type: LiteralSchema<'x'>; name: StringSchema; foo: string},
     '_type'
   >
   expectTypeOf<Errors['foo']>().toEqualTypeOf<
-    SanityAny | SchemaError<"Field 'foo' is not a schema">
+    Schema | SchemaError<"Field 'foo' is not a schema">
   >()
   expectTypeOf<keyof Errors>().toEqualTypeOf<'foo'>()
 
@@ -200,20 +200,20 @@ test('a document needs a _type literal and a string _id', () => {
 
 test('invalid document system fields map to a SchemaError with the message', () => {
   expectTypeOf<
-    SystemFieldErrors<{_type: SanityString; _id: SanityNumber}>
+    SystemFieldErrors<{_type: StringSchema; _id: NumberSchema}>
   >().toEqualTypeOf<{
     _type: SchemaError<"document() field '_type' must be a string literal(), e.g. literal('post')">
     _id: SchemaError<"document() field '_id' must be string() or a string literal()">
   }>()
   expectTypeOf<
-    RequireTypeField<{title: SanityString}>['_type']
+    RequireTypeField<{title: StringSchema}>['_type']
   >().toEqualTypeOf<
     SchemaError<"document() needs a _type field, e.g. _type: literal('post')">
   >()
   expectTypeOf<
-    keyof SystemFieldErrors<{_type: SanityLiteral<'x'>; _id: SanityString}>
+    keyof SystemFieldErrors<{_type: LiteralSchema<'x'>; _id: StringSchema}>
   >().toBeNever()
   expectTypeOf<
-    RequireTypeField<{_type: SanityLiteral<'x'>}>
+    RequireTypeField<{_type: LiteralSchema<'x'>}>
   >().toEqualTypeOf<unknown>()
 })

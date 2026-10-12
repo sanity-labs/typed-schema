@@ -11,7 +11,7 @@ import {object} from '../creators/object'
 import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
-import {REF_SCHEMA, type SanityType} from '../defs'
+import {REF_SCHEMA, type Schema} from '../defs'
 import {parse} from '../parse'
 
 test('typed object union excludes never types', () => {
@@ -44,7 +44,7 @@ describe('a union with several references', () => {
   const Link = object({_type: literal('link'), href: string()})
   const Quote = object({_type: literal('quote'), text: string()})
 
-  function targetsOf(schema: SanityType) {
+  function targetsOf(schema: Schema) {
     assert(isReferenceSchema(schema))
     const targets = schema.referenceType
     assert(isDocumentUnionSchema(targets))
@@ -152,7 +152,7 @@ test('a union of documents parses each document against its own schema', () => {
   expect(invalid.error.issues.map(issue => issue.path)).toContainEqual(['name'])
 })
 
-function targetsOfSchema(schema: SanityType) {
+function targetsOfSchema(schema: Schema) {
   assert(isDocumentUnionSchema(schema))
   return schema.union
 }

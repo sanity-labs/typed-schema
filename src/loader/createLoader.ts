@@ -1,7 +1,7 @@
-import {type Parsed, type SanityDocumentType, type SanityType} from '../defs'
+import {type DocumentSchemaOf, type Parsed, type Schema} from '../defs'
 import {type ElementType} from '../helpers/utilTypes'
 import {type Committed} from '../lifecycle'
-import {type SanityDocumentValue} from '../shapeDefs'
+import {type DocumentValue} from '../shapeDefs'
 import {createDocumentLoader, type MaybeLazy} from './createDocumentLoader'
 import {
   createReferenceLoader,
@@ -16,15 +16,13 @@ export function createLoader(
   const loadReference = createReferenceLoader(fetchImpl)
 
   function loadReferences<
-    RefArray extends Array<
-      ReferenceWithOptionalRefType<SanityType<SanityDocumentValue>>
-    >,
+    RefArray extends Array<ReferenceWithOptionalRefType<Schema<DocumentValue>>>,
   >(references: RefArray): Promise<LoadedReference<ElementType<RefArray>>[]> {
     return Promise.all(references.map(loadReference)) as any
   }
 
   function loadDocuments<
-    DocumentSchema extends SanityDocumentType<SanityDocumentValue>,
+    DocumentSchema extends DocumentSchemaOf<DocumentValue>,
   >(
     schema: MaybeLazy<DocumentSchema>,
     ids: string[],

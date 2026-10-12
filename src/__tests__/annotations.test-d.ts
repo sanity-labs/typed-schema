@@ -14,14 +14,14 @@ import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {
   type AnnotationText,
+  type DocumentSchema,
   type ExampleValue,
   type Infer,
-  type SanityDocument,
-  type SanityLiteral,
-  type SanityNumber,
-  type SanityObject,
-  type SanityString,
+  type LiteralSchema,
+  type NumberSchema,
+  type ObjectSchema,
   type SchemaAnnotations,
+  type StringSchema,
 } from '../defs'
 import {getAnnotations} from '../helpers/annotations'
 import {
@@ -34,11 +34,11 @@ import {
 import {parseOrThrow} from '../parse'
 
 test('annotations do not change the schema type', () => {
-  expectTypeOf(string({description: 'x'})).toEqualTypeOf<SanityString>()
-  expectTypeOf(number({min: 1, description: 'x'})).toEqualTypeOf<SanityNumber>()
-  expectTypeOf(safeint({description: 'x'})).toEqualTypeOf<SanityNumber>()
+  expectTypeOf(string({description: 'x'})).toEqualTypeOf<StringSchema>()
+  expectTypeOf(number({min: 1, description: 'x'})).toEqualTypeOf<NumberSchema>()
+  expectTypeOf(safeint({description: 'x'})).toEqualTypeOf<NumberSchema>()
   expectTypeOf(object({name: string()}, {description: 'x'})).toEqualTypeOf<
-    SanityObject<{name: SanityString}>
+    ObjectSchema<{name: StringSchema}>
   >()
 })
 
@@ -130,27 +130,27 @@ test('examples are checked against the output type', () => {
 
 test('invalid annotations report why', () => {
   // valid first arguments resolve the catch-all's message to the annotations
-  expectTypeOf<ArrayElementError<SanityString>>().toEqualTypeOf<
+  expectTypeOf<ArrayElementError<StringSchema>>().toEqualTypeOf<
     InvalidAnnotations<'array'>
   >()
   expectTypeOf<
-    ObjectArrayElementError<SanityObject<{_type: SanityLiteral<'x'>}>>
+    ObjectArrayElementError<ObjectSchema<{_type: LiteralSchema<'x'>}>>
   >().toEqualTypeOf<InvalidAnnotations<'objectArray'>>()
-  expectTypeOf<PrimitiveArrayElementError<SanityString>>().toEqualTypeOf<
+  expectTypeOf<PrimitiveArrayElementError<StringSchema>>().toEqualTypeOf<
     InvalidAnnotations<'primitiveArray'>
   >()
-  expectTypeOf<ReferenceTargetError<SanityDocument>>().toEqualTypeOf<
+  expectTypeOf<ReferenceTargetError<DocumentSchema>>().toEqualTypeOf<
     InvalidAnnotations<'reference'>
   >()
   // invalid first arguments keep their own message
   expectTypeOf<
-    ObjectArrayElementError<SanityString>
+    ObjectArrayElementError<StringSchema>
   >().toEqualTypeOf<'objectArray() elements must be objects, references, blocks, images, files or unions of these'>()
   expectTypeOf<
-    PrimitiveArrayElementError<SanityObject>
+    PrimitiveArrayElementError<ObjectSchema>
   >().toEqualTypeOf<'primitiveArray() elements must be primitives, literals or unions of these'>()
   expectTypeOf<
-    ReferenceTargetError<SanityObject>
+    ReferenceTargetError<ObjectSchema>
   >().toEqualTypeOf<'reference() target must be a document schema or a union() of document schemas'>()
   expectTypeOf<
     InvalidAnnotations<'union'>

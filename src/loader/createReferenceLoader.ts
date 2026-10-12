@@ -1,10 +1,10 @@
 import {
   type Conceal,
+  type ObjectSchema,
   type OutputOf,
   type Parsed,
   REF_SCHEMA,
-  type SanityObject,
-  type SanityType,
+  type Schema,
 } from '../defs'
 import {getLazySchema} from '../helpers/getLazySchema'
 import {inspect} from '../helpers/inspect'
@@ -19,8 +19,8 @@ import {type Committed, committed} from '../lifecycle'
 import {ParseError, type ParseOk, type ParseResult, parse} from '../parse'
 import {
   DocumentBase,
+  type DocumentValue,
   type ReferenceBase,
-  type SanityDocumentValue,
 } from '../shapeDefs'
 
 export type DocumentLike = OutputOf<typeof DocumentBase>
@@ -47,13 +47,11 @@ const NO_REF: Promise<ParseOk<any>> = Promise.resolve({
  * base document schema, so only the system fields are parsed.
  */
 export type ReferencedSchema<
-  RefValue extends ReferenceWithOptionalRefType<
-    SanityType<SanityDocumentValue>
-  >,
+  RefValue extends ReferenceWithOptionalRefType<Schema<DocumentValue>>,
 > = RefValue extends {[REF_SCHEMA]?: infer Ref}
   ? Ref extends {typeName: 'documentUnion'; union: readonly (infer Member)[]}
-    ? Extract<Member, SanityType<SanityDocumentValue>>
-    : Ref extends SanityType<SanityDocumentValue>
+    ? Extract<Member, Schema<DocumentValue>>
+    : Ref extends Schema<DocumentValue>
       ? Ref
       : typeof DocumentBase
   : typeof DocumentBase
@@ -64,9 +62,7 @@ export type ReferencedSchema<
  * For a reference to a `union()` of documents, a union of those documents.
  */
 export type LoadedReference<
-  RefValue extends ReferenceWithOptionalRefType<
-    SanityType<SanityDocumentValue>
-  >,
+  RefValue extends ReferenceWithOptionalRefType<Schema<DocumentValue>>,
 > = Parsed<Committed<ReferencedSchema<RefValue>>>
 
 /** `"a"`, `"a" or "b"`, `"a", "b" or "c"` */
@@ -82,10 +78,7 @@ function formatChoices(values: unknown[]): string {
  * `ParseError` if none does. With a single target, returns it without
  * checking `_type`, so parsing reports what is wrong with the input.
  */
-function findTarget(
-  targets: SanityType[],
-  input: unknown,
-): SanityType | ParseError {
+function findTarget(targets: Schema[], input: unknown): Schema | ParseError {
   if (targets.length === 1) {
     return targets[0]!
   }
@@ -118,9 +111,7 @@ export function createLoadReferenceResult(
   fetch: (id: string, fieldSelection: string[]) => Promise<unknown>,
 ) {
   return function loadReferenceResult<
-    RefValue extends ReferenceWithOptionalRefType<
-      SanityType<SanityDocumentValue>
-    >,
+    RefValue extends ReferenceWithOptionalRefType<Schema<DocumentValue>>,
   >(
     reference: RefValue,
     fieldSelection?: Extract<keyof LoadedReference<RefValue>, string>[],
@@ -155,7 +146,7 @@ export function createLoadReferenceResult(
       Array.from(
         new Set(
           targets.flatMap(target =>
-            Object.keys((target as SanityObject).shape),
+            Object.keys((target as ObjectSchema).shape),
           ),
         ),
       )
@@ -174,9 +165,7 @@ export function createReferenceLoader(
   const loadReferenceResult = createLoadReferenceResult(fetch)
 
   return function loadReference<
-    RefValue extends ReferenceWithOptionalRefType<
-      SanityType<SanityDocumentValue>
-    >,
+    RefValue extends ReferenceWithOptionalRefType<Schema<DocumentValue>>,
   >(reference: RefValue): Promise<LoadedReference<RefValue>> {
     return loadReferenceResult(reference).then(result =>
       result.ok ? result.value : Promise.reject(result.error),

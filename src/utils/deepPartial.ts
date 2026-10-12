@@ -14,29 +14,29 @@ import {object} from '../creators/object'
 import {optional} from '../creators/optional'
 import {union} from '../creators/union'
 import {
+  type DocumentSchema,
+  type DocumentUnionMemberKind,
+  type DocumentUnionSchema,
+  type LazySchema,
+  type ObjectArraySchema,
+  type ObjectSchema,
+  type ObjectSchemaOf,
+  type ObjectShape,
+  type ObjectUnionMemberKind,
+  type ObjectUnionSchema,
+  type OptionalSchema,
   type OutputOf,
-  type SanityDocument,
-  type SanityDocumentUnion,
-  type SanityDocumentUnionMemberKind,
-  type SanityLazy,
-  type SanityObject,
-  type SanityObjectArray,
-  type SanityObjectShape,
-  type SanityObjectType,
-  type SanityObjectUnion,
-  type SanityObjectUnionMemberKind,
-  type SanityOptional,
-  type SanityType,
+  type Schema,
 } from '../defs'
 import {inheritAnnotations} from '../helpers/annotations'
 import {getLazySchema} from '../helpers/getLazySchema'
 import {type Combine, type ExtendsNever} from '../helpers/utilTypes'
 
-export type MaybeOptionalType<T extends SanityType> =
-  T extends SanityOptional<any> ? T : SanityOptional<T>
+export type MaybeOptionalType<T extends Schema> =
+  T extends OptionalSchema<any> ? T : OptionalSchema<T>
 
 export type PartialShape<
-  S extends SanityObjectShape,
+  S extends ObjectShape,
   Except extends keyof S = never,
 > = {
   [K in keyof S]: ExtendsNever<Except> extends true
@@ -48,7 +48,7 @@ export type PartialShape<
 
 /**
  * Value-level counterpart of {@link DeepPartial}, used where a schema carries
- * no shape to transform (`SanityObjectType<Value>`). Not exported: express a
+ * no shape to transform (`ObjectSchemaOf<Value>`). Not exported: express a
  * partial value as `Infer<DeepPartial<typeof Obj>>`.
  */
 type DeepPartialValue<T> = T extends {_type: string}
@@ -60,35 +60,35 @@ type DeepPartialValue<T> = T extends {_type: string}
     >
   : {[P in keyof T]?: DeepPartialValue<T[P]>}
 
-export type DeepPartialObject<S extends SanityObject | SanityDocument> =
-  S extends SanityObject<infer Shape extends SanityObjectShape>
-    ? SanityObjectShape extends Shape
-      ? SanityObjectType<DeepPartialValue<OutputOf<S>>>
-      : SanityObject<PartialShape<Shape, '_type'>>
-    : S extends SanityDocument<infer Shape extends SanityObjectShape>
-      ? SanityDocument<PartialShape<Shape, '_type'>>
+export type DeepPartialObject<S extends ObjectSchema | DocumentSchema> =
+  S extends ObjectSchema<infer Shape extends ObjectShape>
+    ? ObjectShape extends Shape
+      ? ObjectSchemaOf<DeepPartialValue<OutputOf<S>>>
+      : ObjectSchema<PartialShape<Shape, '_type'>>
+    : S extends DocumentSchema<infer Shape extends ObjectShape>
+      ? DocumentSchema<PartialShape<Shape, '_type'>>
       : never
 
-export type DeepPartial<S extends SanityType> =
-  S extends SanityOptional<any>
+export type DeepPartial<S extends Schema> =
+  S extends OptionalSchema<any>
     ? S
-    : S extends SanityLazy<infer T>
-      ? SanityLazy<DeepPartial<T>>
-      : S extends SanityObject | SanityDocument
+    : S extends LazySchema<infer T>
+      ? LazySchema<DeepPartial<T>>
+      : S extends ObjectSchema | DocumentSchema
         ? DeepPartialObject<S>
-        : S extends SanityObjectUnion<infer UnionTypes>
-          ? SanityObjectUnion<
-              Extract<DeepPartial<UnionTypes>, SanityObjectUnionMemberKind>
+        : S extends ObjectUnionSchema<infer UnionTypes>
+          ? ObjectUnionSchema<
+              Extract<DeepPartial<UnionTypes>, ObjectUnionMemberKind>
             >
-          : S extends SanityDocumentUnion<infer UnionTypes>
-            ? SanityDocumentUnion<
-                Extract<DeepPartial<UnionTypes>, SanityDocumentUnionMemberKind>
+          : S extends DocumentUnionSchema<infer UnionTypes>
+            ? DocumentUnionSchema<
+                Extract<DeepPartial<UnionTypes>, DocumentUnionMemberKind>
               >
-            : S extends SanityObjectArray<infer ElementType>
-              ? SanityObjectArray<DeepPartial<ElementType>>
+            : S extends ObjectArraySchema<infer ElementType>
+              ? ObjectArraySchema<DeepPartial<ElementType>>
               : S
 
-function partialShape(shape: SanityObjectShape): SanityObjectShape {
+function partialShape(shape: ObjectShape): ObjectShape {
   return Object.fromEntries(
     Object.entries(shape).map(([key, propSchema]) => [
       key,
@@ -102,9 +102,9 @@ function partialShape(shape: SanityObjectShape): SanityObjectShape {
 // Cached by input schema, so transforming a recursive schema gives a recursive
 // schema: resolving a transformed getter field returns the transformed schema
 // it is part of, not a fresh copy at every level
-const cache = new WeakMap<SanityType, SanityType>()
+const cache = new WeakMap<Schema, Schema>()
 
-export function deepPartial<S extends SanityType>(schema: S): DeepPartial<S> {
+export function deepPartial<S extends Schema>(schema: S): DeepPartial<S> {
   let result = cache.get(schema)
   if (result === undefined) {
     result = transform(schema)
@@ -113,7 +113,7 @@ export function deepPartial<S extends SanityType>(schema: S): DeepPartial<S> {
   return result as any
 }
 
-function transform(schema: SanityType): SanityType {
+function transform(schema: Schema): Schema {
   if (isOptionalSchema(schema)) {
     return optional(deepPartial(schema.type)) as any
   }
@@ -136,7 +136,7 @@ function transform(schema: SanityType): SanityType {
   if (isObjectUnionSchema(schema) || isDocumentUnionSchema(schema)) {
     return inheritAnnotations(
       union(
-        (schema.union as SanityType[]).map(unionSchema =>
+        (schema.union as Schema[]).map(unionSchema =>
           deepPartial(unionSchema),
         ) as any,
       ),

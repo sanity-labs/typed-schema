@@ -9,24 +9,24 @@ import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {
   type Infer,
-  type SanityLiteral,
-  type SanityNumber,
-  type SanityObjectArray,
-  type SanityObjectLikeKind,
-  type SanityObjectUnionKind,
-  type SanityPrimitive,
-  type SanityPrimitiveArray,
-  type SanityPrimitiveUnion,
-  type SanityString,
+  type LiteralSchema,
+  type NumberSchema,
+  type ObjectArraySchema,
+  type ObjectLikeKind,
+  type ObjectUnionKind,
+  type PrimitiveArraySchema,
+  type PrimitiveSchema,
+  type PrimitiveUnionSchema,
+  type StringSchema,
 } from '../defs'
 
 function table<
   CellType extends
-    | SanityObjectLikeKind
-    | SanityObjectUnionKind
-    | SanityPrimitive
-    | SanityPrimitiveUnion,
-  TypeName extends SanityLiteral<string> = SanityLiteral<'table'>,
+    | ObjectLikeKind
+    | ObjectUnionKind
+    | PrimitiveSchema
+    | PrimitiveUnionSchema,
+  TypeName extends LiteralSchema<string> = LiteralSchema<'table'>,
 >(options: {_type?: TypeName; cell: CellType}) {
   return object({
     _type: (options._type ?? literal('table')) as TypeName,
@@ -94,12 +94,12 @@ describe('array() with a generic element type', () => {
 
   test('concrete calls still resolve to the specific overloads', () => {
     const Price = object({_type: literal('price'), amount: number()})
-    expectTypeOf(array(Price)).toEqualTypeOf<SanityObjectArray<typeof Price>>()
+    expectTypeOf(array(Price)).toEqualTypeOf<ObjectArraySchema<typeof Price>>()
     expectTypeOf(array(string())).toEqualTypeOf<
-      SanityPrimitiveArray<SanityString>
+      PrimitiveArraySchema<StringSchema>
     >()
     expectTypeOf(array(number())).toEqualTypeOf<
-      SanityPrimitiveArray<SanityNumber>
+      PrimitiveArraySchema<NumberSchema>
     >()
   })
 })

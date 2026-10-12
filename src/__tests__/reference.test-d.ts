@@ -10,21 +10,21 @@ import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {
+  type DocumentSchema,
+  type DocumentSchemaOf,
+  type DocumentUnionSchema,
   type Infer,
+  type ObjectSchemaOf,
+  type ObjectUnionSchema,
   type Parsed,
-  type SanityDocument,
-  type SanityDocumentType,
-  type SanityDocumentUnion,
-  type SanityObjectType,
-  type SanityObjectUnion,
-  type SanityType,
+  type Schema,
 } from '../defs'
 import {
   type InvalidAnnotations,
   type ReferenceTargetError,
 } from '../helpers/schemaErrors'
 import {parse} from '../parse'
-import {type SanityDocumentValue} from '../shapeDefs'
+import {type DocumentValue} from '../shapeDefs'
 
 describe('reference type', () => {
   const Person = document({_type: literal('person'), name: string()})
@@ -78,10 +78,10 @@ describe('reference type', () => {
 
 describe('reference targets', () => {
   test('a document annotated by its value can be referenced', () => {
-    interface Person extends SanityDocumentValue {
+    interface Person extends DocumentValue {
       name: string
     }
-    const Person: SanityType<Person> = document({
+    const Person: Schema<Person> = document({
       _type: literal('person'),
       name: string(),
     })
@@ -98,10 +98,10 @@ describe('reference targets', () => {
   })
 
   test('a lazy document annotated by its value can be referenced', () => {
-    interface Person extends SanityDocumentValue {
+    interface Person extends DocumentValue {
       name: string
     }
-    const Person: SanityType<Person> = document({
+    const Person: Schema<Person> = document({
       _type: literal('person'),
       name: string(),
     })
@@ -129,7 +129,7 @@ describe('reference targets', () => {
     // @ts-expect-error - a lazy typed object is not a document
     reference(lazy(() => object({_type: literal('x'), title: string()})))
     // @ts-expect-error - a schema annotated as an object is not a document
-    reference({} as SanityObjectType<{_type: 'x'}>)
+    reference({} as ObjectSchemaOf<{_type: 'x'}>)
     // @ts-expect-error - a primitive is not a document
     reference(string())
     // @ts-expect-error - a primitive is not a document
@@ -154,41 +154,41 @@ describe('references to several document types', () => {
   test('the parsed type includes the union of targets', () => {
     const Ref = reference(union([Author, Book]))
     expectTypeOf<Parsed<typeof Ref>['$refSchema']>().toEqualTypeOf<
-      SanityDocumentUnion<typeof Author | typeof Book>
+      DocumentUnionSchema<typeof Author | typeof Book>
     >()
   })
 
   test('a union of references is a reference to a union', () => {
     const Ref = reference(union([Author, Book]))
     expectTypeOf(union([reference(Author), reference(Book)])).toEqualTypeOf<
-      SanityObjectUnion<typeof Ref>
+      ObjectUnionSchema<typeof Ref>
     >()
     expectTypeOf(
       union([reference(Author), Link, union([reference(Book), Link])]),
-    ).toEqualTypeOf<SanityObjectUnion<typeof Ref | typeof Link>>()
+    ).toEqualTypeOf<ObjectUnionSchema<typeof Ref | typeof Link>>()
     expectTypeOf(
       union([reference(union([Author, Book])), reference(Author)]),
-    ).toEqualTypeOf<SanityObjectUnion<typeof Ref>>()
+    ).toEqualTypeOf<ObjectUnionSchema<typeof Ref>>()
   })
 
   test('a union with one reference keeps it', () => {
     const AuthorRef = reference(Author)
     expectTypeOf(union([AuthorRef, Link])).toEqualTypeOf<
-      SanityObjectUnion<typeof AuthorRef | typeof Link>
+      ObjectUnionSchema<typeof AuthorRef | typeof Link>
     >()
   })
 
   test('a target typed by its value becomes a document type in the merged union', () => {
-    interface Person extends SanityDocumentValue {
+    interface Person extends DocumentValue {
       name: string
     }
-    const Person: SanityType<Person> = document({
+    const Person: Schema<Person> = document({
       _type: literal('person'),
       name: string(),
     })
     const Merged = union([reference(Person), reference(Book)])
     expectTypeOf<Parsed<typeof Merged>['$refSchema']>().toEqualTypeOf<
-      SanityDocumentUnion<SanityDocumentType<Person> | typeof Book>
+      DocumentUnionSchema<DocumentSchemaOf<Person> | typeof Book>
     >()
   })
 
@@ -231,25 +231,25 @@ describe('references to several document types', () => {
     // @ts-expect-error - a typed object is not a document
     reference(union([Author, Link]))
     expectTypeOf<
-      ReferenceTargetError<SanityObjectUnion<typeof Link>>
+      ReferenceTargetError<ObjectUnionSchema<typeof Link>>
     >().toEqualTypeOf<'reference() target must be a document schema or a union() of document schemas'>()
     expectTypeOf<
-      ReferenceTargetError<SanityDocumentUnion<SanityDocument>>
+      ReferenceTargetError<DocumentUnionSchema<DocumentSchema>>
     >().toEqualTypeOf<InvalidAnnotations<'reference'>>()
   })
 })
 
 test('a reference to a union of documents typed by their value equals the union of references', () => {
-  interface Person extends SanityDocumentValue {
+  interface Person extends DocumentValue {
     name: string
   }
-  const Person: SanityDocumentType<Person> = document({
+  const Person: DocumentSchemaOf<Person> = document({
     _type: literal('person'),
     name: string(),
   })
   const Book = document({_type: literal('book'), title: string()})
   const Ref = reference(union([Person, Book]))
   expectTypeOf(union([reference(Person), reference(Book)])).toEqualTypeOf<
-    SanityObjectUnion<typeof Ref>
+    ObjectUnionSchema<typeof Ref>
   >()
 })

@@ -11,11 +11,11 @@ import * as s from '@sanity-labs/typed-schema'
 
 function table<
   CellType extends
-    | s.SanityObjectLike
-    | s.SanityObjectUnion
-    | s.SanityPrimitive
-    | s.SanityPrimitiveUnion,
-  TypeName extends s.SanityLiteral<string> = s.SanityLiteral<'table'>,
+    | s.ObjectLikeSchema
+    | s.ObjectUnionSchema
+    | s.PrimitiveSchema
+    | s.PrimitiveUnionSchema,
+  TypeName extends s.LiteralSchema<string> = s.LiteralSchema<'table'>,
 >(options: {_type?: TypeName; cell: CellType}) {
   return s.object({
     _type: (options._type ?? s.literal('table')) as TypeName,
@@ -50,11 +50,11 @@ import * as s from '@sanity-labs/typed-schema'
 
 function table<
   CellType extends
-    | s.SanityObjectLike
-    | s.SanityObjectUnion
-    | s.SanityPrimitive
-    | s.SanityPrimitiveUnion,
-  TypeName extends s.SanityLiteral<string> = s.SanityLiteral<'table'>,
+    | s.ObjectLikeSchema
+    | s.ObjectUnionSchema
+    | s.PrimitiveSchema
+    | s.PrimitiveUnionSchema,
+  TypeName extends s.LiteralSchema<string> = s.LiteralSchema<'table'>,
 >(options: {_type?: TypeName; cell: CellType}) {
   return s.object({
     _type: (options._type ?? s.literal('table')) as TypeName,
@@ -66,8 +66,8 @@ function table<
 // table() is the creator from the example above
 
 function objectTable<
-  CellType extends s.SanityTypedObject | s.SanityObjectUnion,
-  TypeName extends s.SanityLiteral<string> = s.SanityLiteral<'table'>,
+  CellType extends s.TypedObjectSchema | s.ObjectUnionSchema,
+  TypeName extends s.LiteralSchema<string> = s.LiteralSchema<'table'>,
 >(options: {_type?: TypeName; cell: CellType}) {
   return table(options)
 }
@@ -108,7 +108,7 @@ type Contacts = s.Infer<typeof Contacts>
 
 ## Constrain options with schema types
 
-Give each schema option a type parameter constrained by one of the library's schema types, such as `SanityTypedObject` (an object with a `_type` literal), `SanityObjectUnion` (a union of those) or `SanityPrimitive` (a string, number, boolean, date, date-time or literal). The inferred type then follows whatever schema the caller passes, and passing the wrong kind of schema is a type error at the call site:
+Give each schema option a type parameter constrained by one of the library's schema types, such as `TypedObjectSchema` (an object with a `_type` literal), `ObjectUnionSchema` (a union of those) or `PrimitiveSchema` (a string, number, boolean, date, date-time or literal). The inferred type then follows whatever schema the caller passes, and passing the wrong kind of schema is a type error at the call site:
 
 ```ts twoslash
 // @errors: 2322
@@ -116,11 +116,11 @@ import * as s from '@sanity-labs/typed-schema'
 
 function table<
   CellType extends
-    | s.SanityObjectLike
-    | s.SanityObjectUnion
-    | s.SanityPrimitive
-    | s.SanityPrimitiveUnion,
-  TypeName extends s.SanityLiteral<string> = s.SanityLiteral<'table'>,
+    | s.ObjectLikeSchema
+    | s.ObjectUnionSchema
+    | s.PrimitiveSchema
+    | s.PrimitiveUnionSchema,
+  TypeName extends s.LiteralSchema<string> = s.LiteralSchema<'table'>,
 >(options: {_type?: TypeName; cell: CellType}) {
   return s.object({
     _type: (options._type ?? s.literal('table')) as TypeName,
@@ -129,8 +129,8 @@ function table<
 }
 
 function objectTable<
-  CellType extends s.SanityTypedObject | s.SanityObjectUnion,
-  TypeName extends s.SanityLiteral<string> = s.SanityLiteral<'table'>,
+  CellType extends s.TypedObjectSchema | s.ObjectUnionSchema,
+  TypeName extends s.LiteralSchema<string> = s.LiteralSchema<'table'>,
 >(options: {_type?: TypeName; cell: CellType}) {
   return table(options)
 }
@@ -150,11 +150,11 @@ import * as s from '@sanity-labs/typed-schema'
 
 function table<
   CellType extends
-    | s.SanityObjectLike
-    | s.SanityObjectUnion
-    | s.SanityPrimitive
-    | s.SanityPrimitiveUnion,
-  TypeName extends s.SanityLiteral<string> = s.SanityLiteral<'table'>,
+    | s.ObjectLikeSchema
+    | s.ObjectUnionSchema
+    | s.PrimitiveSchema
+    | s.PrimitiveUnionSchema,
+  TypeName extends s.LiteralSchema<string> = s.LiteralSchema<'table'>,
 >(options: {_type?: TypeName; cell: CellType}) {
   return s.object({
     _type: (options._type ?? s.literal('table')) as TypeName,
@@ -163,8 +163,8 @@ function table<
 }
 
 function objectTable<
-  CellType extends s.SanityTypedObject | s.SanityObjectUnion,
-  TypeName extends s.SanityLiteral<string> = s.SanityLiteral<'table'>,
+  CellType extends s.TypedObjectSchema | s.ObjectUnionSchema,
+  TypeName extends s.LiteralSchema<string> = s.LiteralSchema<'table'>,
 >(options: {_type?: TypeName; cell: CellType}) {
   return table(options)
 }

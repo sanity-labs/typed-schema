@@ -12,23 +12,23 @@ import {
   isTypedObjectSchema,
 } from '../asserters'
 import {
+  type DocumentSchemaOf,
+  type DocumentUnionKind,
+  type DocumentUnionMemberKind,
+  type DocumentUnionSchema,
+  type LazySchema,
+  type LiteralSchema,
+  type NeverSchema,
+  type ObjectUnionMemberKind,
+  type ObjectUnionSchema,
   type OutputOf,
-  type SanityDocumentType,
-  type SanityDocumentUnion,
-  type SanityDocumentUnionKind,
-  type SanityDocumentUnionMemberKind,
-  type SanityKind,
-  type SanityLazy,
-  type SanityLiteral,
-  type SanityNever,
-  type SanityObjectUnion,
-  type SanityObjectUnionMemberKind,
-  type SanityPrimitive,
-  type SanityPrimitiveUnion,
-  type SanityReference,
-  type SanityType,
-  type SanityTypedObject,
+  type PrimitiveSchema,
+  type PrimitiveUnionSchema,
+  type ReferenceSchema,
+  type Schema,
   type SchemaAnnotations,
+  type SchemaKind,
+  type TypedObjectSchema,
 } from '../defs'
 import {defineType} from '../helpers/defineType'
 import {listReferenceTargets} from '../helpers/referenceTargets'
@@ -40,23 +40,23 @@ import {
 import {reference} from './reference'
 
 export type FlattenUnionTypes<
-  T extends SanityObjectUnionMemberKind | SanityObjectUnion<any>,
+  T extends ObjectUnionMemberKind | ObjectUnionSchema<any>,
 > =
-  T extends SanityObjectUnion<infer UnionTypes>
-    ? UnionTypes extends SanityObjectUnion<any>
+  T extends ObjectUnionSchema<infer UnionTypes>
+    ? UnionTypes extends ObjectUnionSchema<any>
       ? FlattenUnionTypes<UnionTypes>
-      : Exclude<UnionTypes, SanityNever>
+      : Exclude<UnionTypes, NeverSchema>
     : T
 
 export type FlattenPrimitiveUnionTypes<
   T extends
-    | SanityPrimitive
-    | SanityLiteral
-    | SanityPrimitiveUnion<any>
-    | SanityNever,
+    | PrimitiveSchema
+    | LiteralSchema
+    | PrimitiveUnionSchema<any>
+    | NeverSchema,
 > =
-  T extends SanityPrimitiveUnion<infer UnionTypes>
-    ? UnionTypes extends SanityPrimitiveUnion<any>
+  T extends PrimitiveUnionSchema<infer UnionTypes>
+    ? UnionTypes extends PrimitiveUnionSchema<any>
       ? FlattenPrimitiveUnionTypes<UnionTypes>
       : UnionTypes
     : T
@@ -70,22 +70,21 @@ type FlattenDocumentUnionTypes<T> = T extends {
   union: readonly (infer Member)[]
 }
   ? Member
-  : Exclude<T, SanityNever>
+  : Exclude<T, NeverSchema>
 
 /**
  * `Target` as a document union member. A document or lazy document is
- * returned as is. A schema typed by its value (`SanityType<Person>`), directly
- * or inside `lazy()`, becomes a `SanityDocumentType` of that value;
+ * returned as is. A schema typed by its value (`Schema<Person>`), directly
+ * or inside `lazy()`, becomes a `DocumentSchemaOf` of that value;
  * `reference()` checks at runtime that it is a document.
  */
-type AsDocumentUnionMember<Target> =
-  Target extends SanityDocumentUnionMemberKind
-    ? Target
-    : Target extends SanityLazy<infer Inner>
-      ? SanityLazy<SanityDocumentType<OutputOf<Inner>>>
-      : Target extends SanityType<infer Value>
-        ? SanityDocumentType<Value>
-        : never
+type AsDocumentUnionMember<Target> = Target extends DocumentUnionMemberKind
+  ? Target
+  : Target extends LazySchema<infer Inner>
+    ? LazySchema<DocumentSchemaOf<OutputOf<Inner>>>
+    : Target extends Schema<infer Value>
+      ? DocumentSchemaOf<Value>
+      : never
 
 /**
  * `true` if `Member` is a `reference()` or a union with a `reference()`
@@ -124,18 +123,15 @@ type ReferenceTargetsOf<Reference> = Reference extends {
  */
 type MergeReferences<Members> =
   | Exclude<Members, {typeName: 'reference'}>
-  | SanityReference<
-      SanityDocumentUnion<
+  | ReferenceSchema<
+      DocumentUnionSchema<
         ReferenceTargetsOf<Extract<Members, {typeName: 'reference'}>>
       >
     >
 
 /** The members of the object union `union()` returns for `Members` */
 type ObjectUnionMembers<
-  Members extends readonly (
-    | SanityObjectUnionMemberKind
-    | SanityObjectUnion<any>
-  )[],
+  Members extends readonly (ObjectUnionMemberKind | ObjectUnionSchema<any>)[],
 > =
   HasSeveralReferences<Members> extends true
     ? MergeReferences<FlattenUnionTypes<Members[number]>>
@@ -146,17 +142,17 @@ type ObjectUnionMembers<
 // since the check on the overload below cannot resolve for a type parameter
 export function union<
   UnionTypes extends
-    | SanityTypedObject
-    | (SanityType & {typeName: 'block' | 'image' | 'file'})
-    | SanityNever,
+    | TypedObjectSchema
+    | (Schema & {typeName: 'block' | 'image' | 'file'})
+    | NeverSchema,
 >(
   unionTypes: UnionTypes[],
   annotations?: NoInfer<
     SchemaAnnotations<
-      OutputOf<SanityObjectUnion<Exclude<UnionTypes, SanityNever>>>
+      OutputOf<ObjectUnionSchema<Exclude<UnionTypes, NeverSchema>>>
     >
   >,
-): SanityObjectUnion<Exclude<UnionTypes, SanityNever>>
+): ObjectUnionSchema<Exclude<UnionTypes, NeverSchema>>
 // A union of typed objects, references, blocks, images and files. A reference
 // value does not say which type of document it points to, so a union could
 // not tell several references apart. `union()` merges them into one
@@ -166,57 +162,57 @@ export function union<
 // references is rejected by `UncountedReferences`.
 export function union<
   const Members extends readonly (
-    | SanityObjectUnionMemberKind
-    | SanityObjectUnion<any>
+    | ObjectUnionMemberKind
+    | ObjectUnionSchema<any>
   )[],
 >(
   unionTypes: Members & NoInfer<UncountedReferences<Members>>,
   annotations?: NoInfer<
-    SchemaAnnotations<OutputOf<SanityObjectUnion<ObjectUnionMembers<Members>>>>
+    SchemaAnnotations<OutputOf<ObjectUnionSchema<ObjectUnionMembers<Members>>>>
   >,
-): SanityObjectUnion<ObjectUnionMembers<Members>>
+): ObjectUnionSchema<ObjectUnionMembers<Members>>
 // A union of documents. Lazy documents are accepted by the constraint alone,
 // without a check that would resolve them: TypeScript is still inferring a
 // document that references itself through a getter when it checks this
-// call. A schema typed by its value must be typed as `SanityDocumentType` to
-// be a member, since a `SanityType<Value>` may be an object at runtime.
+// call. A schema typed by its value must be typed as `DocumentSchemaOf` to
+// be a member, since a `Schema<Value>` may be an object at runtime.
 export function union<
   const Members extends readonly (
-    | SanityDocumentUnionMemberKind
-    | SanityDocumentUnionKind
-    | SanityNever
+    | DocumentUnionMemberKind
+    | DocumentUnionKind
+    | NeverSchema
   )[],
 >(
   unionTypes: Members,
   annotations?: NoInfer<
     SchemaAnnotations<
-      OutputOf<SanityDocumentUnion<FlattenDocumentUnionTypes<Members[number]>>>
+      OutputOf<DocumentUnionSchema<FlattenDocumentUnionTypes<Members[number]>>>
     >
   >,
-): SanityDocumentUnion<FlattenDocumentUnionTypes<Members[number]>>
+): DocumentUnionSchema<FlattenDocumentUnionTypes<Members[number]>>
 export function union<
   UnionTypes extends
-    | SanityNever
-    | SanityPrimitive
-    | SanityLiteral
-    | SanityPrimitiveUnion<any>,
+    | NeverSchema
+    | PrimitiveSchema
+    | LiteralSchema
+    | PrimitiveUnionSchema<any>,
 >(
   unionTypes: UnionTypes[],
   annotations?: NoInfer<
     SchemaAnnotations<
-      OutputOf<SanityPrimitiveUnion<FlattenPrimitiveUnionTypes<UnionTypes>>>
+      OutputOf<PrimitiveUnionSchema<FlattenPrimitiveUnionTypes<UnionTypes>>>
     >
   >,
-): SanityPrimitiveUnion<FlattenPrimitiveUnionTypes<UnionTypes>>
+): PrimitiveUnionSchema<FlattenPrimitiveUnionTypes<UnionTypes>>
 // Matches only what the overloads above reject, and its parameter can never be
 // satisfied. TypeScript 7 reports only the last overload's error, which says
 // what is wrong with the members. TypeScript 6 lists every overload's error,
 // ending with this one.
-export function union<const Members extends readonly SanityKind[]>(
+export function union<const Members extends readonly SchemaKind[]>(
   unionTypes: Members & NoInfer<CheckUnionMembers<Members>>,
   annotations?: AnnotationsError<'union'>,
 ): never
-export function union(unionTypes: SanityType[], annotations?: any): unknown {
+export function union(unionTypes: Schema[], annotations?: any): unknown {
   if (
     unionTypes.every(
       schema =>
@@ -268,7 +264,7 @@ export function union(unionTypes: SanityType[], annotations?: any): unknown {
  * accepted, since resolving it here would break a document that references
  * itself; the types allow only lazy documents.
  */
-function isDocumentUnionMember(schema: SanityType): boolean {
+function isDocumentUnionMember(schema: Schema): boolean {
   return (
     isDocumentSchema(schema) ||
     isLazySchema(schema) ||
@@ -277,7 +273,7 @@ function isDocumentUnionMember(schema: SanityType): boolean {
 }
 
 /** Whether `schema` can be a member of an object union */
-function isObjectUnionMember(schema: SanityType): boolean {
+function isObjectUnionMember(schema: Schema): boolean {
   return (
     // documents have a `_type` literal too, but go in a document union
     (isTypedObjectSchema(schema) && !isDocumentSchema(schema)) ||
@@ -288,7 +284,7 @@ function isObjectUnionMember(schema: SanityType): boolean {
 }
 
 /** Whether `schema` is a `reference()` or a union that has a `reference()` member */
-function hasReference(schema: SanityType): boolean {
+function hasReference(schema: Schema): boolean {
   return (
     isReferenceSchema(schema) ||
     (isObjectUnionSchema(schema) && schema.union.some(hasReference))
@@ -302,7 +298,7 @@ const MERGE_ANNOTATIONS_ERROR =
  * Flattens a nested union that has a reference, and any unions with
  * references nested inside it. Throws if any of them has annotations.
  */
-function flattenReferenceUnion(schema: SanityObjectUnion): SanityType[] {
+function flattenReferenceUnion(schema: ObjectUnionSchema): Schema[] {
   if (schema.annotations) {
     throw new Error(MERGE_ANNOTATIONS_ERROR)
   }
@@ -318,7 +314,7 @@ function flattenReferenceUnion(schema: SanityObjectUnion): SanityType[] {
  * with one reference to a union of their targets, at the position of the
  * first reference
  */
-function mergeReferences(members: SanityType[]): SanityType[] {
+function mergeReferences(members: Schema[]): Schema[] {
   const flat = members.flatMap(member =>
     isObjectUnionSchema(member) && hasReference(member)
       ? flattenReferenceUnion(member)

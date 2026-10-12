@@ -11,9 +11,9 @@ import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {
   type Infer,
-  type SanityLiteral,
-  type SanityObject,
-  type SanityString,
+  type LiteralSchema,
+  type ObjectSchema,
+  type StringSchema,
 } from '../defs'
 import {type BlockOptionErrors} from '../helpers/schemaErrors'
 import {type SchemaError} from '../helpers/utilTypes'
@@ -122,23 +122,23 @@ describe('invalid block options', () => {
 
   test('report why', () => {
     expectTypeOf<
-      BlockOptionErrors<{style: SanityString; list: SanityLiteral<'bullet'>}>
+      BlockOptionErrors<{style: StringSchema; list: LiteralSchema<'bullet'>}>
     >().toEqualTypeOf<{
       style: SchemaError<"block() option 'style' must be a string literal() or a union() of string literals">
     }>()
     expectTypeOf<
-      BlockOptionErrors<{inline: SanityObject<{foo: SanityString}>}>
+      BlockOptionErrors<{inline: ObjectSchema<{foo: StringSchema}>}>
     >().toEqualTypeOf<{
       inline: SchemaError<"block() option 'inline' must be an object() with a _type literal, a reference(), image(), file() or a union() of these">
     }>()
     expectTypeOf<
-      BlockOptionErrors<{styles: SanityLiteral<'h1'>}>
+      BlockOptionErrors<{styles: LiteralSchema<'h1'>}>
     >().toEqualTypeOf<{
       styles: SchemaError<"'styles' is not a block() option">
     }>()
     // No option is wrong, so the whole options object is the error
     expectTypeOf<
-      BlockOptionErrors<{style: SanityLiteral<'normal'>}>
+      BlockOptionErrors<{style: LiteralSchema<'normal'>}>
     >().toEqualTypeOf<SchemaError<'Invalid block() options or annotations'>>()
   })
 })

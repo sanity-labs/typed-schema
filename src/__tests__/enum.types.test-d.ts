@@ -1,25 +1,25 @@
 import {assert, expectTypeOf, test} from 'vitest'
 
 import {enums} from '../creators/enums'
-import {type Infer, type SanityEnum} from '../defs'
+import {type EnumSchema, type Infer} from '../defs'
 import {parse} from '../parse'
 
 test('define string array enum', () => {
-  expectTypeOf<Infer<SanityEnum<['foo', 'bar', 'baz']>>>().toEqualTypeOf<
+  expectTypeOf<Infer<EnumSchema<['foo', 'bar', 'baz']>>>().toEqualTypeOf<
     'foo' | 'bar' | 'baz'
   >()
-  expectTypeOf<Infer<SanityEnum<['foo', 'bar']>>>().toEqualTypeOf<
+  expectTypeOf<Infer<EnumSchema<['foo', 'bar']>>>().toEqualTypeOf<
     // @ts-expect-error 'baz' is not valid
     'foo' | 'bar' | 'baz'
   >()
 })
 
 test('define object literal enum', () => {
-  expectTypeOf<Infer<SanityEnum<{foo: 1; bar: 2; baz: 'baz'}>>>().toEqualTypeOf<
+  expectTypeOf<Infer<EnumSchema<{foo: 1; bar: 2; baz: 'baz'}>>>().toEqualTypeOf<
     1 | 2 | 'baz'
   >()
 
-  expectTypeOf<Infer<SanityEnum<{foo: 1; bar: 2}>>>().toEqualTypeOf<
+  expectTypeOf<Infer<EnumSchema<{foo: 1; bar: 2}>>>().toEqualTypeOf<
     // @ts-expect-error 'baz' is not valid
     1 | 2 | 'baz'
   >()

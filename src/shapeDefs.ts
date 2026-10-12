@@ -1,16 +1,16 @@
 import {
+  type BooleanSchema,
   type Conceal,
+  type DocumentSchema,
+  type LiteralSchema,
+  type NumberSchema,
+  type ObjectSchema,
+  type OptionalSchema,
   type OutputFromShape,
   type OutputOf,
-  type SanityBoolean,
-  type SanityDocument,
-  type SanityLiteral,
-  type SanityNumber,
-  type SanityObject,
-  type SanityOptional,
-  type SanityReference,
-  type SanityString,
-  type SanityType,
+  type ReferenceSchema,
+  type Schema,
+  type StringSchema,
 } from './defs'
 import {defineType as dt} from './helpers/defineType'
 import {type Combine, type OutputFormatFix} from './helpers/utilTypes'
@@ -18,36 +18,36 @@ import {type Combine, type OutputFormatFix} from './helpers/utilTypes'
 // Built-in shapes are declared with `defineType` directly rather than the
 // creators in ./creators, since the creators depend on this module.
 
-const STRING: SanityString = dt({typeName: 'string'})
-const OPTIONAL_STRING: SanityOptional<SanityString> = dt({
+const STRING: StringSchema = dt({typeName: 'string'})
+const OPTIONAL_STRING: OptionalSchema<StringSchema> = dt({
   typeName: 'optional',
   type: STRING,
 })
-const NUMBER: SanityNumber = dt({typeName: 'number'})
-const OPTIONAL_NUMBER: SanityOptional<SanityNumber> = dt({
+const NUMBER: NumberSchema = dt({typeName: 'number'})
+const OPTIONAL_NUMBER: OptionalSchema<NumberSchema> = dt({
   typeName: 'optional',
   type: NUMBER,
 })
-const BOOLEAN: SanityBoolean = dt({typeName: 'boolean'})
+const BOOLEAN: BooleanSchema = dt({typeName: 'boolean'})
 
-function lit<const V extends string>(value: V): SanityLiteral<V> {
+function lit<const V extends string>(value: V): LiteralSchema<V> {
   return dt({typeName: 'literal', value})
 }
 
-function opt<T extends SanityType>(type: T): SanityOptional<T> {
+function opt<T extends Schema>(type: T): OptionalSchema<T> {
   return dt({typeName: 'optional', type})
 }
 
-export type SanityDocumentShape = {
-  _type: SanityString | SanityLiteral<string>
-  _id: SanityOptional<SanityString>
-  _createdAt: SanityOptional<SanityString>
-  _updatedAt: SanityOptional<SanityString>
-  _rev: SanityOptional<SanityString>
+export type DocumentShape = {
+  _type: StringSchema | LiteralSchema<string>
+  _id: OptionalSchema<StringSchema>
+  _createdAt: OptionalSchema<StringSchema>
+  _updatedAt: OptionalSchema<StringSchema>
+  _rev: OptionalSchema<StringSchema>
 }
 
 /** @internal */
-export const DocumentBase: SanityObject<SanityDocumentShape> = dt({
+export const DocumentBase: ObjectSchema<DocumentShape> = dt({
   typeName: 'object',
   shape: {
     _type: STRING,
@@ -58,14 +58,14 @@ export const DocumentBase: SanityObject<SanityDocumentShape> = dt({
   },
 })
 
-export type SanityReferenceShape = {
-  _type: SanityLiteral<'reference'>
-  _ref: SanityString
-  _weak: SanityOptional<SanityBoolean>
+export type ReferenceShape = {
+  _type: LiteralSchema<'reference'>
+  _ref: StringSchema
+  _weak: OptionalSchema<BooleanSchema>
 }
 
 /** @internal */
-export const ReferenceBase: SanityObject<SanityReferenceShape> = dt({
+export const ReferenceBase: ObjectSchema<ReferenceShape> = dt({
   typeName: 'object',
   shape: {
     _type: lit('reference'),
@@ -77,14 +77,14 @@ export const ReferenceBase: SanityObject<SanityReferenceShape> = dt({
 export type ReferenceBase = OutputOf<typeof ReferenceBase>
 
 export type GeopointShape = {
-  _type: SanityLiteral<'geopoint'>
-  lat: SanityNumber
-  lng: SanityNumber
-  alt: SanityOptional<SanityNumber>
+  _type: LiteralSchema<'geopoint'>
+  lat: NumberSchema
+  lng: NumberSchema
+  alt: OptionalSchema<NumberSchema>
 }
 
 /** @internal */
-export const GEOPOINT: SanityObject<GeopointShape> = dt({
+export const GEOPOINT: ObjectSchema<GeopointShape> = dt({
   typeName: 'object',
   shape: {
     _type: lit('geopoint'),
@@ -95,13 +95,13 @@ export const GEOPOINT: SanityObject<GeopointShape> = dt({
 })
 
 export type AssetSourceSpecShape = {
-  _type: SanityLiteral<'sanity.assetSourceData'>
-  id: SanityString
-  name: SanityString
-  url: SanityOptional<SanityString>
+  _type: LiteralSchema<'sanity.assetSourceData'>
+  id: StringSchema
+  name: StringSchema
+  url: OptionalSchema<StringSchema>
 }
 
-const ASSET_SOURCE_SPEC: SanityObject<AssetSourceSpecShape> = dt({
+const ASSET_SOURCE_SPEC: ObjectSchema<AssetSourceSpecShape> = dt({
   typeName: 'object',
   shape: {
     _type: lit('sanity.assetSourceData'),
@@ -112,24 +112,24 @@ const ASSET_SOURCE_SPEC: SanityObject<AssetSourceSpecShape> = dt({
 })
 
 /** Fields shared by `sanity.imageAsset` and `sanity.fileAsset` documents */
-export type AssetBaseShape = SanityDocumentShape & {
-  url: SanityString
-  path: SanityString
-  assetId: SanityString
-  extension: SanityString
-  mimeType: SanityString
-  sha1hash: SanityString
-  size: SanityNumber
-  originalFilename: SanityOptional<SanityString>
-  uploadId: SanityOptional<SanityString>
+export type AssetBaseShape = DocumentShape & {
+  url: StringSchema
+  path: StringSchema
+  assetId: StringSchema
+  extension: StringSchema
+  mimeType: StringSchema
+  sha1hash: StringSchema
+  size: NumberSchema
+  originalFilename: OptionalSchema<StringSchema>
+  uploadId: OptionalSchema<StringSchema>
   // Extensions
-  label: SanityOptional<SanityString>
-  title: SanityOptional<SanityString>
-  description: SanityOptional<SanityString>
-  altText: SanityOptional<SanityString>
+  label: OptionalSchema<StringSchema>
+  title: OptionalSchema<StringSchema>
+  description: OptionalSchema<StringSchema>
+  altText: OptionalSchema<StringSchema>
   // External asset source extensions
-  creditLine: SanityOptional<SanityString>
-  source: SanityOptional<SanityObject<AssetSourceSpecShape>>
+  creditLine: OptionalSchema<StringSchema>
+  source: OptionalSchema<ObjectSchema<AssetSourceSpecShape>>
 }
 
 const assetBase: AssetBaseShape = {
@@ -152,13 +152,13 @@ const assetBase: AssetBaseShape = {
 }
 
 export type ImageDimensionsShape = {
-  _type: SanityLiteral<'sanity.imageDimensions'>
-  height: SanityNumber
-  width: SanityNumber
-  aspectRatio: SanityNumber
+  _type: LiteralSchema<'sanity.imageDimensions'>
+  height: NumberSchema
+  width: NumberSchema
+  aspectRatio: NumberSchema
 }
 
-const IMAGE_DIMENSIONS: SanityObject<ImageDimensionsShape> = dt({
+const IMAGE_DIMENSIONS: ObjectSchema<ImageDimensionsShape> = dt({
   typeName: 'object',
   shape: {
     _type: lit('sanity.imageDimensions'),
@@ -169,14 +169,14 @@ const IMAGE_DIMENSIONS: SanityObject<ImageDimensionsShape> = dt({
 })
 
 export type ImageSwatchShape = {
-  _type: SanityLiteral<'sanity.imagePaletteSwatch'>
-  background: SanityString
-  foreground: SanityString
-  population: SanityNumber
-  title: SanityOptional<SanityString>
+  _type: LiteralSchema<'sanity.imagePaletteSwatch'>
+  background: StringSchema
+  foreground: StringSchema
+  population: NumberSchema
+  title: OptionalSchema<StringSchema>
 }
 
-const IMAGE_SWATCH: SanityObject<ImageSwatchShape> = dt({
+const IMAGE_SWATCH: ObjectSchema<ImageSwatchShape> = dt({
   typeName: 'object',
   shape: {
     _type: lit('sanity.imagePaletteSwatch'),
@@ -199,10 +199,10 @@ export type ImagePaletteName =
   | 'vibrant'
 
 export type ImagePaletteShape = {
-  _type: SanityLiteral<'sanity.imagePalette'>
-} & Record<ImagePaletteName, SanityOptional<SanityObject<ImageSwatchShape>>>
+  _type: LiteralSchema<'sanity.imagePalette'>
+} & Record<ImagePaletteName, OptionalSchema<ObjectSchema<ImageSwatchShape>>>
 
-const IMAGE_PALETTE: SanityObject<ImagePaletteShape> = dt({
+const IMAGE_PALETTE: ObjectSchema<ImagePaletteShape> = dt({
   typeName: 'object',
   shape: {
     _type: lit('sanity.imagePalette'),
@@ -221,17 +221,17 @@ const IMAGE_PALETTE: SanityObject<ImagePaletteShape> = dt({
  * absent for images Sanity cannot analyse (e.g. SVGs).
  */
 export type ImageMetadataShape = {
-  _type: SanityLiteral<'sanity.imageMetadata'>
-  dimensions: SanityObject<ImageDimensionsShape>
-  location: SanityOptional<SanityObject<GeopointShape>>
-  palette: SanityOptional<SanityObject<ImagePaletteShape>>
-  lqip: SanityOptional<SanityString>
-  blurHash: SanityOptional<SanityString>
-  hasAlpha: SanityBoolean
-  isOpaque: SanityBoolean
+  _type: LiteralSchema<'sanity.imageMetadata'>
+  dimensions: ObjectSchema<ImageDimensionsShape>
+  location: OptionalSchema<ObjectSchema<GeopointShape>>
+  palette: OptionalSchema<ObjectSchema<ImagePaletteShape>>
+  lqip: OptionalSchema<StringSchema>
+  blurHash: OptionalSchema<StringSchema>
+  hasAlpha: BooleanSchema
+  isOpaque: BooleanSchema
 }
 
-const IMAGE_METADATA: SanityObject<ImageMetadataShape> = dt({
+const IMAGE_METADATA: ObjectSchema<ImageMetadataShape> = dt({
   typeName: 'object',
   shape: {
     _type: lit('sanity.imageMetadata'),
@@ -246,12 +246,12 @@ const IMAGE_METADATA: SanityObject<ImageMetadataShape> = dt({
 })
 
 export type ImageAssetShape = AssetBaseShape & {
-  _type: SanityLiteral<'sanity.imageAsset'>
-  metadata: SanityObject<ImageMetadataShape>
+  _type: LiteralSchema<'sanity.imageAsset'>
+  metadata: ObjectSchema<ImageMetadataShape>
 }
 
 /** @internal */
-export const IMAGE_ASSET: SanityDocument<ImageAssetShape> = dt({
+export const IMAGE_ASSET: DocumentSchema<ImageAssetShape> = dt({
   typeName: 'document',
   shape: {
     ...assetBase,
@@ -261,11 +261,11 @@ export const IMAGE_ASSET: SanityDocument<ImageAssetShape> = dt({
 })
 
 export type FileAssetShape = AssetBaseShape & {
-  _type: SanityLiteral<'sanity.fileAsset'>
+  _type: LiteralSchema<'sanity.fileAsset'>
 }
 
 /** @internal */
-export const FILE_ASSET: SanityDocument<FileAssetShape> = dt({
+export const FILE_ASSET: DocumentSchema<FileAssetShape> = dt({
   typeName: 'document',
   shape: {
     ...assetBase,
@@ -273,13 +273,13 @@ export const FILE_ASSET: SanityDocument<FileAssetShape> = dt({
   },
 })
 
-export type SanityImageShape = {
-  _type: SanityLiteral<'image'>
-  asset: SanityReference<SanityDocument<ImageAssetShape>>
+export type ImageShape = {
+  _type: LiteralSchema<'image'>
+  asset: ReferenceSchema<DocumentSchema<ImageAssetShape>>
 }
 
 /** @internal */
-export const ImageBase: SanityObject<SanityImageShape> = dt({
+export const ImageBase: ObjectSchema<ImageShape> = dt({
   typeName: 'object',
   shape: {
     _type: lit('image'),
@@ -291,13 +291,13 @@ export const ImageBase: SanityObject<SanityImageShape> = dt({
   },
 })
 
-export type SanityFileShape = {
-  _type: SanityLiteral<'file'>
-  asset: SanityReference<SanityDocument<FileAssetShape>>
+export type FileShape = {
+  _type: LiteralSchema<'file'>
+  asset: ReferenceSchema<DocumentSchema<FileAssetShape>>
 }
 
 /** @internal */
-export const FileBase: SanityObject<SanityFileShape> = dt({
+export const FileBase: ObjectSchema<FileShape> = dt({
   typeName: 'object',
   shape: {
     _type: lit('file'),
@@ -309,21 +309,21 @@ export const FileBase: SanityObject<SanityFileShape> = dt({
   },
 })
 
-export type SanityArrayValue<ElementType> = Array<
+export type ArrayValue<ElementType> = Array<
   ElementType extends object
     ? Combine<ElementType, {_key: string}>
     : ElementType
 > &
   OutputFormatFix
 
-export type SanityDocumentValue = OutputFromShape<SanityDocumentShape>
+export type DocumentValue = OutputFromShape<DocumentShape>
 
 /**
  * The value of a `reference()` to a document of type `RefType`, for annotating
  * recursive schemas by hand. `$refSchema` is optional here so that
  * hand-written values typecheck; `parse` still attaches it.
  */
-export type SanityReferenceValue<RefType> = Combine<
+export type ReferenceValue<RefType> = Combine<
   ReferenceBase,
-  Partial<Conceal<SanityType<RefType>>>
+  Partial<Conceal<Schema<RefType>>>
 >

@@ -1,20 +1,20 @@
 import {
   array,
   document,
+  type DocumentValue,
   lazy,
   literal,
   parse,
   reference,
-  type SanityDocumentValue,
-  type SanityType,
+  type Schema,
   string,
 } from '@sanity-labs/typed-schema'
 
-interface Human extends SanityDocumentValue {
+interface Human extends DocumentValue {
   name: string
 }
 
-const Human: SanityType<Human> = document({
+const Human: Schema<Human> = document({
   _type: literal('human'),
   name: string(),
   pets: lazy(() => array(reference(Pet))),

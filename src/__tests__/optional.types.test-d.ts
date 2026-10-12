@@ -1,19 +1,19 @@
 import {assertType, test} from 'vitest'
 
 import {
+  type DocumentSchema,
   type Infer,
-  type SanityDocument,
-  type SanityLiteral,
-  type SanityOptional,
-  type SanityString,
+  type LiteralSchema,
+  type OptionalSchema,
+  type StringSchema,
 } from '../defs'
 
 test('optional fields', () => {
-  type DocType = SanityDocument<{
-    _type: SanityLiteral<'pet'>
-    optional: SanityOptional<SanityString>
-    required: SanityString
-    otherOptional: SanityOptional<SanityString>
+  type DocType = DocumentSchema<{
+    _type: LiteralSchema<'pet'>
+    optional: OptionalSchema<StringSchema>
+    required: StringSchema
+    otherOptional: OptionalSchema<StringSchema>
   }>
 
   type Doc = Infer<DocType>

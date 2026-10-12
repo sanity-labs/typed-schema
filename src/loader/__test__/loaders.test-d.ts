@@ -7,13 +7,13 @@ import {optional} from '../../creators/optional'
 import {reference} from '../../creators/reference'
 import {string} from '../../creators/string'
 import {union} from '../../creators/union'
-import {type Infer, type Parsed, type SanityDocumentType} from '../../defs'
+import {type DocumentSchemaOf, type Infer, type Parsed} from '../../defs'
 import {type Committed} from '../../lifecycle'
 import {parse} from '../../parse'
 import {
   type DocumentBase,
-  type SanityDocumentValue,
-  type SanityReferenceValue,
+  type DocumentValue,
+  type ReferenceValue,
 } from '../../shapeDefs'
 import {createLoader} from '../createLoader'
 import {
@@ -110,12 +110,12 @@ test('createLoader types every helper', async () => {
   >()
 })
 
-test('loadReference stays typed for a recursive schema annotated with SanityReferenceValue', async () => {
-  interface TreeNode extends SanityDocumentValue {
+test('loadReference stays typed for a recursive schema annotated with ReferenceValue', async () => {
+  interface TreeNode extends DocumentValue {
     name: string
-    parent?: SanityReferenceValue<TreeNode>
+    parent?: ReferenceValue<TreeNode>
   }
-  const TreeNode: SanityDocumentType<TreeNode> = document({
+  const TreeNode: DocumentSchemaOf<TreeNode> = document({
     _type: literal('node'),
     name: string(),
     parent: optional(lazy(() => reference(TreeNode))),
@@ -137,7 +137,7 @@ test('loadReference stays typed for a recursive schema annotated with SanityRefe
     _createdAt: string
     _updatedAt: string
     name: string
-    parent?: SanityReferenceValue<TreeNode>
+    parent?: ReferenceValue<TreeNode>
   }>()
 })
 

@@ -10,9 +10,9 @@ import {
 } from '../asserters'
 import {getUnkeyedSchema} from '../creators/array'
 import {
-  type SanityObjectUnion,
-  type SanityPrimitiveUnion,
-  type SanityType,
+  type ObjectUnionSchema,
+  type PrimitiveUnionSchema,
+  type Schema,
 } from '../defs'
 import {formatPath, type ParseIssue, parse} from '../parse'
 import {getLazySchema} from './getLazySchema'
@@ -58,7 +58,7 @@ function formatFailures(failures: ExampleFailure[]): string {
 }
 
 /** What {@link validateExamples} returns: the schema, or an {@link ExampleError} listing every failing example. */
-export type ValidateExamplesResult<S extends SanityType> =
+export type ValidateExamplesResult<S extends Schema> =
   | {ok: true; value: S}
   | {ok: false; error: ExampleError}
 
@@ -70,7 +70,7 @@ export type ValidateExamplesResult<S extends SanityType> =
  * {@link validateExamplesOrThrow} for that.
  * @param schema - the schema to check
  */
-export function validateExamples<S extends SanityType>(
+export function validateExamples<S extends Schema>(
   schema: S,
 ): ValidateExamplesResult<S> {
   const failures: ExampleFailure[] = []
@@ -85,7 +85,7 @@ export function validateExamples<S extends SanityType>(
  * the {@link ExampleError} when an example does not parse
  * @param schema - the schema to check
  */
-export function validateExamplesOrThrow<S extends SanityType>(schema: S): S {
+export function validateExamplesOrThrow<S extends Schema>(schema: S): S {
   const result = validateExamples(schema)
   if (!result.ok) {
     throw result.error
@@ -94,10 +94,10 @@ export function validateExamplesOrThrow<S extends SanityType>(schema: S): S {
 }
 
 function collectExampleFailures(
-  schema: SanityType,
+  schema: Schema,
   schemaPath: string[],
   failures: ExampleFailure[],
-  seen: Set<SanityType>,
+  seen: Set<Schema>,
   depth = 0,
 ): void {
   // lazy schemas may be circular; each node is checked once
@@ -144,7 +144,7 @@ function collectExampleFailures(
     isPrimitiveUnionSchema(schema)
   ) {
     // like an object union, a union of documents has a `union` list of members with shapes
-    const {union} = schema as SanityObjectUnion | SanityPrimitiveUnion
+    const {union} = schema as ObjectUnionSchema | PrimitiveUnionSchema
     union.forEach((member, index) => {
       const name =
         'shape' in member && member.shape._type && 'value' in member.shape._type

@@ -1,14 +1,14 @@
 import {
   array,
+  type ArrayValue,
   document,
+  type DocumentSchemaOf,
   extend,
   type Infer,
   lazy,
   literal,
   reference,
-  type SanityArrayValue,
-  type SanityDocumentType,
-  type SanityReferenceValue,
+  type ReferenceValue,
   string,
 } from '@sanity-labs/typed-schema'
 
@@ -25,12 +25,12 @@ const BaseBlogpost = document({
 
 // Define only the circular part here by extending from the inferred base schema
 interface SelfReferencingBlogPost extends Infer<typeof BaseBlogpost> {
-  mainRelated: SanityReferenceValue<SelfReferencingBlogPost>
-  relatedPosts: SanityArrayValue<SanityReferenceValue<SelfReferencingBlogPost>>
+  mainRelated: ReferenceValue<SelfReferencingBlogPost>
+  relatedPosts: ArrayValue<ReferenceValue<SelfReferencingBlogPost>>
 }
 
 // Now extend the base schema with the circular field
-const Blogpost: SanityDocumentType<SelfReferencingBlogPost> = extend(
+const Blogpost: DocumentSchemaOf<SelfReferencingBlogPost> = extend(
   BaseBlogpost,
   {
     mainRelated: lazy(() => reference(Blogpost)),

@@ -12,7 +12,7 @@ import {optional} from '../creators/optional'
 import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
-import {REF_SCHEMA, type SanityObjectType, type SanityType} from '../defs'
+import {type ObjectSchemaOf, REF_SCHEMA, type Schema} from '../defs'
 import {
   formatIssues,
   formatPath,
@@ -21,7 +21,7 @@ import {
   type ParseIssue,
   parseOrThrow,
 } from '../parse'
-import {type SanityDocumentValue} from '../shapeDefs'
+import {type DocumentValue} from '../shapeDefs'
 
 describe('string parsing', () => {
   test('successful parsing', () => {
@@ -87,7 +87,7 @@ describe('object parsing', () => {
         name: string
         parent?: Person
       }
-      const Person: SanityType<Person> = object({
+      const Person: Schema<Person> = object({
         name: string(),
         parent: optional(lazy(() => Person)),
       })
@@ -110,7 +110,7 @@ describe('object parsing', () => {
       parent?: Person
     }
 
-    const Person: SanityObjectType<Person> = object({
+    const Person: ObjectSchemaOf<Person> = object({
       _type: literal('person'),
       name: string(),
       parent: optional(lazy(() => Person)),
@@ -132,11 +132,11 @@ describe('object parsing', () => {
   })
 
   test('circular/lazy references', () => {
-    interface Human extends SanityDocumentValue {
+    interface Human extends DocumentValue {
       name: string
     }
 
-    const Human: SanityType<Human> = document({
+    const Human: Schema<Human> = document({
       _type: literal('human'),
       name: string(),
       pets: lazy(() => array(reference(Pet))),
@@ -163,7 +163,7 @@ describe('object parsing', () => {
         _type: 'reference',
       },
     })
-    assertType<SanityType<Human>>(parsed.owner.$refSchema!)
+    assertType<Schema<Human>>(parsed.owner.$refSchema!)
   })
 })
 
@@ -278,9 +278,9 @@ describe('reference parsing', () => {
 
 describe('asset parsing', () => {
   test('parsing of image', () => {
-    const ImageSchema = image({caption: string()})
+    const schema = image({caption: string()})
 
-    const parsedResult = parse(ImageSchema, {
+    const parsedResult = parse(schema, {
       _type: 'image',
       caption: 'A nice pic of my favourite lizard, Leon.',
       asset: {
@@ -301,9 +301,9 @@ describe('asset parsing', () => {
     })
   })
   test('parsing of file', () => {
-    const FileSchema = file({caption: string()})
+    const schema = file({caption: string()})
 
-    const parsedResult = parse(FileSchema, {
+    const parsedResult = parse(schema, {
       _type: 'file',
       asset: {
         _type: 'reference',

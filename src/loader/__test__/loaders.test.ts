@@ -9,16 +9,13 @@ import {reference} from '../../creators/reference'
 import {string} from '../../creators/string'
 import {union} from '../../creators/union'
 import {
+  type DocumentSchemaOf,
   type Infer,
   REF_SCHEMA,
-  type SanityDocumentType,
-  type SanityType,
+  type Schema,
 } from '../../defs'
 import {parse, parseOrThrow} from '../../parse'
-import {
-  type SanityDocumentValue,
-  type SanityReferenceValue,
-} from '../../shapeDefs'
+import {type DocumentValue, type ReferenceValue} from '../../shapeDefs'
 import {createDocumentLoader} from '../createDocumentLoader'
 import {createLoader} from '../createLoader'
 import {
@@ -191,12 +188,12 @@ test('document loader resolves lazy document schemas', async () => {
   expect(fetch.mock.calls[0]?.[1]).toContain('name')
 })
 
-test('loadReference stays typed for a recursive schema annotated with SanityReferenceValue', async () => {
-  interface TreeNode extends SanityDocumentValue {
+test('loadReference stays typed for a recursive schema annotated with ReferenceValue', async () => {
+  interface TreeNode extends DocumentValue {
     name: string
-    parent?: SanityReferenceValue<TreeNode>
+    parent?: ReferenceValue<TreeNode>
   }
-  const TreeNode: SanityDocumentType<TreeNode> = document({
+  const TreeNode: DocumentSchemaOf<TreeNode> = document({
     _type: literal('node'),
     name: string(),
     parent: optional(lazy(() => reference(TreeNode))),
@@ -408,10 +405,10 @@ test('a target listed twice counts once', async () => {
 })
 
 test('a lazy target that is not a document rejects before fetching', async () => {
-  interface Folder extends SanityDocumentValue {
+  interface Folder extends DocumentValue {
     name: string
   }
-  const Folder: SanityType<Folder> = object({
+  const Folder: Schema<Folder> = object({
     _type: literal('folder'),
     name: string(),
   })

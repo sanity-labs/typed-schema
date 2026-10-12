@@ -9,20 +9,20 @@
  * `document()`, `extend()`, `image()` and `file()`.
  */
 import {
-  type SanityAny,
-  type SanityBlock,
-  type SanityDocumentKind,
-  type SanityKind,
-  type SanityLiteral,
-  type SanityNever,
-  type SanityObjectLikeKind,
-  type SanityObjectUnion,
-  type SanityObjectUnionKind,
-  type SanityObjectUnionMemberKind,
-  type SanityPortableTextMember,
-  type SanityPrimitive,
-  type SanityPrimitiveUnion,
-  type SanityString,
+  type BlockSchema,
+  type DocumentKind,
+  type LiteralSchema,
+  type NeverSchema,
+  type ObjectLikeKind,
+  type ObjectUnionKind,
+  type ObjectUnionMemberKind,
+  type ObjectUnionSchema,
+  type PortableTextMemberKind,
+  type PrimitiveSchema,
+  type PrimitiveUnionSchema,
+  type Schema,
+  type SchemaKind,
+  type StringSchema,
 } from '../defs'
 import {type FieldNameError, type SchemaError} from './utilTypes'
 
@@ -75,7 +75,7 @@ type Equals<A, B> =
 type ReadonlyModifiers<Shape> = {[Property in keyof Shape]-?: 0}
 
 /** A schema, or `undefined` for an optional property */
-type FieldSchemaKind = (SanityKind & {output: unknown}) | undefined
+type FieldSchemaKind = (SchemaKind & {output: unknown}) | undefined
 
 /**
  * Requires every field of `Shape` to be a schema, except fields declared with
@@ -88,12 +88,12 @@ type FieldSchemaKind = (SanityKind & {output: unknown}) | undefined
  *
  * Only fields that are not schemas are mapped. A schema is matched on having
  * `typeName` and `output` keys, so the type of `output` is never compared.
- * Mapping every field would intersect each schema with `SanityAny`, and
+ * Mapping every field would intersect each schema with `Schema`, and
  * TypeScript 6 resolves the `output` of such an intersection, which reads
  * getters nested in the field (`cover: object({get related() {...}})`).
  *
- * The expected type includes `SanityAny` because the check cannot resolve for
- * a field whose type depends on a type parameter, such as `SanityArray<T>` in
+ * The expected type includes `Schema` because the check cannot resolve for
+ * a field whose type depends on a type parameter, such as `ArraySchema<T>` in
  * a generic creator. Such a field is kept and must be assignable to the
  * expected type.
  */
@@ -111,7 +111,7 @@ type FieldSchemas<Shape, Allowed extends string> = {
           : Property
         : never
       : never
-  ]: SanityAny | SchemaError<FieldValueError<Property>>
+  ]: Schema | SchemaError<FieldValueError<Property>>
 }
 
 /**
@@ -128,13 +128,13 @@ export type FieldErrors<
 // document()
 
 type SystemFieldError<Property, Field> = [Field] extends [
-  SanityKind & {output: unknown},
+  SchemaKind & {output: unknown},
 ]
   ? Property extends '_type'
-    ? [Field] extends [SanityLiteral<string>]
+    ? [Field] extends [LiteralSchema<string>]
       ? never
       : "document() field '_type' must be a string literal(), e.g. literal('post')"
-    : [Field] extends [SanityLiteral<string> | SanityString]
+    : [Field] extends [LiteralSchema<string> | StringSchema]
       ? never
       : "document() field '_id' must be string() or a string literal()"
   : never // not a schema, reported by `FieldErrors`
@@ -143,7 +143,7 @@ type SystemFieldError<Property, Field> = [Field] extends [
  * Requires a `_type` field holding a string `literal()`, and an `_id` field, if
  * given, holding `string()` or a string `literal()`. Each violation maps the
  * field to a `SchemaError`. Checked here rather than by intersecting the
- * shape with the expected schemas, because `SanityString & SanityLiteral`
+ * shape with the expected schemas, because `StringSchema & LiteralSchema`
  * reduces to `never` and the type error would not say what is wrong.
  */
 export type SystemFieldErrors<Shape> = {
@@ -188,11 +188,11 @@ export type AnnotationsError<Creator extends string> = SchemaError<
 // array()
 
 type ValidArrayElement =
-  | SanityObjectLikeKind
-  | SanityObjectUnionKind
-  | SanityPrimitive
-  | SanityPrimitiveUnion
-  | SanityNever
+  | ObjectLikeKind
+  | ObjectUnionKind
+  | PrimitiveSchema
+  | PrimitiveUnionSchema
+  | NeverSchema
 
 /**
  * Says why `Def` cannot be an `array()` element, or, for a valid element,
@@ -212,17 +212,17 @@ export type ArrayElementError<Def> = Def extends {
 
 /** Like {@link ArrayElementError}, for `objectArray()` */
 export type ObjectArrayElementError<Def> = Def extends
-  | SanityObjectLikeKind
-  | SanityObjectUnionKind
+  | ObjectLikeKind
+  | ObjectUnionKind
   ? InvalidAnnotations<'objectArray'>
   : 'objectArray() elements must be objects, references, blocks, images, files or unions of these'
 
 /** Like {@link ArrayElementError}, for `primitiveArray()` */
 export type PrimitiveArrayElementError<Def> = Def extends
-  | SanityPrimitive
-  | SanityLiteral
-  | SanityPrimitiveUnion
-  | SanityNever
+  | PrimitiveSchema
+  | LiteralSchema
+  | PrimitiveUnionSchema
+  | NeverSchema
   ? InvalidAnnotations<'primitiveArray'>
   : 'primitiveArray() elements must be primitives, literals or unions of these'
 
@@ -233,7 +233,7 @@ export type PrimitiveArrayElementError<Def> = Def extends
  * that the annotations are what the catch-all overload rejects
  */
 export type ReferenceTargetError<Def> = Def extends
-  | SanityDocumentKind
+  | DocumentKind
   | {typeName: 'documentUnion'}
   ? InvalidAnnotations<'reference'>
   : 'reference() target must be a document schema or a union() of document schemas'
@@ -245,13 +245,13 @@ export type ReferenceTargetError<Def> = Def extends
  * getters are accepted; see `defs.ts`
  */
 type ObjectUnionMember =
-  | Exclude<SanityObjectUnionMemberKind, SanityNever>
-  | SanityObjectUnionKind
+  | Exclude<ObjectUnionMemberKind, NeverSchema>
+  | ObjectUnionKind
 
 type PrimitiveUnionMember =
-  | SanityPrimitive
-  | SanityLiteral
-  | SanityPrimitiveUnion<any>
+  | PrimitiveSchema
+  | LiteralSchema
+  | PrimitiveUnionSchema<any>
 
 /**
  * `true` if `Member` can be in a union of documents: a document, a union of
@@ -266,7 +266,7 @@ type IsDocumentUnionMember<Member> = Member extends {
     ? IsDocumentUnionMember<Inner>
     : false
 
-/** `true` if `Member` is typed by its value as `SanityType<Value>`, directly or inside `lazy()` */
+/** `true` if `Member` is typed by its value as `Schema<Value>`, directly or inside `lazy()` */
 type IsTypedByValue<Member> = Member extends {
   typeName: 'lazy'
   get: () => infer Inner
@@ -279,14 +279,14 @@ type IsTypedByValue<Member> = Member extends {
     : false
 
 type UnionMemberError<Member> = Member extends
-  | SanityNever
+  | NeverSchema
   | ObjectUnionMember
   | PrimitiveUnionMember
   ? never
   : IsDocumentUnionMember<Member> extends true
     ? never
     : IsTypedByValue<Member> extends true
-      ? 'union() members typed by their value must be typed as SanityDocumentType<Value> or SanityObjectType<Value>, not SanityType<Value>'
+      ? 'union() members typed by their value must be typed as DocumentSchemaOf<Value> or ObjectSchemaOf<Value>, not Schema<Value>'
       : Member extends {typeName: 'object'}
         ? "union() members that are objects need a _type literal field, e.g. _type: literal('link')"
         : Member extends {typeName: 'lazy'}
@@ -435,22 +435,22 @@ type BlockOptionError<Option, Value> = [Value] extends [undefined]
   ? never
   : Option extends 'style' | 'list' | 'decorator'
     ? [Value] extends [
-        | SanityLiteral<string>
-        | SanityPrimitiveUnion<SanityLiteral<string>>
+        | LiteralSchema<string>
+        | PrimitiveUnionSchema<LiteralSchema<string>>
         | undefined,
       ]
       ? never
       : `block() option '${Option}' must be a string literal() or a union() of string literals`
     : Option extends 'inline' | 'annotation'
       ? [Value] extends [
-          | SanityPortableTextMember
-          | SanityObjectUnion<SanityPortableTextMember>
+          | PortableTextMemberKind
+          | ObjectUnionSchema<PortableTextMemberKind>
           | undefined,
         ]
         ? never
         : `block() option '${Option}' must be an object() with a _type literal, a reference(), image(), file() or a union() of these`
       : Option extends '_type'
-        ? [Value] extends [SanityLiteral<string> | undefined]
+        ? [Value] extends [LiteralSchema<string> | undefined]
           ? never
           : "block() option '_type' must be a string literal()"
         : `'${Option & string}' is not a block() option`
@@ -465,14 +465,14 @@ export type BlockOptionErrors<Options> = OptionErrors<
 >
 
 type PortableTextOptionError<Option, Value> = Option extends 'block'
-  ? [Value] extends [SanityBlock]
+  ? [Value] extends [BlockSchema]
     ? never
     : "portableText() option 'block' must be a block() schema"
   : Option extends 'element'
     ? [Value] extends [
-        | SanityPortableTextMember
-        | SanityObjectUnion<SanityPortableTextMember>
-        | SanityNever,
+        | PortableTextMemberKind
+        | ObjectUnionSchema<PortableTextMemberKind>
+        | NeverSchema,
       ]
       ? never
       : "portableText() option 'element' must be an object() with a _type literal, a reference(), image(), file(), a union() of these or never()"

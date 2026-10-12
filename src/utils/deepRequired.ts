@@ -13,24 +13,24 @@ import {lazy} from '../creators/lazy'
 import {object} from '../creators/object'
 import {union} from '../creators/union'
 import {
+  type DocumentSchema,
+  type DocumentUnionMemberKind,
+  type DocumentUnionSchema,
+  type LazySchema,
+  type ObjectArraySchema,
+  type ObjectSchema,
+  type ObjectSchemaOf,
+  type ObjectShape,
+  type ObjectUnionMemberKind,
+  type ObjectUnionSchema,
+  type OptionalSchema,
   type OutputOf,
-  type SanityDocument,
-  type SanityDocumentUnion,
-  type SanityDocumentUnionMemberKind,
-  type SanityLazy,
-  type SanityObject,
-  type SanityObjectArray,
-  type SanityObjectShape,
-  type SanityObjectType,
-  type SanityObjectUnion,
-  type SanityObjectUnionMemberKind,
-  type SanityOptional,
-  type SanityType,
+  type Schema,
 } from '../defs'
 import {inheritAnnotations} from '../helpers/annotations'
 import {getLazySchema} from '../helpers/getLazySchema'
 
-export type DeepRequiredShape<S> = S extends SanityObjectShape
+export type DeepRequiredShape<S> = S extends ObjectShape
   ? {
       [K in keyof S]: DeepRequired<S[K]>
     }
@@ -40,35 +40,35 @@ export type DeepRequiredPlain<T> = {
   [P in keyof T]-?: DeepRequiredPlain<T[P]>
 }
 
-export type DeepRequiredObject<S extends SanityObject | SanityDocument> =
-  S extends SanityObject<infer Shape extends SanityObjectShape>
-    ? SanityObjectShape extends Shape
-      ? SanityObjectType<DeepRequiredPlain<OutputOf<S>>>
-      : SanityObject<DeepRequiredShape<Shape>>
-    : S extends SanityDocument<infer Shape extends SanityObjectShape>
-      ? SanityDocument<DeepRequiredShape<Shape>>
+export type DeepRequiredObject<S extends ObjectSchema | DocumentSchema> =
+  S extends ObjectSchema<infer Shape extends ObjectShape>
+    ? ObjectShape extends Shape
+      ? ObjectSchemaOf<DeepRequiredPlain<OutputOf<S>>>
+      : ObjectSchema<DeepRequiredShape<Shape>>
+    : S extends DocumentSchema<infer Shape extends ObjectShape>
+      ? DocumentSchema<DeepRequiredShape<Shape>>
       : never
 
-export type DeepRequired<S extends SanityType> =
-  S extends SanityOptional<infer T>
+export type DeepRequired<S extends Schema> =
+  S extends OptionalSchema<infer T>
     ? DeepRequired<T>
-    : S extends SanityLazy<infer T>
-      ? SanityLazy<DeepRequired<T>>
-      : S extends SanityObject | SanityDocument
+    : S extends LazySchema<infer T>
+      ? LazySchema<DeepRequired<T>>
+      : S extends ObjectSchema | DocumentSchema
         ? DeepRequiredObject<S>
-        : S extends SanityObjectUnion<infer UnionTypes>
-          ? SanityObjectUnion<
-              Extract<DeepRequired<UnionTypes>, SanityObjectUnionMemberKind>
+        : S extends ObjectUnionSchema<infer UnionTypes>
+          ? ObjectUnionSchema<
+              Extract<DeepRequired<UnionTypes>, ObjectUnionMemberKind>
             >
-          : S extends SanityDocumentUnion<infer UnionTypes>
-            ? SanityDocumentUnion<
-                Extract<DeepRequired<UnionTypes>, SanityDocumentUnionMemberKind>
+          : S extends DocumentUnionSchema<infer UnionTypes>
+            ? DocumentUnionSchema<
+                Extract<DeepRequired<UnionTypes>, DocumentUnionMemberKind>
               >
-            : S extends SanityObjectArray<infer ElementType>
-              ? SanityObjectArray<DeepRequired<ElementType>>
+            : S extends ObjectArraySchema<infer ElementType>
+              ? ObjectArraySchema<DeepRequired<ElementType>>
               : S
 
-function requiredShape(shape: SanityObjectShape): SanityObjectShape {
+function requiredShape(shape: ObjectShape): ObjectShape {
   return Object.fromEntries(
     Object.entries(shape).map(([key, propSchema]) => [
       key,
@@ -80,9 +80,9 @@ function requiredShape(shape: SanityObjectShape): SanityObjectShape {
 // Cached by input schema, so transforming a recursive schema gives a recursive
 // schema: resolving a transformed getter field returns the transformed schema
 // it is part of, not a fresh copy at every level
-const cache = new WeakMap<SanityType, SanityType>()
+const cache = new WeakMap<Schema, Schema>()
 
-export function deepRequired<S extends SanityType>(schema: S): DeepRequired<S> {
+export function deepRequired<S extends Schema>(schema: S): DeepRequired<S> {
   let result = cache.get(schema)
   if (result === undefined) {
     result = transform(schema)
@@ -91,7 +91,7 @@ export function deepRequired<S extends SanityType>(schema: S): DeepRequired<S> {
   return result as any
 }
 
-function transform(schema: SanityType): SanityType {
+function transform(schema: Schema): Schema {
   if (isOptionalSchema(schema)) {
     return deepRequired(schema.type) as any
   }
@@ -118,7 +118,7 @@ function transform(schema: SanityType): SanityType {
   if (isObjectUnionSchema(schema) || isDocumentUnionSchema(schema)) {
     return inheritAnnotations(
       union(
-        (schema.union as SanityType[]).map(unionSchema =>
+        (schema.union as Schema[]).map(unionSchema =>
           deepRequired(unionSchema),
         ) as any,
       ),

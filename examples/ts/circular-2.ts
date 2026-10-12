@@ -4,8 +4,8 @@ import {
   literal,
   number,
   object,
+  type ObjectSchemaOf,
   type OutputOf,
-  type SanityObjectType,
   string,
 } from '@sanity-labs/typed-schema'
 
@@ -15,7 +15,7 @@ interface Person {
   parent: Person & {foo: string}
 }
 
-const Person: SanityObjectType<Person> = object({
+const Person: ObjectSchemaOf<Person> = object({
   _type: literal('person'),
   name: lazy(() => number()),
   foo: literal('ok'),

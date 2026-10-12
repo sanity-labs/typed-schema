@@ -7,37 +7,37 @@ import {optional} from '../../creators/optional'
 import {string} from '../../creators/string'
 import {
   type Infer,
-  type SanityLiteral,
-  type SanityNumber,
-  type SanityObject,
-  type SanityObjectArray,
-  type SanityObjectUnion,
-  type SanityOptional,
-  type SanityString,
+  type LiteralSchema,
+  type NumberSchema,
+  type ObjectArraySchema,
+  type ObjectSchema,
+  type ObjectUnionSchema,
+  type OptionalSchema,
+  type StringSchema,
 } from '../../defs'
 import {parse} from '../../parse'
 import {type ShallowPartial, shallowPartial} from '../shallowPartial'
 
 test('shallow partial on nested type', () => {
   type Nested = {
-    prop: SanityNumber
-    array: SanityObjectArray<
-      SanityObjectUnion<
-        | SanityObject<{_type: SanityLiteral<'a'>; str: SanityString}>
-        | SanityObject<{_type: SanityLiteral<'b'>; num: SanityNumber}>
+    prop: NumberSchema
+    array: ObjectArraySchema<
+      ObjectUnionSchema<
+        | ObjectSchema<{_type: LiteralSchema<'a'>; str: StringSchema}>
+        | ObjectSchema<{_type: LiteralSchema<'b'>; num: NumberSchema}>
       >
     >
   }
 
-  type Obj = SanityObject<{
-    foo: SanityString
-    sub: SanityObject<Nested>
+  type Obj = ObjectSchema<{
+    foo: StringSchema
+    sub: ObjectSchema<Nested>
   }>
 
   expectTypeOf<ShallowPartial<Obj>>().toEqualTypeOf<
-    SanityObject<{
-      foo: SanityOptional<SanityString>
-      sub: SanityOptional<SanityObject<Nested>>
+    ObjectSchema<{
+      foo: OptionalSchema<StringSchema>
+      sub: OptionalSchema<ObjectSchema<Nested>>
     }>
   >()
 

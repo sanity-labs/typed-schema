@@ -1,30 +1,30 @@
 import {expectTypeOf, test} from 'vitest'
 
 import {
-  type SanityBoolean,
-  type SanityDocument,
-  type SanityNumber,
-  type SanityString,
+  type BooleanSchema,
+  type DocumentSchema,
+  type NumberSchema,
+  type StringSchema,
 } from '../../defs'
 import {type OmitObjectLike} from '../omit'
 
 test('omit from document', () => {
-  type Doc = SanityDocument<{
-    foo: SanityString
-    bar: SanityNumber
-    baz: SanityBoolean
+  type Doc = DocumentSchema<{
+    foo: StringSchema
+    bar: NumberSchema
+    baz: BooleanSchema
   }>
   expectTypeOf<OmitObjectLike<Doc, ['foo', 'bar']>>().toEqualTypeOf<
-    SanityDocument<{
-      baz: SanityBoolean
+    DocumentSchema<{
+      baz: BooleanSchema
     }>
   >()
 
   expectTypeOf<OmitObjectLike<Doc, ['foo']>>().toEqualTypeOf<
     // @ts-expect-error foo should not be part of the new type
-    SanityDocument<{
-      foo: SanityString
-      bar: SanityNumber
+    DocumentSchema<{
+      foo: StringSchema
+      bar: NumberSchema
     }>
   >()
 })

@@ -1,19 +1,19 @@
 import {document} from './creators/document'
 import {
-  type _SanityDocument,
+  type _DocumentSchema,
+  type DocumentSchema,
+  type DocumentSchemaOf,
+  type LazySchema,
+  type ObjectShape,
   type OutputOf,
-  type SanityDocument,
-  type SanityDocumentType,
-  type SanityLazy,
-  type SanityObjectShape,
-  type SanityType,
+  type Schema,
 } from './defs'
 import {
   type ElementType,
   type Format,
   type RequireSome,
 } from './helpers/utilTypes'
-import {type SanityDocumentValue} from './shapeDefs'
+import {type DocumentValue} from './shapeDefs'
 import {type DeepPartial, deepPartial} from './utils/deepPartial'
 import {required} from './utils/required'
 import {type ShallowRequiredShape} from './utils/shallowRequired'
@@ -35,10 +35,10 @@ export type CommittedKeys = ElementType<typeof COMMITTED_KEYS>
 
 /**
  * Value-level counterpart of {@link Committed}, used where a schema carries no
- * shape to transform (`SanityDocumentType<Value>`). Not exported: express a
+ * shape to transform (`DocumentSchemaOf<Value>`). Not exported: express a
  * committed value as `Infer<Committed<typeof Doc>>`.
  */
-type CommittedValue<T> = T extends SanityDocumentValue
+type CommittedValue<T> = T extends DocumentValue
   ? Format<RequireSome<T, CommittedKeys>>
   : never
 
@@ -47,34 +47,32 @@ type CommittedValue<T> = T extends SanityDocumentValue
  * and `_updatedAt` required. `Infer<Committed<typeof Pet>>` is the type of a
  * pet as the Content Lake returns it, whichever perspective it is read from.
  *
- * Document schemas annotated by value (`SanityDocumentType<Value>`) and other
+ * Document schemas annotated by value (`DocumentSchemaOf<Value>`) and other
  * document-like schemas keep their kind and get the same change applied to
  * their value type; lazy schemas are transformed when resolved.
  */
-export type Committed<
-  T extends SanityDocument | SanityType<SanityDocumentValue>,
-> =
-  T extends SanityLazy<infer Inner>
-    ? Inner extends SanityType<SanityDocumentValue>
-      ? SanityLazy<Committed<Inner>>
+export type Committed<T extends DocumentSchema | Schema<DocumentValue>> =
+  T extends LazySchema<infer Inner>
+    ? Inner extends Schema<DocumentValue>
+      ? LazySchema<Committed<Inner>>
       : never
-    : T extends _SanityDocument<infer DocShape>
-      ? SanityObjectShape extends DocShape
-        ? SanityDocumentType<CommittedValue<OutputOf<T>>>
-        : SanityDocument<
+    : T extends _DocumentSchema<infer DocShape>
+      ? ObjectShape extends DocShape
+        ? DocumentSchemaOf<CommittedValue<OutputOf<T>>>
+        : DocumentSchema<
             ShallowRequiredShape<Pick<DocShape, CommittedKeys>> &
               Omit<DocShape, CommittedKeys>
           >
-      : T extends SanityDocumentType<infer Value>
-        ? SanityDocumentType<CommittedValue<Value>>
-        : SanityType<CommittedValue<OutputOf<T>>>
+      : T extends DocumentSchemaOf<infer Value>
+        ? DocumentSchemaOf<CommittedValue<Value>>
+        : Schema<CommittedValue<OutputOf<T>>>
 
 /**
  * Makes the fields the Content Lake assigns on commit (`_id`, `_rev`,
  * `_createdAt`, `_updatedAt`) required. Compose with `partial` for a
  * committed document that may be incomplete: `committed(partial(Doc))`.
  */
-export function committed<T extends SanityDocument>(schema: T): Committed<T> {
+export function committed<T extends DocumentSchema>(schema: T): Committed<T> {
   const committedShape = Object.entries(schema.shape).map(
     ([key, propSchema]) => {
       return [
@@ -100,6 +98,6 @@ export function committed<T extends SanityDocument>(schema: T): Committed<T> {
  * Lake returns it: `committed(partial(Doc))`. Its schema type is
  * `DeepPartial<typeof Doc>`.
  */
-export function partial<T extends SanityDocument>(schema: T): DeepPartial<T> {
+export function partial<T extends DocumentSchema>(schema: T): DeepPartial<T> {
   return deepPartial(schema)
 }

@@ -13,25 +13,25 @@ import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {
   type Infer,
-  type SanityNumber,
-  type SanityOptional,
-  type SanityPrimitiveArray,
-  type SanityString,
+  type NumberSchema,
+  type OptionalSchema,
+  type PrimitiveArraySchema,
+  type StringSchema,
 } from '../defs'
 import {type ArrayElementError} from '../helpers/schemaErrors'
 
 describe('array types', () => {
   test('array type definition with object item', () => {
-    const ArraySchema = array(object({foo: string()}))
+    const schema = array(object({foo: string()}))
 
     type ArrayValueType = {foo: string; _key: string}[]
 
-    type InferredValueType = Infer<typeof ArraySchema>
+    type InferredValueType = Infer<typeof schema>
     expectTypeOf<InferredValueType>().toEqualTypeOf<ArrayValueType>()
   })
 
   test('array type definition with union of objects', () => {
-    const ArraySchema = array(
+    const schema = array(
       union([
         object({_type: literal('foo'), foo: string()}),
         object({_type: literal('bar'), bar: number()}),
@@ -43,24 +43,24 @@ describe('array types', () => {
       | {_type: 'bar'; bar: number; _key: string}
     )[]
 
-    type ActualType = Infer<typeof ArraySchema>
+    type ActualType = Infer<typeof schema>
 
     expectTypeOf<ActualType>().toEqualTypeOf<ExpectedType>()
   })
 
   test('array type definition with never', () => {
-    const ArraySchema = array(never())
+    const schema = array(never())
 
-    expectTypeOf<Infer<typeof ArraySchema>>().toEqualTypeOf<never[]>()
+    expectTypeOf<Infer<typeof schema>>().toEqualTypeOf<never[]>()
   })
   test('array type definition with object and never', () => {
-    const ArraySchema = objectArray(
+    const schema = objectArray(
       union([object({_type: literal('foo'), foo: string()}), never()]),
     )
 
     type ExpectedType = {_type: 'foo'; foo: string; _key: string}[]
 
-    type ActualType = Infer<typeof ArraySchema>
+    type ActualType = Infer<typeof schema>
 
     expectTypeOf<ActualType>().toEqualTypeOf<ExpectedType>()
   })
@@ -83,8 +83,8 @@ describe('object array element', () => {
   test('is the element schema with a _key field', () => {
     const element = array(object({n: number()})).element
     expectTypeOf(element.typeName).toEqualTypeOf<'object'>()
-    expectTypeOf(element.shape._key).toEqualTypeOf<SanityString>()
-    expectTypeOf(element.shape.n).toEqualTypeOf<SanityNumber>()
+    expectTypeOf(element.shape._key).toEqualTypeOf<StringSchema>()
+    expectTypeOf(element.shape.n).toEqualTypeOf<NumberSchema>()
     expectTypeOf<Infer<typeof element>>().toEqualTypeOf<{
       n: number
       _key: string
@@ -101,7 +101,7 @@ describe('object array element', () => {
     expectTypeOf(element.typeName).toEqualTypeOf<'union'>()
     expectTypeOf<
       (typeof element)['union'][number]['shape']['_key']
-    >().toEqualTypeOf<SanityString>()
+    >().toEqualTypeOf<StringSchema>()
     expectTypeOf<Infer<typeof element>>().toEqualTypeOf<
       | {_type: 'foo'; foo: string; _key: string}
       | {_type: 'bar'; bar: number; _key: string}
@@ -137,7 +137,7 @@ describe('invalid array elements', () => {
     array(union(members))
 
     expectTypeOf(array(string())).toEqualTypeOf<
-      SanityPrimitiveArray<SanityString>
+      PrimitiveArraySchema<StringSchema>
     >()
   })
 
@@ -153,10 +153,10 @@ describe('invalid array elements', () => {
 
   test('report why', () => {
     expectTypeOf<
-      ArrayElementError<SanityPrimitiveArray<SanityString>>
+      ArrayElementError<PrimitiveArraySchema<StringSchema>>
     >().toEqualTypeOf<'array() elements cannot be arrays. Wrap the inner array in an object'>()
     expectTypeOf<
-      ArrayElementError<SanityOptional<SanityString>>
+      ArrayElementError<OptionalSchema<StringSchema>>
     >().toEqualTypeOf<'array() elements cannot be optional'>()
   })
 })

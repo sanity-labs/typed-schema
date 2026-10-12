@@ -1,17 +1,17 @@
 import {isDocumentSchema, isLiteralSchema, isObjectSchema} from '../asserters'
 import {
+  type DocumentSchema,
   type InferLiteralValue,
-  type SanityDocument,
-  type SanityLiteral,
-  type SanityObject,
-  type SanityType,
+  type LiteralSchema,
+  type ObjectSchema,
+  type Schema,
 } from '../defs'
 import {getLazySchema} from '../helpers/getLazySchema'
 import {isEmpty} from '../helpers/isEmpty'
 
 function canCreateLiteralFrom(
-  schema: SanityType,
-): schema is SanityLiteral | SanityDocument | SanityObject {
+  schema: Schema,
+): schema is LiteralSchema | DocumentSchema | ObjectSchema {
   return (
     isObjectSchema(schema) ||
     isDocumentSchema(schema) ||
@@ -19,7 +19,7 @@ function canCreateLiteralFrom(
   )
 }
 
-export function createLiteralValue<T extends SanityType>(
+export function createLiteralValue<T extends Schema>(
   _schema: T,
 ): InferLiteralValue<T> {
   const schema = getLazySchema(_schema)
@@ -32,7 +32,7 @@ export function createLiteralValue<T extends SanityType>(
   }
   throw new Error(`Cannot create literal value from "${schema.typeName}"`)
 }
-function createObject<S extends SanityObject | SanityDocument>(
+function createObject<S extends ObjectSchema | DocumentSchema>(
   schema: S,
 ): InferLiteralValue<S> | undefined {
   const keys: string[] = Object.keys(schema.shape)

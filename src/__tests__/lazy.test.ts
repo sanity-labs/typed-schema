@@ -8,16 +8,16 @@ import {object} from '../creators/object'
 import {optional} from '../creators/optional'
 import {reference} from '../creators/reference'
 import {string} from '../creators/string'
-import {type SanityDocumentType} from '../defs'
+import {type DocumentSchemaOf} from '../defs'
 import {parse} from '../parse'
-import {type SanityDocumentValue} from '../shapeDefs'
+import {type DocumentValue} from '../shapeDefs'
 
 test('recursive schemas stay plain, serializable objects after parsing', () => {
-  type Person = SanityDocumentValue & {
+  type Person = DocumentValue & {
     name: string
     friends: {_type: 'reference'; _ref: string; _key: string}[]
   }
-  const person: SanityDocumentType<Person> & {shape: Record<string, unknown>} =
+  const person: DocumentSchemaOf<Person> & {shape: Record<string, unknown>} =
     document({
       _type: literal('person'),
       name: string(),

@@ -1,26 +1,26 @@
 import {
   array,
+  type ArrayValue,
   document,
+  type DocumentSchemaOf,
+  type DocumentValue,
   lazy,
   literal,
   object,
   reference,
-  type SanityArrayValue,
-  type SanityDocumentType,
-  type SanityDocumentValue,
-  type SanityReferenceValue,
+  type ReferenceValue,
   string,
 } from '@sanity-labs/typed-schema'
 
 import {loadDocument, loadReference} from './loader'
 
 // todo: define a "human" document schema with name: {first, last}
-interface Human extends SanityDocumentValue {
+interface Human extends DocumentValue {
   name: {first: string; last: string}
-  coworkers: SanityArrayValue<SanityReferenceValue<Human>>
+  coworkers: ArrayValue<ReferenceValue<Human>>
 }
 
-const Human = lazy((): SanityDocumentType<Human> =>
+const Human = lazy((): DocumentSchemaOf<Human> =>
   document({
     _type: literal('human'),
     name: object({first: string(), last: string()}),

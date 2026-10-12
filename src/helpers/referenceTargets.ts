@@ -4,22 +4,22 @@ import {
   isLazySchema,
   isLiteralSchema,
 } from '../asserters'
-import {type SanityObject, type SanityType} from '../defs'
+import {type ObjectSchema, type Schema} from '../defs'
 
 /**
  * The target schemas of a reference: the schema given to `reference()`, or
  * the members of the `union()` of documents given to it, with nested unions
  * flattened. Lazy targets are returned unresolved.
  */
-export function listReferenceTargets(referenceType: SanityType): SanityType[] {
+export function listReferenceTargets(referenceType: Schema): Schema[] {
   return isDocumentUnionSchema(referenceType)
     ? referenceType.union.flatMap(listReferenceTargets)
     : [referenceType]
 }
 
 /** The `_type` literal of a document schema, if it has one */
-export function documentTypeOf(schema: SanityType): string | undefined {
-  const typeLiteral = (schema as SanityObject).shape?._type
+export function documentTypeOf(schema: Schema): string | undefined {
+  const typeLiteral = (schema as ObjectSchema).shape?._type
   return typeLiteral && isLiteralSchema(typeLiteral)
     ? String(typeLiteral.value)
     : undefined
@@ -27,11 +27,11 @@ export function documentTypeOf(schema: SanityType): string | undefined {
 
 /**
  * Throws if a target is not a document schema, such as an object typed by its
- * value as `SanityType<Value>`, which the types accept as a target. Lazy
+ * value as `Schema<Value>`, which the types accept as a target. Lazy
  * targets are skipped, since resolving them here would break schemas that
  * reference themselves.
  */
-export function assertDocumentTargets(targets: readonly SanityType[]) {
+export function assertDocumentTargets(targets: readonly Schema[]) {
   for (const target of targets) {
     if (!isLazySchema(target) && !isDocumentSchema(target)) {
       throw new Error(
@@ -48,8 +48,8 @@ export function assertDocumentTargets(targets: readonly SanityType[]) {
  * them here would break schemas that reference themselves; the loader checks
  * them once resolved.
  */
-export function assertDistinctTargetTypes(targets: readonly SanityType[]) {
-  const seen = new Map<string, SanityType>()
+export function assertDistinctTargetTypes(targets: readonly Schema[]) {
+  const seen = new Map<string, Schema>()
   for (const target of targets) {
     if (isLazySchema(target)) continue
     const type = documentTypeOf(target)

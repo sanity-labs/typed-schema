@@ -3,7 +3,7 @@ import {
   type AnnotationText,
   type OutputOf,
   type ResolvedSchemaAnnotations,
-  type SanityType,
+  type Schema,
   type SchemaAnnotations,
 } from '../defs'
 import {defineType} from './defineType'
@@ -88,12 +88,12 @@ export function resolveAnnotationText(
  * @param schema - the schema to read annotations from
  * @param options - which locale to resolve `AnnotationText` values in
  */
-export function getAnnotations<S extends SanityType>(
+export function getAnnotations<S extends Schema>(
   schema: S,
   options: GetAnnotationsOptions = {},
 ): ResolvedSchemaAnnotations<OutputOf<S>> | undefined {
   const layers: SchemaAnnotations[] = []
-  let current: SanityType = schema
+  let current: Schema = schema
   for (;;) {
     if (current.annotations) {
       layers.push(current.annotations)
@@ -158,9 +158,9 @@ export function withoutExamples(
  * @param source - the schema it was built from
  * @param options - whether to keep `examples`
  */
-export function inheritAnnotations<T extends SanityType>(
+export function inheritAnnotations<T extends Schema>(
   target: T,
-  source: SanityType,
+  source: Schema,
   options: {examples?: boolean} = {},
 ): T {
   const annotations =

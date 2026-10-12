@@ -1,31 +1,31 @@
 import {expectTypeOf, test} from 'vitest'
 
 import {
-  type SanityBoolean,
-  type SanityDocument,
-  type SanityNumber,
-  type SanityString,
+  type BooleanSchema,
+  type DocumentSchema,
+  type NumberSchema,
+  type StringSchema,
 } from '../../defs'
 import {type PickShape} from '../pick'
 
 test('pick from document', () => {
-  type Doc = SanityDocument<{
-    foo: SanityString
-    bar: SanityNumber
-    baz: SanityBoolean
+  type Doc = DocumentSchema<{
+    foo: StringSchema
+    bar: NumberSchema
+    baz: BooleanSchema
   }>
   expectTypeOf<PickShape<Doc, ['foo', 'bar']>>().toEqualTypeOf<
-    SanityDocument<{
-      foo: SanityString
-      bar: SanityNumber
+    DocumentSchema<{
+      foo: StringSchema
+      bar: NumberSchema
     }>
   >()
 
   expectTypeOf<PickShape<Doc, ['foo']>>().toEqualTypeOf<
     // @ts-expect-error bar should not be part of the new type
-    SanityDocument<{
-      foo: SanityString
-      bar: SanityNumber
+    DocumentSchema<{
+      foo: StringSchema
+      bar: NumberSchema
     }>
   >()
 })

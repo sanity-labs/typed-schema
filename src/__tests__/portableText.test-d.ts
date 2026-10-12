@@ -12,10 +12,10 @@ import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
 import {
+  type BlockSchema,
   type Infer,
-  type SanityBlock,
-  type SanityObject,
-  type SanityString,
+  type ObjectSchema,
+  type StringSchema,
 } from '../defs'
 import {type PortableTextOptionErrors} from '../helpers/schemaErrors'
 import {type SchemaError} from '../helpers/utilTypes'
@@ -176,15 +176,15 @@ describe('invalid portableText options', () => {
   test('report why', () => {
     expectTypeOf<
       PortableTextOptionErrors<{
-        block: SanityObject<{href: SanityString}>
-        element: SanityString
+        block: ObjectSchema<{href: StringSchema}>
+        element: StringSchema
       }>
     >().toEqualTypeOf<{
       block: SchemaError<"portableText() option 'block' must be a block() schema">
       element: SchemaError<"portableText() option 'element' must be an object() with a _type literal, a reference(), image(), file(), a union() of these or never()">
     }>()
     expectTypeOf<
-      PortableTextOptionErrors<{block: SanityBlock}>
+      PortableTextOptionErrors<{block: BlockSchema}>
     >().toEqualTypeOf<
       SchemaError<"Invalid portableText() options or annotations: it needs a 'block' and an 'element' option">
     >()

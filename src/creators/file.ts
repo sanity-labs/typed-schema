@@ -1,25 +1,25 @@
 import {
+  type FileSchema,
+  type ObjectShape,
   type OutputOf,
-  type SanityFile,
-  type SanityObjectShape,
   type SchemaAnnotations,
 } from '../defs'
 import {deferGetters} from '../helpers/deferGetters'
 import {defineType} from '../helpers/defineType'
 import {type FieldErrors} from '../helpers/schemaErrors'
-import {FileBase, type SanityFileShape} from '../shapeDefs'
+import {FileBase, type FileShape} from '../shapeDefs'
 
-export function file(): SanityFile<SanityFileShape>
-export function file<Shape extends {[key: string]: any} = SanityObjectShape>(
+export function file(): FileSchema<FileShape>
+export function file<Shape extends {[key: string]: any} = ObjectShape>(
   shape: Shape & NoInfer<FieldErrors<Shape>>,
   annotations?: NoInfer<
-    SchemaAnnotations<OutputOf<SanityFile<Shape & SanityFileShape>>>
+    SchemaAnnotations<OutputOf<FileSchema<Shape & FileShape>>>
   >,
-): SanityFile<Shape & SanityFileShape>
+): FileSchema<Shape & FileShape>
 export function file(
-  shape: SanityObjectShape = {},
+  shape: ObjectShape = {},
   annotations?: SchemaAnnotations<any>,
-): SanityFile {
+): FileSchema {
   return defineType(
     {
       typeName: 'file',

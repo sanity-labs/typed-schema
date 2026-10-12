@@ -7,8 +7,8 @@ import {object} from '../creators/object'
 import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
-import {type SanityType} from '../defs'
-import {type SanityDocumentValue} from '../shapeDefs'
+import {type Schema} from '../defs'
+import {type DocumentValue} from '../shapeDefs'
 
 const Author = document({_type: literal('author'), name: string()})
 const Book = document({_type: literal('book'), title: string()})
@@ -43,11 +43,11 @@ test('a target listed twice, or lazy targets with the same _type, do not throw',
 })
 
 test('a target that is not a document throws, even when typed as one', () => {
-  interface Folder extends SanityDocumentValue {
+  interface Folder extends DocumentValue {
     name: string
   }
   // typed by its value, but an object at runtime
-  const Folder: SanityType<Folder> = object({
+  const Folder: Schema<Folder> = object({
     _type: literal('folder'),
     name: string(),
   })

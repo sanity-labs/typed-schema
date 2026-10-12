@@ -10,7 +10,7 @@ import {object} from '../../creators/object'
 import {optional} from '../../creators/optional'
 import {string} from '../../creators/string'
 import {union} from '../../creators/union'
-import {type SanityObjectType} from '../../defs'
+import {type ObjectSchemaOf} from '../../defs'
 import {parse} from '../../parse'
 import {extend} from '../extend'
 
@@ -86,7 +86,7 @@ describe('extends helper', () => {
       parent: Omit<Person, 'parent'> & {foo: string; parent?: Person}
     }
 
-    const LazyPerson: SanityObjectType<Person> = object({
+    const LazyPerson: ObjectSchemaOf<Person> = object({
       _type: literal('person'),
       name: lazy(() => string()),
       parent: lazy(() =>

@@ -2,33 +2,33 @@ import {isDocumentSchema, isObjectSchema} from '../asserters'
 import {document} from '../creators/document'
 import {object} from '../creators/object'
 import {
-  type _SanityDocument,
+  type _DocumentSchema,
+  type DocumentSchema,
+  type ObjectSchema,
+  type ObjectSchemaOf,
+  type ObjectShape,
   type OutputOf,
-  type SanityDocument,
-  type SanityObject,
-  type SanityObjectShape,
-  type SanityObjectType,
 } from '../defs'
 import {inheritAnnotations} from '../helpers/annotations'
-import {type SanityDocumentShape} from '../shapeDefs'
-import {required, type SanityRequired} from './required'
+import {type DocumentShape} from '../shapeDefs'
+import {required, type RequiredSchema} from './required'
 
-export type ShallowRequiredShape<S> = S extends SanityObjectShape
+export type ShallowRequiredShape<S> = S extends ObjectShape
   ? {
-      [K in keyof S]: SanityRequired<S[K]>
+      [K in keyof S]: RequiredSchema<S[K]>
     }
   : never
 
-export type ShallowRequired<S extends SanityObject | SanityDocument> =
-  S extends SanityObject<infer Shape extends SanityObjectShape>
-    ? SanityObjectShape extends Shape
-      ? SanityObjectType<Required<OutputOf<S>>>
-      : SanityObject<ShallowRequiredShape<Shape>>
-    : S extends _SanityDocument<infer Shape extends SanityDocumentShape>
-      ? SanityDocument<ShallowRequiredShape<Shape>>
+export type ShallowRequired<S extends ObjectSchema | DocumentSchema> =
+  S extends ObjectSchema<infer Shape extends ObjectShape>
+    ? ObjectShape extends Shape
+      ? ObjectSchemaOf<Required<OutputOf<S>>>
+      : ObjectSchema<ShallowRequiredShape<Shape>>
+    : S extends _DocumentSchema<infer Shape extends DocumentShape>
+      ? DocumentSchema<ShallowRequiredShape<Shape>>
       : never
 
-export function shallowRequired<S extends SanityObject | SanityDocument>(
+export function shallowRequired<S extends ObjectSchema | DocumentSchema>(
   schema: S,
 ): ShallowRequired<S> {
   if (!isObjectSchema(schema) && !isDocumentSchema(schema)) {

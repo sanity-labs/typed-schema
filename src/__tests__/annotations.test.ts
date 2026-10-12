@@ -12,7 +12,7 @@ import {optional} from '../creators/optional'
 import {reference} from '../creators/reference'
 import {string} from '../creators/string'
 import {union} from '../creators/union'
-import {type SanityDocumentType} from '../defs'
+import {type DocumentSchemaOf} from '../defs'
 import {getAnnotations, resolveAnnotationText} from '../helpers/annotations'
 import {validateExamples} from '../helpers/validateExamples'
 import {parseOrThrow} from '../parse'
@@ -279,7 +279,7 @@ describe('recursive schemas', () => {
       title: string
       parent?: {_type: 'reference'; _ref: string}
     }
-    const Category: SanityDocumentType<Category> = document({
+    const Category: DocumentSchemaOf<Category> = document({
       _type: literal('category'),
       title: string(),
       parent: optional(

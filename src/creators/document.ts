@@ -1,7 +1,7 @@
 import {
+  type DocumentSchema,
+  type ObjectShape,
   type OutputOf,
-  type SanityDocument,
-  type SanityObjectShape,
   type SchemaAnnotations,
   type WithDocumentShape,
 } from '../defs'
@@ -24,14 +24,12 @@ type DocumentShapeInput<Shape> = Shape &
   NoInfer<RequireTypeField<Shape>> &
   NoInfer<FieldErrors<Shape, '_id' | '_type'> & SystemFieldErrors<Shape>>
 
-export function document<
-  Shape extends {[key: string]: any} = SanityObjectShape,
->(
+export function document<Shape extends {[key: string]: any} = ObjectShape>(
   shape: DocumentShapeInput<Shape>,
   annotations?: NoInfer<
-    SchemaAnnotations<OutputOf<SanityDocument<WithDocumentShape<Shape>>>>
+    SchemaAnnotations<OutputOf<DocumentSchema<WithDocumentShape<Shape>>>>
   >,
-): SanityDocument<WithDocumentShape<Shape>> {
+): DocumentSchema<WithDocumentShape<Shape>> {
   return defineType(
     {
       typeName: 'document',
