@@ -70,3 +70,9 @@ test('makes document fields optional, but keeps _type and nested fields required
   expect(parse(partial, {_type: 'pet', owner: {}}).ok).toBe(false)
   expect(parse(partial, {_type: 'pet', owner: {name: 'Ann'}}).ok).toBe(true)
 })
+
+test('throws on a schema that is not an object or document', () => {
+  expect(() => shallowPartial(string() as any)).toThrow(
+    'Expected object or document schema',
+  )
+})

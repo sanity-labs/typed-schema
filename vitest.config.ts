@@ -17,6 +17,8 @@ export default defineConfig({
       reporter: ['text-summary', 'json-summary', 'json'],
       reportOnFailure: true,
       include: ['src/**'],
+      exclude: ['src/**/__tests__/**', 'src/**/__test__/**'],
+      thresholds: {statements: 99, branches: 98, functions: 99, lines: 99},
     },
   },
 })

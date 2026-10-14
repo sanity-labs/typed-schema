@@ -191,16 +191,16 @@ function convertItemType(
   if (isDateTimeSchema(schema)) {
     return {type: 'datetime'}
   }
+  if (isDateSchema(schema)) {
+    return {type: 'date'}
+  }
   if (isNeverSchema(schema)) {
     return []
   }
   if (isObjectUnionSchema(schema)) {
     return schema.union.flatMap(unionType => convertItem(unionType, context))
   }
-  if (isPrimitiveUnionSchema(schema)) {
-    return schema.union.flatMap(unionType => convertItem(unionType, context))
-  }
-  throw new Error(`Unsupported schema type ${schema.typeName}}`)
+  throw new Error(`Unsupported schema type ${schema.typeName}`)
 }
 
 function convertField(

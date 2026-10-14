@@ -1,6 +1,13 @@
 import {expect, test} from 'vitest'
 
-import {int32, number, safeint, uint32} from '../creators/number'
+import {
+  float32,
+  float64,
+  int32,
+  number,
+  safeint,
+  uint32,
+} from '../creators/number'
 import {parse} from '../parse'
 
 test('parse a number', () => {
@@ -158,5 +165,18 @@ test('integer helpers reject non-integers and out-of-range values', () => {
   expect(parse(safeint(), Number.MAX_SAFE_INTEGER)).toEqual({
     ok: true,
     value: Number.MAX_SAFE_INTEGER,
+  })
+})
+
+test('float helpers accept fractions within their range', () => {
+  expect(parse(float32(), 1.5)).toEqual({ok: true, value: 1.5})
+  expect(parse(float32(), 3.4028234663852886e38).ok).toBe(true)
+  expect(parse(float32(), 3.5e38).ok).toBe(false)
+  expect(parse(float32(), -3.5e38).ok).toBe(false)
+  expect(parse(float64(), Number.MAX_VALUE).ok).toBe(true)
+  expect(parse(float64(), -Number.MAX_VALUE).ok).toBe(true)
+  expect(parse(float64({title: 'Ratio'}), 0.25)).toEqual({
+    ok: true,
+    value: 0.25,
   })
 })

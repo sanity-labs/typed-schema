@@ -170,6 +170,29 @@ describe('recursive schemas', () => {
     })
   })
 
+  test('a hoisted type used again later is referred to by name', () => {
+    const Node = object({
+      _type: literal('node'),
+      get children() {
+        return array(Node)
+      },
+    })
+    const Tree = document({
+      _type: literal('tree'),
+      root: Node,
+      backup: optional(Node),
+    })
+
+    const types = toClassicSchema(Tree)
+    expect(types.map(type => type.name)).toEqual(['tree', 'node'])
+    expect(types[0]).toMatchObject({
+      fields: [
+        {name: 'root', type: 'node'},
+        {name: 'backup', type: 'node'},
+      ],
+    })
+  })
+
   test('non-recursive fields declared with getters or lazy() are inlined', () => {
     const Address = object({street: string()})
     const Place = document({
