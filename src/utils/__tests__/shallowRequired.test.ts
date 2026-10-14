@@ -31,3 +31,9 @@ test('works on documents and keeps them documents', () => {
   expect(req.typeName).toBe('document')
   expect(typeNames(req)).toMatchObject({_id: 'string', name: 'string'})
 })
+
+test('throws on a schema that is not an object or document', () => {
+  expect(() => shallowRequired(string() as any)).toThrow(
+    'Expected object or document schema',
+  )
+})

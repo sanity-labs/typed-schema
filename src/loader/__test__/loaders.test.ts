@@ -63,6 +63,17 @@ test('resolve reference with schema', async () => {
   expect(personCountry).toEqual(usa)
 })
 
+test('a reference without a `_ref` resolves to undefined without fetching', async () => {
+  const fetch = vi.fn()
+  const loadReferenceResult = createLoadReferenceResult(fetch)
+
+  expect(await loadReferenceResult({_type: 'reference', _ref: ''})).toEqual({
+    ok: true,
+    value: undefined,
+  })
+  expect(fetch).not.toHaveBeenCalled()
+})
+
 test('loadReference rejects a target without the committed fields', async () => {
   const personResult = parse(Person, {
     _type: 'person',
