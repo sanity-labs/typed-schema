@@ -39,6 +39,6 @@ if (result.ok) {
 
 Schema constants are PascalCase (`User`, `Address`), the same as the type inferred from them. TypeScript lets a `const` and a `type` share a name, so `User` is the schema in a value position and the parsed document type in a type position, and one import gives you both. Creator and transform functions (`document()`, `reference()`, `extend()`) stay camelCase, and `_type` literals keep Sanity's camelCase type names (`'user'`).
 
-A document schema needs a `_type` literal. `document()` adds the optional system fields `_id`, `_rev`, `_createdAt` and `_updatedAt`. Use `object()` for nested objects; give it a `_type` literal when the object is a member of a union.
+A document schema needs a `_type` literal, and gets the system fields `_id`, `_rev`, `_createdAt` and `_updatedAt` (see [`document()`](/api/schema-types#document)). Use `object()` for nested objects; give it a `_type` literal when the object is a member of a union.
 
-See the [API reference](/api/schema-types) for every creator.
+See the [schema types reference](/api/schema-types) for every creator.

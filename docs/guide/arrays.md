@@ -53,58 +53,13 @@ s.parse(Addresses, [{city: 'Oslo'}])
 
 ## Element schemas
 
-An array schema's `element` is the element schema with `_key` added. Use it to parse or type one array item:
+An array schema's `element` is the element schema with `_key` added, and `element.unkeyed` is the schema given to `array()`. Use them to parse or type one item, or to get the item type of an array declared inline. See [`array()`](/api/schema-types#array) for examples.
 
-```ts twoslash
-import * as s from '@sanity-labs/typed-schema'
+## Nesting arrays
 
-const Address = s.object({city: s.string()})
-const Addresses = s.array(Address)
+Sanity does not allow arrays of arrays, so `array(array(Dish))` is a type error. The [`array()` reference](/api/schema-types#array) lists the other elements an array can't have.
 
-type AddressItem = s.Infer<typeof Addresses.element>
-//   ^?
-
-// {ok: true, value: {city: 'Oslo', _key: 'a1'}}
-s.parse(Addresses.element, {city: 'Oslo', _key: 'a1'})
-```
-
-The other way round, `element.unkeyed` is the schema given to `array()`, without `_key`. This is useful when the array is declared inline, as a field of another schema:
-
-```ts twoslash
-import * as s from '@sanity-labs/typed-schema'
-
-const Recipe = s.document({
-  _type: s.literal('recipe'),
-  ingredients: s.array(s.object({name: s.string(), grams: s.number()})),
-})
-
-const Ingredient = Recipe.shape.ingredients.element.unkeyed
-
-type Ingredient = s.Infer<typeof Ingredient>
-//   ^?
-```
-
-## Restrictions
-
-Sanity does not allow arrays that mix primitives and objects, or arrays of arrays. Both are type errors:
-
-```ts twoslash
-// @errors: 2769
-import * as s from '@sanity-labs/typed-schema'
-
-const Dish = s.object({
-  _type: s.literal('dish'),
-  name: s.string(),
-  vegetarian: s.boolean(),
-})
-
-const Mixed = s.array(s.union([s.string(), Dish]))
-
-// a menu as a list of sections, each a list of dishes
-const Menu = s.array(s.array(Dish))
-```
-
-To nest arrays, wrap each inner array in an object. The menu becomes a list of sections, each section an object holding its dishes:
+To nest arrays, wrap each inner array in an object. A menu becomes a list of sections, each section an object holding its dishes:
 
 ```ts twoslash
 import * as s from '@sanity-labs/typed-schema'

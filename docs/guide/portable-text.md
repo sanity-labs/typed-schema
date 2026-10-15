@@ -24,18 +24,7 @@ The inferred type matches what Sanity stores: `style`, `listItem`, `level` and `
 
 ## Configuring a block
 
-Each option narrows one part of the block:
-
-| Option       | What it allows                                                                          |
-| ------------ | --------------------------------------------------------------------------------------- |
-| `style`      | Block styles, such as `normal` and `h2`, as a literal or a union of literals            |
-| `list`       | List item types, such as `bullet` and `number`                                          |
-| `decorator`  | Decorators, such as `strong` and `em`. Spans don't check them: `marks` stays `string[]` |
-| `inline`     | Objects that can sit among the spans in `children`, such as mentions                    |
-| `annotation` | Objects in `markDefs`, such as links, which spans refer to by `_key` in `marks`         |
-| `_type`      | The block's type name, `block` by default                                               |
-
-`inline` and `annotation` each take a typed object (an object schema with a `_type` literal), a reference, an image, a file or a union of these. Sanity Studio's own schema types allow only objects and references for these two options.
+Each option narrows one part of the block. `style` and `list` set the allowed block styles and list types, `decorator` names the span decorators, `inline` sets the objects allowed among the spans, and `annotation` sets the objects allowed in `markDefs`, such as links. The [`block()` reference](/api/schema-types#block) lists what each option takes.
 
 ```ts twoslash
 import * as s from '@sanity-labs/typed-schema'
@@ -169,4 +158,4 @@ if (!result.ok) {
 }
 ```
 
-See the [schema types reference](/api/schema-types#portable-text) for the full list of options.
+See [`block()`](/api/schema-types#block) and [`portableText()`](/api/schema-types#portabletext) in the reference for every option.

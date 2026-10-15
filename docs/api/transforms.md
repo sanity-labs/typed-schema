@@ -2,11 +2,11 @@
 
 ## Modifiers
 
-| Function             | Notes                                                                                                                        |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `optional(schema)`   | The field may be `undefined` or absent                                                                                       |
-| `required(schema)`   | Removes `optional()`, however many times it was applied                                                                      |
-| `lazy(() => schema)` | Defers a schema until it is parsed; for recursive schemas prefer a getter, see [Recursive schemas](/guide/recursive-schemas) |
+| Function             | Notes                                                                                  |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| `optional(schema)`   | The field may be `undefined` or absent. See [`optional()`](/api/schema-types#optional) |
+| `required(schema)`   | Removes `optional()`, however many times it was applied                                |
+| `lazy(() => schema)` | Defers a schema until it is parsed. See [`lazy()`](/api/schema-types#lazy)             |
 
 ## Schema transforms
 

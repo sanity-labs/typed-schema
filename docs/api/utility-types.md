@@ -7,6 +7,7 @@
 | `OutputOf<typeof schema>` | The same as `Infer`                                                                                                                 |
 | `Schema<Output>`          | Base type of every schema; `ObjectSchema`, `DocumentSchema`, `ArraySchema`, ... extend it                                           |
 | `DocumentSchemaOf<Value>` | A document schema annotated by its value type                                                                                       |
+| `ObjectSchemaOf<Value>`   | An object schema annotated by its value type                                                                                        |
 | `DocumentValue`           | `{_type: string; _id?: string; _rev?: string; _createdAt?: string; _updatedAt?: string}`                                            |
 | `ReferenceValue<T>`       | The value of a `reference()` to a schema of type `T`                                                                                |
 | `ArrayValue<T>`           | `T[]`, with `_key` added to object elements                                                                                         |
