@@ -9,7 +9,7 @@ export const Recipe = s.document(
   {
     _type: s.literal('recipe'),
     title: s.string({description: 'Shown as the heading on the recipe page'}),
-    difficulty: s.enums(['easy', 'medium', 'hard'], {
+    difficulty: s.enum(['easy', 'medium', 'hard'], {
       description: 'Used to filter the recipe list',
     }),
     servings: s.optional(
