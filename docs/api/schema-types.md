@@ -8,7 +8,7 @@ All creators are named exports of `@sanity-labs/typed-schema`.
 | [`number()`](#number) and its aliases           | `number`                                                        |
 | [`boolean()`](#boolean)                         | `boolean`                                                       |
 | [`literal()`](#literal)                         | the literal                                                     |
-| [`enums()`](#enums)                             | a union of the values                                           |
+| [`enum()`](#enum)                               | a union of the values                                           |
 | [`date()`](#date)                               | `string`                                                        |
 | [`dateTime()`](#datetime)                       | `string`                                                        |
 | [`object()`](#object)                           | an object with the declared fields                              |
@@ -112,28 +112,30 @@ literal(value: string | number | boolean, annotations?): LiteralSchema
 - **Parsing:** Only `value` itself (`===`). Anything else is `INVALID_TYPE`
 - **Properties:** `value`
 
-The `_type` field of a document or typed object is a `literal()`. A [union](#union) of literals is a closed set of values, like [`enums()`](#enums).
+The `_type` field of a document or typed object is a `literal()`. A [union](#union) of literals is a closed set of values, like [`enum()`](#enum).
 
-## `enums()` {#enums}
+## `enum()` {#enum}
 
 ```ts
-enums(values: string[] | {[name: string]: string | number}, annotations?): EnumSchema
+enum(values: string[] | {[name: string]: string | number}, annotations?): EnumSchema
 ```
 
 - **Inferred type:** A union of the values
 - **Parsing:** One of the values. Anything else is `INVALID_ENUM_VALUE`
 - **Properties:** `enum`, the values as an object. An array of values is stored as an object that maps each value to itself
 
-With an object, the values are the object's values, not its keys. An `enums()` can't be an array element or a union member; use a [union](#union) of literals there.
+With an object, the values are the object's values, not its keys. An `enum()` can't be an array element or a union member; use a [union](#union) of literals there.
+
+`enum` is a reserved word in JavaScript, so a named import has to rename it: `import {enum as enumOf} from '@sanity-labs/typed-schema'`. With a namespace import, `s.enum()` works as is. `enums()` is a deprecated alias of `enum()`.
 
 ```ts twoslash
 import * as s from '@sanity-labs/typed-schema'
 
-const Status = s.enums(['draft', 'review', 'published'])
+const Status = s.enum(['draft', 'review', 'published'])
 type Status = s.Infer<typeof Status>
 //   ^?
 
-const Priority = s.enums({Low: 1, High: 2})
+const Priority = s.enum({Low: 1, High: 2})
 type Priority = s.Infer<typeof Priority>
 //   ^?
 ```

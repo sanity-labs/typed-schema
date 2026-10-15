@@ -2,7 +2,7 @@ import {describe, expect, test} from 'vitest'
 
 import {array} from '../creators/array'
 import {document} from '../creators/document'
-import {enums} from '../creators/enums'
+import {enum as enumOf} from '../creators/enum'
 import {geopoint} from '../creators/geopoint'
 import {lazy} from '../creators/lazy'
 import {literal} from '../creators/literal'
@@ -63,7 +63,7 @@ describe('creators', () => {
       {
         _type: literal('pet', {description: 'Always "pet"'}),
         name: string({title: 'Name'}),
-        species: enums(['dog', 'cat'], {description: 'Species'}),
+        species: enumOf(['dog', 'cat'], {description: 'Species'}),
         owner: reference(Person, {description: 'Owner'}),
         tags: array(string(), {description: 'Tags'}),
         address: object({city: string()}, {description: 'Address'}),

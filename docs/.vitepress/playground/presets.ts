@@ -29,7 +29,7 @@ const Event = s.document({
   _type: s.literal('event'),
   name: s.string(),
   slug: Slug,
-  eventType: s.enums(['in-person', 'virtual']),
+  eventType: s.enum(['in-person', 'virtual']),
   date: s.dateTime(),
   // minutes before the start time
   doorsOpen: s.optional(s.number({min: 0})),
