@@ -1,17 +1,18 @@
 import {expect, test} from 'vitest'
 
-import {enums} from '../creators/enums'
+import {enum as enumOf} from '../creators/enum'
+import * as s from '../index'
 import {parse} from '../parse'
 
 test('define string array enum', () => {
-  const Enum = enums(['a', 'b', 'c'])
+  const Enum = enumOf(['a', 'b', 'c'])
   expect(Enum.enum.a).toEqual('a')
   expect(Enum.enum.b).toEqual('b')
   expect(Enum.enum.c).toEqual('c')
 })
 
 test('define object literal enum', () => {
-  const Enum = enums({foo: 'a', bar: 'b', baz: 'c'})
+  const Enum = enumOf({foo: 'a', bar: 'b', baz: 'c'})
   expect(Enum.enum.foo).toEqual('a')
   expect(Enum.enum.bar).toEqual('b')
   expect(Enum.enum.baz).toEqual('c')
@@ -20,15 +21,15 @@ test('define object literal enum', () => {
 test('define object literal enum as const', () => {
   const enumDef = {foo: 'a', bar: 1, baz: 'c'} as const
 
-  const Enum = enums(enumDef)
+  const Enum = enumOf(enumDef)
   expect(Enum.enum.foo).toEqual('a')
   expect(Enum.enum.bar).toEqual(1)
   expect(Enum.enum.baz).toEqual('c')
 })
 
 test('parse string array enum', () => {
-  expect(parse(enums(['a', 'b', 'c']), 'a')).toEqual({ok: true, value: 'a'})
-  expect(parse(enums(['a', 'b', 'c']), 'x')).toMatchInlineSnapshot(`
+  expect(parse(enumOf(['a', 'b', 'c']), 'a')).toEqual({ok: true, value: 'a'})
+  expect(parse(enumOf(['a', 'b', 'c']), 'x')).toMatchInlineSnapshot(`
     {
       "error": ParseError {
         "issues": [
@@ -46,11 +47,11 @@ test('parse string array enum', () => {
 })
 
 test('parse object literal enum', () => {
-  expect(parse(enums({foo: 'a', bar: 'b', baz: 'c'}), 'a')).toEqual({
+  expect(parse(enumOf({foo: 'a', bar: 'b', baz: 'c'}), 'a')).toEqual({
     ok: true,
     value: 'a',
   })
-  expect(parse(enums(['a', 'b', 'c']), 'x')).toMatchInlineSnapshot(`
+  expect(parse(enumOf(['a', 'b', 'c']), 'x')).toMatchInlineSnapshot(`
     {
       "error": ParseError {
         "issues": [
@@ -65,4 +66,9 @@ test('parse object literal enum', () => {
       "ok": false,
     }
   `)
+})
+
+test('enum is exported from the package root', () => {
+  expect(s.enum).toBe(enumOf)
+  expect(s.enums).toBe(enumOf)
 })

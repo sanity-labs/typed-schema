@@ -5,7 +5,7 @@ import {block} from '../../../creators/block'
 import {date} from '../../../creators/date'
 import {dateTime} from '../../../creators/dateTime'
 import {document} from '../../../creators/document'
-import {enums} from '../../../creators/enums'
+import {enum as enumOf} from '../../../creators/enum'
 import {image} from '../../../creators/image'
 import {lazy} from '../../../creators/lazy'
 import {literal} from '../../../creators/literal'
@@ -142,8 +142,8 @@ test('literal, date and enum fields', () => {
     _type: literal('post'),
     kind: literal('news'),
     publishedOn: date(),
-    status: enums(['draft', 'published']),
-    priority: enums({Low: 1, High: 2}),
+    status: enumOf(['draft', 'published']),
+    priority: enumOf({Low: 1, High: 2}),
   })
   expect(toClassicSchema(Post)[0]).toMatchObject({
     fields: [
@@ -178,7 +178,7 @@ test('an enum with mixed value types falls back to string and warns', () => {
   try {
     const Post = document({
       _type: literal('post'),
-      rating: enums({None: 'none', One: 1}),
+      rating: enumOf({None: 'none', One: 1}),
     })
     expect(toClassicSchema(Post)[0]).toMatchObject({
       fields: [{name: 'rating', type: 'string'}],
@@ -281,7 +281,7 @@ test('throws on a reference to a document without a `_type` literal', () => {
 test('throws on an unsupported array item type', () => {
   const Doc = document({
     _type: literal('doc'),
-    statuses: array(enums(['a', 'b']) as any),
+    statuses: array(enumOf(['a', 'b']) as any),
   })
   expect(() => toClassicSchema(Doc)).toThrow('Unsupported schema type enum')
 })

@@ -16,14 +16,14 @@
 | `schema['~standard']`                       | The [Standard Schema](/guide/standard-schema) properties; `validate` runs `parse`                                                                |
 | `ErrorCode`                                 | One of the codes below                                                                                                                           |
 
-| Error code                       | Raised when                                           |
-| -------------------------------- | ----------------------------------------------------- |
-| `INVALID_TYPE`                   | The value has the wrong type or format                |
-| `INVALID_ENUM_VALUE`             | The value is not one of the values given to `enums()` |
-| `INVALID_PRIMITIVE_UNION`        | The value matches no member of a union of primitives  |
-| `NUM_TOO_SMALL`, `NUM_TOO_BIG`   | A number is outside the range given to `number()`     |
-| `NUM_NOT_MULTIPLE_OF`            | A number does not match the `step` constraint         |
-| `INVALID_OBJECT_UNION`           | No member of an object union matches the `_type`      |
-| `ARRAY_ELEMENT_NOT_KEYED_OBJECT` | An object in an array has no `_key`                   |
+| Error code                       | Raised when                                          |
+| -------------------------------- | ---------------------------------------------------- |
+| `INVALID_TYPE`                   | The value has the wrong type or format               |
+| `INVALID_ENUM_VALUE`             | The value is not one of the values given to `enum()` |
+| `INVALID_PRIMITIVE_UNION`        | The value matches no member of a union of primitives |
+| `NUM_TOO_SMALL`, `NUM_TOO_BIG`   | A number is outside the range given to `number()`    |
+| `NUM_NOT_MULTIPLE_OF`            | A number does not match the `step` constraint        |
+| `INVALID_OBJECT_UNION`           | No member of an object union matches the `_type`     |
+| `ARRAY_ELEMENT_NOT_KEYED_OBJECT` | An object in an array has no `_key`                  |
 
 See [Parsing and errors](/guide/parsing) for examples.

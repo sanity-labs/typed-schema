@@ -3,7 +3,7 @@ import {expectTypeOf, test} from 'vitest'
 import {array} from '../creators/array'
 import {block} from '../creators/block'
 import {document} from '../creators/document'
-import {enums} from '../creators/enums'
+import {enum as enumOf} from '../creators/enum'
 import {literal} from '../creators/literal'
 import {number, safeint} from '../creators/number'
 import {object} from '../creators/object'
@@ -59,9 +59,9 @@ test('examples are checked against the output type', () => {
   // @ts-expect-error a string example is not a number
   number({examples: ['12']})
 
-  enums(['dog', 'cat'], {examples: ['dog']})
+  enumOf(['dog', 'cat'], {examples: ['dog']})
   // @ts-expect-error not a member of the enum
-  enums(['dog', 'cat'], {examples: ['bird']})
+  enumOf(['dog', 'cat'], {examples: ['bird']})
 
   literal('pet', {examples: ['pet']})
   // @ts-expect-error not the literal value
