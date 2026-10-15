@@ -28,6 +28,24 @@ type Speaker = s.Infer<typeof Speaker>
 
 Use `extend` when the new fields include a getter for a [recursive schema](./recursive-schemas): spreading a shape into the same object literal as a getter breaks type inference.
 
+`extend` also takes a `union` of objects and adds the fields to every member. Each member keeps its own `_type`, so the result is still a union of typed objects. This is how the section types of a page builder can share fields:
+
+```ts twoslash
+import * as s from '@sanity-labs/typed-schema'
+
+const Hero = s.object({_type: s.literal('hero'), title: s.string()})
+const Gallery = s.object({_type: s.literal('gallery'), columns: s.number()})
+
+const Section = s.extend(s.union([Hero, Gallery]), {
+  anchor: s.optional(s.string()),
+})
+
+type Section = s.Infer<typeof Section>
+//   ^?
+```
+
+A union with a `reference`, `block`, `image` or `file` member cannot be extended: those types have fixed shapes. `_type` cannot be replaced on a union either, since the members are told apart by it.
+
 ## Removing fields with `omit`
 
 ```ts twoslash

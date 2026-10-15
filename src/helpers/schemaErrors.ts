@@ -30,16 +30,20 @@ import {type FieldNameError, type SchemaError} from './utilTypes'
 
 /**
  * The message {@link InvalidFieldNames} reports for `Property`, `never` if it
- * reports nothing
+ * reports nothing. `Allowed` is read last, so a valid name resolves even
+ * when `Allowed` depends on a type parameter, as in generic code calling
+ * `extend()`.
  */
 type ReportedNameError<
   Property,
   Allowed extends string,
-> = Property extends Allowed
-  ? never
-  : string extends Property
-    ? never // index signature, e.g. a shape built at runtime
-    : FieldNameError<Property & PropertyKey>
+> = string extends Property
+  ? never // index signature, e.g. a shape built at runtime
+  : [FieldNameError<Property & PropertyKey>] extends [never]
+    ? never
+    : Property extends Allowed
+      ? never
+      : FieldNameError<Property & PropertyKey>
 
 type FieldValueError<Property> = Property extends string | number
   ? `Field '${Property}' is not a schema`
@@ -237,6 +241,43 @@ export type ReferenceTargetError<Def> = Def extends
   | {typeName: 'documentUnion'}
   ? InvalidAnnotations<'reference'>
   : 'reference() target must be a document schema or a union() of document schemas'
+
+// extend()
+
+/** The members of a `union()` that `extend()` cannot extend */
+type UnextendableMember = {typeName: 'reference' | 'block' | 'image' | 'file'}
+
+/**
+ * A `SchemaError` if `Def` is a union with a member that is not an object,
+ * otherwise `unknown`. References, blocks, images and files have fixed
+ * shapes, so a union with any of them cannot be extended as a whole. Wrap it
+ * in `NoInfer`, like {@link InvalidFieldNames}.
+ */
+export type ExtendSourceError<Def> =
+  Def extends ObjectUnionSchema<infer Members>
+    ? [Extract<Members, UnextendableMember>] extends [never]
+      ? unknown
+      : SchemaError<'extend() can only extend a union() of objects, not one with reference(), block(), image() or file() members'>
+    : unknown
+
+/**
+ * A `SchemaError` at `_type` if `Def` is a union and `Shape` replaces it,
+ * otherwise `unknown`. The members of a union are told apart by their `_type`
+ * literals, so giving them all the same one would break the union. A shape
+ * with an index signature, such as one built at runtime, is not checked;
+ * `extend()` throws for it instead. `Shape` is checked before `Def`, so a
+ * shape without `_type` resolves for a `Def` that is a type parameter. Wrap
+ * it in `NoInfer`, like {@link InvalidFieldNames}.
+ */
+export type ExtendTypeFieldError<Def, Shape> = string extends keyof Shape
+  ? unknown
+  : '_type' extends keyof Shape
+    ? Def extends ObjectUnionKind
+      ? {
+          _type: SchemaError<'extend() cannot replace _type on a union(): its members are told apart by their _type literals'>
+        }
+      : unknown
+    : unknown
 
 // union()
 
