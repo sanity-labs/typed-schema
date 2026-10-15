@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.0
+
+### Minor Changes
+
+- [#72](https://github.com/sanity-labs/typed-schema/pull/72) [`189a832`](https://github.com/sanity-labs/typed-schema/commit/189a832f1ad0718188bc5a6f19111b80418eab85) Thanks [@bjoerge](https://github.com/bjoerge)! - `enums()` is renamed to `enum()`. `enums()` still works but is deprecated. Write `s.enum([...])` with a namespace import; `enum` is a reserved word, so a named import has to rename it: `import {enum as enumOf} from '@sanity-labs/typed-schema'`.
+
+- [#70](https://github.com/sanity-labs/typed-schema/pull/70) [`5b1690a`](https://github.com/sanity-labs/typed-schema/commit/5b1690afd0f27874d54755e8632a62b6c2157240) Thanks [@bjoerge](https://github.com/bjoerge)! - `extend()` accepts a `union()` of objects and adds the fields to every member, for example to give all the section types of a page builder an `anchor` field. The members keep their `_type` literals. A union with a `reference()`, `block()`, `image()` or `file()` member cannot be extended, and `_type` cannot be replaced on a union.
+
+### Patch Changes
+
+- [#68](https://github.com/sanity-labs/typed-schema/pull/68) [`ebdba88`](https://github.com/sanity-labs/typed-schema/commit/ebdba8898e1db3780301c7faf606d780f6936fde) Thanks [@bjoerge](https://github.com/bjoerge)! - `toClassicSchema()` converts arrays of `date()` instead of throwing.
+
 ## 0.7.0
 
 ### Minor Changes
